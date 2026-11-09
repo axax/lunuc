@@ -133,6 +133,8 @@ export function ExcelPreview({form, field, fieldKey, values}) {
     const sheet = get('sheetField', 'excelSheet') || ''
     const range = (get('rangeField', 'excelRange') || '').trim()
     const headerRows = parseHeaderRows(get('headerRowsField', 'excelHeaderRows'))
+    // «Titelzeilen von»: rows further up in the sheet as header of the range (optional)
+    const headerRange = (get('headerRangeField', 'excelHeaderRange') || '').trim()
     const sumOnlyValue = get('sumOnlyField', 'excelSumOnly')
     const sumOnly = sumOnlyValue === true || sumOnlyValue === 'true'
     const variant = get('variantField', 'tableVariant') || 'statement'
@@ -154,7 +156,7 @@ export function ExcelPreview({form, field, fieldKey, values}) {
     // «nur Summen» and the layout for the phone are computed (and cached) by the api
     const params = useDebounced(mode === 'sheet' ?
         {mediaId, format: 'grid', sheet} :
-        {mediaId, format: 'data', sheet, range, headerRows, sumOnly: sumOnly ? 1 : '', layout: 1}, 400)
+        {mediaId, format: 'data', sheet, range, headerRows, headerRange, sumOnly: sumOnly ? 1 : '', layout: 1}, 400)
     const url = params.mediaId ? apiUrl(params) : ''
 
     useEffect(() => {

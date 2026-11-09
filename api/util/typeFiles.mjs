@@ -2,7 +2,8 @@
  * Export / import of type entries as files in a zip, generic for all types that register a handler
  * (admin: "Export as files (ZIP)" for the selected entries, "Import files (ZIP)" in the actions of the list).
  *
- * Registered by default: the types with scripts of typeScriptFiles.mjs (CronJob, Hook, Api).
+ * Registered by default: the types with scripts of typeScriptFiles.mjs (CronJob, Hook, Api,
+ * GenericDataDefinition and BotCommand if the bot extension is enabled).
  * Other types (also from extensions) can be added:
  *
  *   import {registerTypeFiles} from 'api/util/typeFiles.mjs'
@@ -26,7 +27,7 @@
 import Util from './index.mjs'
 import {CAPABILITY_RUN_SCRIPT, CAPABILITY_EXPORT_IMPORT_DATA} from '../../util/capabilities.mjs'
 import {filesToZip, zipToFiles} from './zipFiles.mjs'
-import {TYPE_SCRIPT_DEFINITIONS, typeItemsToFiles, getTypeScriptItems, importTypeScriptFiles} from './typeScriptFiles.mjs'
+import {getTypeScriptTypes, typeItemsToFiles, getTypeScriptItems, importTypeScriptFiles} from './typeScriptFiles.mjs'
 
 const handlers = {}
 
@@ -37,7 +38,7 @@ export const registerTypeFiles = (type, handler) => {
 export const getTypeFilesTypes = () => Object.keys(handlers).filter(type => handlers[type].perType !== false)
 
 // types with scripts: the export contains code that runs on the server
-Object.keys(TYPE_SCRIPT_DEFINITIONS).forEach(type => {
+getTypeScriptTypes().forEach(type => {
     registerTypeFiles(type, {
         // structure of a GenericDataDefinition is no server script: reading is limited by the entries the
         // user may see, creating needs admin_options and updating the ownership (checked by the resolver)

@@ -66,7 +66,8 @@ const styles = {
 }
 
 const GROUP_LABEL = {
-    cmspages: 'CMS-Seiten', cronjobs: 'Cronjobs', apis: 'APIs', hooks: 'Hooks', genericdatadefinitions: 'Generic Data Definitions'
+    cmspages: 'CMS-Seiten', cronjobs: 'Cronjobs', apis: 'APIs', hooks: 'Hooks', genericdatadefinitions: 'Generic Data Definitions',
+    botcommands: 'Bot-Commands'
 }
 
 const tr = (key, fallback) => {

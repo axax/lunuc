@@ -1,5 +1,5 @@
 /**
- * Exports entries of types that contain scripts (CronJob, Hook, Api, ...) or other
+ * Exports entries of types that contain scripts (CronJob, Hook, Api, BotCommand, ...) or other
  * code-like fields (GenericDataDefinition structure) as files, so they can be edited with
  * an editor or an AI. One folder per entry:
  *
@@ -20,12 +20,13 @@ import {CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
 import {toPlainJson, fromPlainJson, stableJson} from './plainJson.mjs'
 import {readExportState, writeExportState, hashFields, hashValue, threeWayDiff} from './exportState.mjs'
 import GenericResolver from '../resolver/generic/genericResolver.mjs'
+import {isExtensionEnabled} from '../../gensrc/extensions-private.mjs'
 
 export const META_FILE = 'meta.json'
 
 /**
  * per type: which field names the folder, which fields are scripts and which fields must
- * never end up in a file (secrets)
+ * never end up in a file (secrets). extension: the type only exists if that extension is enabled
  */
 export const TYPE_SCRIPT_DEFINITIONS = {
     CronJob: {
@@ -45,8 +46,21 @@ export const TYPE_SCRIPT_DEFINITIONS = {
         folderFields: ['name'],
         // stored as object, written as formatted json (the resolver parses the text on save)
         scripts: [{field: 'structure', file: () => 'structure.json'}]
+    },
+    BotCommand: {
+        extension: 'bot',
+        folderFields: ['name'],
+        scripts: [{field: 'script', file: () => 'script.js'}]
     }
 }
+
+/**
+ * the types of TYPE_SCRIPT_DEFINITIONS that exist on this installation (extension enabled)
+ */
+export const getTypeScriptTypes = () => Object.keys(TYPE_SCRIPT_DEFINITIONS).filter(type => {
+    const extension = TYPE_SCRIPT_DEFINITIONS[type].extension
+    return !extension || isExtensionEnabled(extension)
+})
 
 // files written for the script fields, removed together with meta.json for stale entries
 const SCRIPT_FILE_RE = /^(script\.(js|py)|structure\.json)$/

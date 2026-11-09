@@ -11,10 +11,11 @@ import LinearProgress from '@mui/material/LinearProgress'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import {SimpleDialog} from 'ui/admin'
 import {_t} from '../../../util/i18n.mjs'
+import {openTypePickerWindow} from '../../../client/util/picker'
 
 /**
  * "Inhalt importieren" in the element palette of the cms editor: converts a document (Word, PDF, Pages, Excel, HTML,
- * Markdown/Text, pictures), a web page or pasted text into elements of the template
+ * Markdown/Text, pictures) - uploaded or chosen from the media library -, a web page or pasted text into elements of the template
  * (server: Api system/content2json -> api/util/contentToJson.mjs).
  *
  * props:
@@ -110,6 +111,8 @@ export default function CmsContentImport({hasContent, onApply}) {
     const [open, setOpen] = React.useState(false)
     const [tab, setTab] = React.useState('file')
     const [files, setFiles] = React.useState([])
+    // chosen from the media library (type picker window): [{_id, name}]
+    const [medias, setMedias] = React.useState([])
     const [url, setUrl] = React.useState('')
     const [text, setText] = React.useState('')
     const [mode, setMode] = React.useState('append')
@@ -121,6 +124,7 @@ export default function CmsContentImport({hasContent, onApply}) {
 
     const reset = () => {
         setFiles([])
+        setMedias([])
         setUrl('')
         setText('')
         setMessage(null)
@@ -140,6 +144,12 @@ export default function CmsContentImport({hasContent, onApply}) {
                 // one after the other, in the order of the chosen files
                 for (const mediaId of ids) {
                     results.push(await convert({mediaId, importImages}))
+                }
+            } else if (tab === 'media') {
+                if (!medias.length) throw new Error(_t('CmsContentImport.noMedia'))
+                // already in the media library: no upload, one after the other in the chosen order
+                for (const media of medias) {
+                    results.push(await convert({mediaId: media._id, importImages}))
                 }
             } else if (tab === 'url') {
                 if (!/^https?:\/\//i.test(url.trim())) throw new Error(_t('CmsContentImport.invalidUrl'))
@@ -195,6 +205,7 @@ export default function CmsContentImport({hasContent, onApply}) {
                                ]}>
             <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{mb: 2}}>
                 <Tab value="file" label={_t('CmsContentImport.tabFile')}/>
+                <Tab value="media" label={_t('CmsContentImport.tabMedia')}/>
                 <Tab value="url" label={_t('CmsContentImport.tabUrl')}/>
                 <Tab value="text" label={_t('CmsContentImport.tabText')}/>
             </Tabs>
@@ -214,6 +225,33 @@ export default function CmsContentImport({hasContent, onApply}) {
                 {files.length ? <strong>{files.map(f => f.name).join(', ')}</strong> : _t('CmsContentImport.drop')}
                 <div style={{fontSize: '0.75rem', marginTop: 6}}>{_t('CmsContentImport.formats')}</div>
             </StyledDrop>}
+
+            {tab === 'media' && <div>
+                <StyledDrop as="button" type="button" style={{width: '100%', font: 'inherit'}} onClick={() => {
+                    openTypePickerWindow({
+                        type: 'Media',
+                        multi: true,
+                        label: _t('CmsContentImport.pickMedia'),
+                        onSelect: rawValue => {
+                            const picked = (Array.isArray(rawValue) ? rawValue : [rawValue])
+                                .filter(m => m && m._id).map(m => ({_id: String(m._id), name: m.name || String(m._id)}))
+                            // added to the chosen ones, each media only once
+                            setMedias(current => current.concat(picked.filter(m => !current.some(c => c._id === m._id))))
+                        }
+                    })
+                }}>
+                    {_t('CmsContentImport.pickMedia')}
+                    <div style={{fontSize: '0.75rem', marginTop: 6}}>{_t('CmsContentImport.formats')}</div>
+                </StyledDrop>
+                {medias.length > 0 && <ul style={{listStyle: 'none', padding: 0, margin: '10px 0 0'}}>
+                    {medias.map(m => <li key={m._id} style={{display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', padding: '3px 0'}}>
+                        <span style={{flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{m.name}</span>
+                        <button type="button" title={_t('CmsContentImport.removeMedia')} aria-label={_t('CmsContentImport.removeMedia')}
+                                style={{border: 'none', background: 'none', cursor: 'pointer', fontSize: '1rem', color: 'inherit', opacity: 0.6}}
+                                onClick={() => setMedias(current => current.filter(c => c._id !== m._id))}>×</button>
+                    </li>)}
+                </ul>}
+            </div>}
 
             {tab === 'url' && <TextField fullWidth
                                          autoFocus
