@@ -16,7 +16,7 @@ const externalUpdate = Annotation.define()
 
 
 const CodeMirrorWrapper = (props) => {
-    const {controlled, mergeView, darkMode, onFirstVisibleLineChange, onEditorView, onContextMenu, style, onChange, onBlur, type, lineNumbers, identifier, value, mergeValue, readOnly, onToggleAiAssistent, lint} = props
+    const {controlled, mergeView, darkMode, onFirstVisibleLineChange, onEditorView, onContextMenu, style, onChange, onBlur, type, lineNumbers, identifier, value, mergeValue, mergeLabels, readOnly, onToggleAiAssistent, lint} = props
     const editor = useRef()
     const editorViewRef = useRef()
     const muiTheme = useTheme()
@@ -120,7 +120,8 @@ const CodeMirrorWrapper = (props) => {
                 collapseUnchanged: { margin: 3, minSize: 3 },
                 highlightChanges:true,
                 mergeScroll: true,
-                revertControls:'a-to-b'
+                // a read only diff has nothing to revert
+                revertControls: readOnly ? undefined : 'a-to-b'
             })
         }else {
             view = new EditorView({state: EditorState.create({doc:value,extensions}), parent: editor.current})
@@ -141,8 +142,8 @@ const CodeMirrorWrapper = (props) => {
 
     if(mergeView){
         return <><div style={{display:'flex',width:'100%'}}>
-            <div style={{flex:1}}>Old Version</div>
-            <div style={{flex:1}}>Your Version</div>
+            <div style={{flex:1}}>{mergeLabels ? mergeLabels[0] : 'Old Version'}</div>
+            <div style={{flex:1}}>{mergeLabels ? mergeLabels[1] : 'Your Version'}</div>
         </div>
             <div ref={editor}></div></>
     }else{

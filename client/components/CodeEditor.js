@@ -143,7 +143,7 @@ const StyledAiPaneClose = styled('button')(({theme}) => ({
 }))
 
 function CodeEditor(props,ref){
-    const {controlled, hasContextMenu, mergeView, mergeValue, children, onScroll, onFullSize, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly, showCopyButton, lint} = props
+    const {controlled, hasContextMenu, mergeView, mergeValue, mergeLabels, children, onScroll, onFullSize, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly, showCopyButton, lint} = props
 
     if(!identifier){
         console.warn('CodeEditor identifier is missing')
@@ -509,7 +509,7 @@ function CodeEditor(props,ref){
                                         ]})
                                 }}
                                 active={i === finalFileIndex}>{file.filename}</StyledFile>)})}</div>}
-        <CodeMirrorWrapper mergeView={mergeView} mergeValue={mergeValue} controlled={controlled}
+        <CodeMirrorWrapper mergeView={mergeView} mergeValue={mergeValue} mergeLabels={mergeLabels} controlled={controlled}
             identifier={`${stateIdentifier}${showFileSplit?'-'+finalFileIndex:''}`}
             onChange={(codeAsString)=>{
                 const fullCodeAsString = putFilesTogether(files, finalFileIndex, codeAsString)
