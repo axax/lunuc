@@ -99,7 +99,8 @@ const parentAdminWindow = () => {
 }
 
 let initialized = false
-/* called once on startup (client/index.js): takes over the theme of an admin parent window */
+/* called once on startup (client/index.js, which loads this module only in an iframe of an admin window):
+   takes over the theme of an admin parent window */
 export const initThemeMode = () => {
     if (initialized || !isBrowser()) return
     initialized = true

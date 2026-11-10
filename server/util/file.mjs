@@ -743,6 +743,36 @@ export const sendError = (res, code, msg = '') => {
 }
 
 
+// 103 Early Hints: the index html is only sent once the api preload is done, so the browser discovers
+// the main bundle late. With the hint it already loads the bundle while the api is working.
+// - only HTTP/2 and newer: browsers ignore a 103 over HTTP/1.1 and old HTTP/1.1 clients may not
+//   cope with an interim response
+// - the url is taken from the script tag of the index file itself, so it always matches the request
+//   of the page (otherwise the bundle would be loaded twice). No such tag -> no hint
+// LUNUC_EARLY_HINTS=false -> old behaviour
+const EARLY_HINTS_ENABLED = process.env.LUNUC_EARLY_HINTS !== 'false'
+const RE_MAIN_BUNDLE_SCRIPT = /<script\b[^>]*\bsrc="(\/main\.bundle\.js[^"\s<>]*)"[^>]*>/
+// attributes that change how the script is requested - a plain preload would not match it
+const RE_SCRIPT_FETCH_ATTRIBUTES = /\b(crossorigin|integrity|nomodule|type="module")/
+export const getEarlyHintLink = (html) => {
+    const match = RE_MAIN_BUNDLE_SCRIPT.exec(html)
+    if (!match || RE_SCRIPT_FETCH_ATTRIBUTES.test(match[0])) {
+        return null
+    }
+    return `<${match[1]}>; rel=preload; as=script`
+}
+const sendEarlyHints = (req, res, link) => {
+    if (EARLY_HINTS_ENABLED && link && req.httpVersionMajor >= 2 && req.method === 'GET' &&
+        !res.headersSent && typeof res.writeEarlyHints === 'function') {
+        try {
+            res.writeEarlyHints({link})
+        } catch (e) {
+            // only a hint - the response is sent as usual
+            console.warn('early hints not sent', e.message)
+        }
+    }
+}
+
 const PRELOAD_DATA_PLACEHOLDER = '<%=preloadData%>'
 const APP_DATA_PLACEHOLDER = '<%=appData%>'
 const HEAD_DATA_PLACEHOLDER = '<%=appHead%>'
@@ -771,6 +801,7 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
             sendError(res, 404)
             return
         }
+        data.earlyHintLink = getEarlyHintLink(data.content)
         Cache.set('IndexFile' + filename, data)
     }
 
@@ -825,6 +856,12 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
             }
             const clientId = Date.now().toString(36) + Math.random().toString(36).substring(2, 9)
             const timing = {}
+
+            // the browser loads the main bundle while the api request below is running
+            // (not for bots: many of them don't run javascript)
+            if (!isBot) {
+                sendEarlyHints(req, res, data.earlyHintLink)
+            }
 
             // IP instead of 'localhost': see util/apiHost.mjs
             const apiFetch = (body, signal) => postToApi({

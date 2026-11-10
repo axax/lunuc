@@ -21,8 +21,10 @@ const CodeMirrorWrapper = (props) => {
     const editorViewRef = useRef()
     const muiTheme = useTheme()
     // dark mode follows the active admin theme unless it is set explicitly
-    const isDark = darkMode !== undefined ? !!darkMode : muiTheme?.palette?.mode === 'dark'
-    const editorBackground = isDark ? (muiTheme?.palette?.background?.paper || '#282c34') : '#ffffff'
+    const muiDark = muiTheme?.palette?.mode === 'dark'
+    const isDark = darkMode !== undefined ? !!darkMode : muiDark
+    // outside a dark admin theme (e.g. darkMode set by a public page) the mui default theme is light -> one dark colors
+    const editorBackground = isDark ? (muiDark && muiTheme.palette.background?.paper || '#282c34') : '#ffffff'
 
     // only called when the editor is (re)created - not on every render (every keystroke re-renders this component)
     const createThemeOption = () => EditorView.theme({
@@ -38,7 +40,7 @@ const CodeMirrorWrapper = (props) => {
         ...(isDark && {
             '& .cm-gutters': {
                 backgroundColor: editorBackground,
-                borderRight: '1px solid ' + (muiTheme?.palette?.divider || '#3b4048')
+                borderRight: '1px solid ' + (muiDark && muiTheme.palette.divider || '#3b4048')
             }
         })
     }, {dark: isDark})

@@ -143,7 +143,7 @@ const StyledAiPaneClose = styled('button')(({theme}) => ({
 }))
 
 function CodeEditor(props,ref){
-    const {controlled, hasContextMenu, mergeView, mergeValue, mergeLabels, children, onScroll, onFullSize, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly, showCopyButton, lint} = props
+    const {controlled, hasContextMenu, mergeView, mergeValue, mergeLabels, children, onScroll, onFullSize, onFileChange, showFab, fabButtonStyle, actions, onChange, onError, onBlur, lineNumbers, type, style, className, error, templates, propertyTemplates, fileSplit, identifier, readOnly, showCopyButton, lint, darkMode} = props
 
     if(!identifier){
         console.warn('CodeEditor identifier is missing')
@@ -510,6 +510,7 @@ function CodeEditor(props,ref){
                                 }}
                                 active={i === finalFileIndex}>{file.filename}</StyledFile>)})}</div>}
         <CodeMirrorWrapper mergeView={mergeView} mergeValue={mergeValue} mergeLabels={mergeLabels} controlled={controlled}
+            darkMode={darkMode}
             identifier={`${stateIdentifier}${showFileSplit?'-'+finalFileIndex:''}`}
             onChange={(codeAsString)=>{
                 const fullCodeAsString = putFilesTogether(files, finalFileIndex, codeAsString)
@@ -780,6 +781,7 @@ function CodeEditor(props,ref){
                 <div style={{color: 'red'}}>{compareData.error}</div>
                 :
                 <CodeMirrorWrapper identifier={`${stateIdentifier}-compare`}
+                                   darkMode={darkMode}
                                    type={type}
                                    lineNumbers={lineNumbers}
                                    readOnly={true}
@@ -815,5 +817,5 @@ function CodeEditor(props,ref){
 }
 
 export default memo(forwardRef(CodeEditor), (prev, next)=>{
-    return prev.identifier === next.identifier && prev.height === next.height && (!next.controlled || prev.children === next.children)
+    return prev.identifier === next.identifier && prev.height === next.height && prev.darkMode === next.darkMode && (!next.controlled || prev.children === next.children)
 })

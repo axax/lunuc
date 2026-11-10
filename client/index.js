@@ -8,7 +8,6 @@ import DomUtil from 'client/util/dom.mjs'
 import Util from 'client/util/index.mjs'
 import {unregisterAllServiceworker} from './util/serviceWorkerUtil.mjs'
 import {client} from './middleware/graphql'
-import {initThemeMode} from './util/themeMode.mjs'
 
 const hasStorageSupport = () => {
     try {
@@ -22,7 +21,26 @@ const hasStorageSupport = () => {
 }
 _app_.noStorage = !hasStorageSupport()
 // admin theme for CmsPages in an iframe of the admin (html[data-theme], --lunuc-* variables, see util/themeMode.mjs)
-initThemeMode()
+// themeMode.mjs is only needed in the admin context, so it is not part of the main bundle: the admin ui
+// imports it itself, and here it is loaded on demand only if this window is an iframe of an admin window
+// (same check as parentAdminWindow in themeMode.mjs)
+const isAdminIframe = (() => {
+    try {
+        return !!window.parent && window.parent !== window &&
+            window.parent.document.documentElement.hasAttribute('data-lunuc-admin')
+    } catch (e) {
+        // cross origin -> not admin context
+        return false
+    }
+})()
+// done is always called (also if the chunk could not be loaded), the page then renders without the admin theme
+const loadThemeMode = (done) => {
+    import(/* webpackChunkName: "thememode" */ './util/themeMode.mjs').then(m => {
+        m.initThemeMode()
+    }).catch(e => {
+        console.warn('theme mode not loaded', e)
+    }).then(done)
+}
 
 function addCanonicalTag(href) {
     DomUtil.createAndAddTag('link', 'head', {
@@ -215,6 +233,11 @@ if (!window.LUNUC_PREPARSED) {
             mainInit()
         }
     }
+    if (isAdminIframe) {
+        // as before the theme is set before the page renders (no flash of the unthemed page)
+        maxCounter++
+        loadThemeMode(onload)
+    }
     if (morePolyfill) {
 
         maxCounter++
@@ -245,4 +268,6 @@ if (!window.LUNUC_PREPARSED) {
     if (maxCounter === 0) {
         mainInit()
     }
+} else if (isAdminIframe) {
+    loadThemeMode()
 }

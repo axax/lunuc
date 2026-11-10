@@ -29,6 +29,15 @@ const getPooledObserver = (rootMargin, threshold) => {
     return pooled
 }
 
+// An image that is marked as important (loading="eager" or fetchpriority="high") is rendered right
+// away, like an image that has already been loaded before: no placeholder, no observer and no
+// preloading with new Image(). So the browser requests it with the first render and with the
+// priority set on the element (the Image() preloader ignores fetchpriority).
+// Only if no option of $observe is set (apart from "if") - otherwise the element behaves as before.
+const isEagerImage = (tagName, eleProps, $observe) =>
+    tagName === 'SmartImage' && !eleProps.inlineSvg &&
+    (eleProps.loading === 'eager' || eleProps.fetchpriority === 'high' || eleProps.fetchPriority === 'high') &&
+    !Object.keys($observe || {}).some(key => key !== 'if' && $observe[key])
 
 class ElementWatch extends React.Component {
     static hasLoaded = {}
@@ -73,6 +82,7 @@ class ElementWatch extends React.Component {
         }
 
         const isAlreadyMadeVisible = state.madeVisible && tagName !== 'SmartImage' ? true : ElementWatch.hasLoaded[tagSrc]
+        const eager = isEagerImage(tagName, eleProps, $observe)
 
 
         return {
@@ -84,7 +94,8 @@ class ElementWatch extends React.Component {
             inFlipMode: false,
             hasError: false,
             key: _key,
-            madeVisible: (isAlreadyMadeVisible && !hasMadeVisibleClass) || (_app_.JsonDom.elementWatchForceVisible && !eleProps.inlineSvg),
+            eager,
+            madeVisible: (isAlreadyMadeVisible && !hasMadeVisibleClass) || eager || (_app_.JsonDom.elementWatchForceVisible && !eleProps.inlineSvg),
             initialVisible: tagName === 'SmartImage' ? isVideo : !$observe.waitVisible
         }
     }
@@ -132,8 +143,9 @@ class ElementWatch extends React.Component {
     }
 
     initObserver() {
-        const {tagSrc} = this.state
-        if (!tagSrc || !ElementWatch.hasLoaded[tagSrc]) {
+        const {tagSrc, eager} = this.state
+        // an eager image is already rendered with its final src - nothing to observe
+        if (!eager && (!tagSrc || !ElementWatch.hasLoaded[tagSrc])) {
             if (!!window.IntersectionObserver) {
                 this.setTimeoutSafe(() => {
                     this.addIntersectionObserver()
