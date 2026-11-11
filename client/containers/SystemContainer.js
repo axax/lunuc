@@ -12,14 +12,19 @@ import {Typography, ExpansionPanel, Button, SimpleSwitch, ContentBlock,
 import Hook from 'util/hook.cjs'
 import Util from 'client/util/index.mjs'
 import {_t} from 'util/i18n.mjs'
-import {CAPABILITY_MANAGE_TYPES, CAPABILITY_EXPORT_IMPORT_DATA} from '../../util/capabilities.mjs'
+import {CAPABILITY_MANAGE_TYPES, CAPABILITY_EXPORT_IMPORT_DATA, CAPABILITY_MANAGE_BACKUPS, CAPABILITY_RUN_COMMAND} from '../../util/capabilities.mjs'
+import config from 'gen/config-client'
+import {lazy} from 'client/components/Async'
 import {loadExportAllSources, exportAllTypeFilesAsZip, pickZipFile, importAllTypeFilesFromZip, getExportAiGuide, setExportAiGuide} from '../util/typeFiles'
 import TypeFilesResult from '../components/TypeFilesResult'
 import {client, Query} from '../middleware/graphql'
 import styled from '@emotion/styled'
 import SystemUpdatePanel from './SystemUpdatePanel'
 import {StyledSystemTable} from './systemStyles'
-import {CAPABILITY_RUN_COMMAND} from '../../util/capabilities.mjs'
+
+// only evaluated when the tab is opened (it loads the full type definitions)
+const BackupContainer = lazy(() => import(/* webpackChunkName: "admin" */ './BackupContainer'), {asyncKey: 'BackupContainer'})
+
 const StyledColumn = styled('div')({
     flexBasis: '50%'
 })
@@ -71,8 +76,12 @@ class SystemContainer extends React.Component {
         this.canExportImport = Util.hasCapability(_app_.user, CAPABILITY_EXPORT_IMPORT_DATA)
         // update the system (git pull, build, restart) - same capability as the shell console
         this.canUpdate = Util.hasCapability(_app_.user, CAPABILITY_RUN_COMMAND)
+        this.canBackup = Util.hasCapability(_app_.user, CAPABILITY_MANAGE_BACKUPS)
+        // the tabs of the user in the order they are shown, the first one is the default
+        this.tabs = [this.isAdmin && 'extensions', this.isAdmin && 'database', this.isAdmin && 'cache', this.canUpdate && 'update',
+            this.canBackup && 'backup', this.canExportImport && 'export'].filter(Boolean)
 
-        this.state = {extensionStates, tabValue: this.isAdmin ? 'extensions' : 'export', message:'', confirmDeletionDialog:false, indexSearch:'',
+        this.state = {extensionStates, message:'', confirmDeletionDialog:false, indexSearch:'',
             exportSources: null, exportBusy: false, importPreview: null, aiGuide: getExportAiGuide()}
     }
 
@@ -88,6 +97,16 @@ class SystemContainer extends React.Component {
 
     componentWillUnmount() {
         this._unmounted = true
+    }
+
+    /*
+     The active tab is part of the url (/admin/system/<tab>): a tab can be linked, survives a reload
+     and the back button works. /admin/backup is the url of the former backup page.
+     */
+    getTab() {
+        const match = location.pathname.match(/\/(?:system\/(\w+)|(backup))\/?$/)
+        const tab = match && (match[1] || match[2])
+        return this.tabs.indexOf(tab) >= 0 ? tab : (this.tabs[0] || false)
     }
 
     exportAll() {
@@ -144,8 +163,9 @@ class SystemContainer extends React.Component {
     }
 
     render() {
-        const {extensionStates, tabValue, message, confirmDeletionDialog, indexSearch, exportSources, exportBusy, importPreview, aiGuide} = this.state
-        const {isAdmin, canExportImport, canUpdate} = this
+        const {extensionStates, message, confirmDeletionDialog, indexSearch, exportSources, exportBusy, importPreview, aiGuide} = this.state
+        const {isAdmin, canExportImport, canUpdate, canBackup} = this
+        const tabValue = this.getTab()
 
         return <>
             <Typography variant="h3" component="h1" gutterBottom>System</Typography>
@@ -153,13 +173,15 @@ class SystemContainer extends React.Component {
             <SimpleTabs
                 value={tabValue}
                 onChange={(e, newValue) => {
-                    this.setState({tabValue:newValue})
+                    // Routes renders again on every history change
+                    _app_.history.push(`${config.ADMIN_BASE_URL}/system/${newValue}`)
                 }}
             >
                 {isAdmin && <SimpleTab key="extensions" value="extensions" label="Extensions"/>}
                 {isAdmin && <SimpleTab key="database" value="database" label="Database / Indexes"/>}
                 {isAdmin && <SimpleTab key="cache" value="cache" label="Cache"/>}
                 {canUpdate && <SimpleTab key="update" value="update" label={_t('SystemUpdate.tab')}/>}
+                {canBackup && <SimpleTab key="backup" value="backup" label={_t('BackupContainer.title')}/>}
                 {canExportImport && <SimpleTab key="export" value="export" label={_t('SystemContainer.exportImport')}/>}
             </SimpleTabs>
 
@@ -325,6 +347,9 @@ class SystemContainer extends React.Component {
             </SimpleTabPanel>}
             {canUpdate && <SimpleTabPanel value={tabValue} index="update">
                 <SystemUpdatePanel/>
+            </SimpleTabPanel>}
+            {canBackup && <SimpleTabPanel value={tabValue} index="backup">
+                <BackupContainer/>
             </SimpleTabPanel>}
             {canExportImport && <SimpleTabPanel value={tabValue} index="export">
                 <Typography variant="h4" component="h2" gutterBottom>{_t('SystemContainer.exportImport')}</Typography>

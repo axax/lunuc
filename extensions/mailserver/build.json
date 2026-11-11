@@ -147,6 +147,7 @@
     {
       "onlyRequestedFields": true,
       "name": "MailAccountMessage",
+      "backupEssential": false,
       "access": {
         "create": "anonymous"
       },

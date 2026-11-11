@@ -40,7 +40,11 @@ export const getBackupDir = type => {
     return path.join(path.resolve(), `${BACKUP_DIR}/${type}dumps/`)
 }
 
-export const listBackups = type => {
+/*
+ includePending: also list dumps that are still being written (".part" files) with pending=true
+ and their final name - used by the admin ui to show the progress.
+ */
+export const listBackups = (type, {includePending} = {}) => {
     assertAllowedType(type)
 
     // make sure upload dir exists
@@ -51,12 +55,15 @@ export const listBackups = type => {
 
     const files = []
     fs.readdirSync(backup_dir).forEach(file => {
-        if (file !== '.DS_Store' && !file.endsWith(PARTIAL_SUFFIX)) {
+        const pending = file.endsWith(PARTIAL_SUFFIX)
+        if (file !== '.DS_Store' && (!pending || includePending)) {
             const stats = fs.statSync(backup_dir + '/' + file)
             files.push({
-                name: file,
+                name: pending ? file.slice(0, -PARTIAL_SUFFIX.length) : file,
                 createdAt: (new Date(stats.mtime)).getTime(),
-                size: (stats.size / 1000) + 'kb'
+                size: (stats.size / 1000) + 'kb',
+                bytes: stats.size,
+                pending
             })
         }
     })
@@ -84,7 +91,8 @@ export const createBackup = (type, options) => {
     } catch (e) {
     }
 
-    return {name: result.name, createdAt: result.date, size: (stats.size / 1000) + 'kb'}
+    // pending: the dump is written in the background (db) and not yet in the list of finished backups
+    return {name: result.name, createdAt: result.date, size: (stats.size / 1000) + 'kb', bytes: stats.size, pending: !!result.pending}
 }
 
 export const removeBackup = (type, name) => {
@@ -105,11 +113,14 @@ export const removeBackup = (type, name) => {
         throw new Error(`Invalid backup file name: ${name}`)
     }
 
-    if (!fs.existsSync(targetPath)) {
+    if (fs.existsSync(targetPath)) {
+        fs.unlinkSync(targetPath)
+    } else if (fs.existsSync(targetPath + PARTIAL_SUFFIX)) {
+        // unfinished dump (e.g. the api was restarted while it was written)
+        fs.unlinkSync(targetPath + PARTIAL_SUFFIX)
+    } else {
         throw new Error(`Backup file not found: ${safeName}`)
     }
-
-    fs.unlinkSync(targetPath)
 
     return {status: 'ok'}
 }
@@ -162,7 +173,7 @@ export const createDbBackup = (options = {}) => {
         }
     })
     console.log('createDbDump', 'mongodump', args)
-    return {fullName, name, date}
+    return {fullName, name, date, pending: true}
 }
 
 export const createMediaBackup = (filesToBackup) => {

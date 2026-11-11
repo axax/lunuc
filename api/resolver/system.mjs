@@ -285,7 +285,7 @@ export const systemResolver = (db) => ({
         backups: async ({type}, {context}) => {
             Util.checkIfUserIsLoggedIn(context)
 
-            const files = listBackups(type)
+            const files = listBackups(type, {includePending: true})
 
             const response = {
                 results: files,

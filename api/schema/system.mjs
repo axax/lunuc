@@ -18,6 +18,8 @@ export const systemSchemaRaw = `
         name: String
         createdAt: Float
         size: String
+        bytes: Float
+        pending: Boolean
     }
     
     type BackupResult {

@@ -19,7 +19,6 @@ const LoginContainer = lazy(() => import(/* webpackChunkName: "adminLogin" */ '.
 const SignUpContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/SignUpContainer'))
 const UserProfileContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/UserProfileContainer'), {asyncKey: 'UserProfileContainer'})
 const SystemContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/SystemContainer'), {asyncKey: 'SystemContainer'})
-const BackupContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/BackupContainer'), {asyncKey: 'BackupContainer'})
 const FilesContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/FilesContainer'), {asyncKey: 'FilesContainer'})
 const TypesContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/TypesContainer'), {asyncKey: 'TypesContainer'})
 const HomeContainer = lazy(() => import(/* webpackChunkName: "admin" */ '../../containers/HomeContainer'), {asyncKey: 'HomeContainer'})
@@ -46,7 +45,8 @@ class Routes extends React.Component {
         {exact: true, private: true, path: ADMIN_BASE_URL + '/types/:type*', component: TypesContainer, layout: BaseLayout},
         {private: true, path: ADMIN_BASE_URL + '/profile', component: UserProfileContainer, layout: BaseLayout},
         {private: true, path: ADMIN_BASE_URL + '/system', component: SystemContainer, layout: BaseLayout},
-        {private: true, path: ADMIN_BASE_URL + '/backup', component: BackupContainer, layout: BaseLayout},
+        // the backups are a tab of the system page now (/system/backup), the old url still works
+        {private: true, path: ADMIN_BASE_URL + '/backup', component: SystemContainer, layout: BaseLayout},
         {private: true, path: ADMIN_BASE_URL + '/files', component: FilesContainer, layout: BaseLayout}
     ]
 

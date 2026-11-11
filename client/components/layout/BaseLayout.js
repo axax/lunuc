@@ -11,7 +11,6 @@ import {
     SettingsIcon,
     SimpleDialog,
     SimpleMenu,
-    BackupIcon,
     EditIcon,
     InsertDriveFileIcon,
     DoneIcon
@@ -196,18 +195,15 @@ const BaseLayout = props => {
         menuItems.push(
             {name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon/>},
             {name: 'Types', to: ADMIN_BASE_URL + '/types', auth: true, icon: <BuildIcon/>})
-    } else if (capabilities.indexOf(CAPABILITY_EXPORT_IMPORT_DATA) >= 0) {
-        // author and up: only the export / import of the own data is available on the system page
+    } else if (capabilities.indexOf(CAPABILITY_EXPORT_IMPORT_DATA) >= 0 || capabilities.indexOf(CAPABILITY_MANAGE_BACKUPS) >= 0) {
+        // author and up: only the export / import of the own data (and the backups with the capability)
+        // is available on the system page
         menuItems.push({name: 'System', to: ADMIN_BASE_URL + '/system', auth: true, icon: <SettingsIcon/>})
     }
 
 
     if (capabilities.indexOf(CAPABILITY_RUN_COMMAND) >= 0) {
         menuItems.push({name: 'Files', to: ADMIN_BASE_URL + '/files', auth: true, icon: <InsertDriveFileIcon/>})
-    }
-
-    if (capabilities.indexOf(CAPABILITY_MANAGE_BACKUPS) >= 0) {
-        menuItems.push({name: 'Backup', to:ADMIN_BASE_URL + '/backup', auth: true, icon: <BackupIcon/>})
     }
 
     Hook.call('MenuMenu', {menuItems})
