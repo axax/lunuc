@@ -139,6 +139,8 @@ export function ExcelPreview({form, field, fieldKey, values}) {
     const sumOnly = sumOnlyValue === true || sumOnlyValue === 'true'
     const variant = get('variantField', 'tableVariant') || 'statement'
     const mobileView = get('mobileViewField', 'mobileView') || 'auto'
+    // column of the column switch shown first on the phone (1 = first value column, empty / 0 = automatic)
+    const startCol = get('startColField', 'mobileCol')
 
     // result = as on the website (desktop), phone = mobile display, sheet = whole sheet to choose range / header rows
     const [mode, setMode] = useState(() => {
@@ -186,6 +188,14 @@ export function ExcelPreview({form, field, fieldKey, values}) {
         }
     }, [form, rangeKey, headerRowsKey])
 
+    // chosen in the phone preview: start column into its field of the form (only if the form has this field)
+    const startColKey = relatedKey(fieldKey, field.startColField || 'mobileCol')
+    const hasStartCol = !!(form.props && form.props.fields && form.props.fields[startColKey])
+    const onStartCol = React.useCallback(n => {
+        setCol(null)
+        form.handleInputChange({target: {name: startColKey, value: n}})
+    }, [form, startColKey])
+
     const {data, loading, error} = state
     const dataMatchesMode = !!data && (mode === 'sheet' ? !!data.rows && data.cols !== undefined : !!data.header)
 
@@ -204,11 +214,12 @@ export function ExcelPreview({form, field, fieldKey, values}) {
             pickerRef.current = rangePicker(box, data, {range, headerRows, onPick})
         } else {
             box.replaceChildren(previewTable(data, {
-                variant, view: mode === 'phone' ? 'phone' : 'desktop', mobileView, col, onCol: setCol, emptyText: _t('ExcelField.noData')
+                variant, view: mode === 'phone' ? 'phone' : 'desktop', mobileView, col, onCol: setCol, emptyText: _t('ExcelField.noData'),
+                startCol, onStartCol: hasStartCol ? onStartCol : null
             }))
         }
         // range / header rows are not dependencies: the result gets new data anyway, the picker is synced below
-    }, [data, dataMatchesMode, error, mode, variant, mobileView, col, onPick])
+    }, [data, dataMatchesMode, error, mode, variant, mobileView, col, startCol, hasStartCol, onStartCol, onPick])
     useEffect(() => {
         if (pickerRef.current) pickerRef.current.sync(range, headerRows)
     }, [range, headerRows])

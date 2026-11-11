@@ -228,19 +228,20 @@ Hook.on('FileUpload', async ({db, req, context, file, data, response}) => {
         }
 
 
-        fs.copyFile(file.filepath, path.join(upload_dir, finalName), async (err) => {
-            if (err) throw err
-            if( data.createMediaEntry !== false) {
-                await createMediaEntry({db, _id, file, data, context})
-            }
-            if(replaceMode) {
-                await removeMediaVariants(db, {ids:[data._id],saveMode:true})
-                await removeMediaScreenshots({ids:[data._id]})
-            }
-        })
+        // awaited: the response of the upload is only sent when the file is in place and the Media entry exists
+        // (callers use the returned ids right away, e.g. to put the files into a folder); an error ends the
+        // upload with a message instead of an uncaught exception
+        await fs.promises.copyFile(file.filepath, path.join(upload_dir, finalName))
+        if( data.createMediaEntry !== false) {
+            await createMediaEntry({db, _id, file, data, context})
+        }
+        if(replaceMode) {
+            await removeMediaVariants(db, {ids:[data._id],saveMode:true})
+            await removeMediaScreenshots({ids:[data._id]})
+        }
     }else{
         if( data.createMediaEntry !== false) {
-            createMediaEntry({db, file, data, context, _id})
+            await createMediaEntry({db, file, data, context, _id})
         }
     }
 

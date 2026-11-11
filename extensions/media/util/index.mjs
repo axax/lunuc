@@ -90,12 +90,13 @@ export const createMediaEntry = async ({db, _id, file, data, context}) => {
         media._id = _id
     }
 
+    // returned (awaitable): the entry exists when the promise resolves
     if(!data._id) {
         // save to db
-        mediaResolver(db).Mutation.createMedia(media, {context})
+        return mediaResolver(db).Mutation.createMedia(media, {context})
     }else{
         // update media
-        mediaResolver(db).Mutation.updateMedia(media, {context})
+        return mediaResolver(db).Mutation.updateMedia(media, {context})
     }
 }
 

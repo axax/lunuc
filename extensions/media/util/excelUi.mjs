@@ -7,7 +7,8 @@
  *                                  edges / corners = adjust the range, lower edge of the yellow box or a click on a
  *                                  row number = header rows
  * previewTable(data, options)      table of the api format=data (with layout=1) as on the website, desktop or phone
- *                                  (mobile modes scroll / switch / cards like digithal/element/jahresbericht/bereich)
+ *                                  (mobile modes scroll / switch / cards like digithal/element/jahresbericht/bereich),
+ *                                  with the choice of the start column of the column switch
  * The styles are added to the document once (all classes start with xlui-).
  */
 import {colLetters, parseRange} from './excel.mjs'
@@ -37,7 +38,7 @@ const GREEN = '#239442', LIGHT = '#ecf2d0', INK = '#241c15'
 const switchRules = (prefix, display) => {
     const sel = []
     for (let i = 0; i < 24; i++) sel.push(`${prefix}[data-sel="${i}"] .c${i}`)
-    return sel.join(',') + `{display:${display};flex:0 0 auto}`
+    return sel.join(',') + `{display:${display};flex:0 0 auto;margin-left:auto}`
 }
 const CSS = `
 .xlui-grid-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem 1rem;margin-bottom:.5rem;font-size:.82rem}
@@ -77,6 +78,8 @@ const CSS = `
 .xlui-seg{font:inherit;font-size:.8rem;padding:.3em .9em;border:none;background:#fff;color:${GREEN};cursor:pointer}
 .xlui-seg+.xlui-seg{border-left:1px solid ${GREEN}}
 .xlui-seg.active{background:${GREEN};color:#fff;font-weight:600}
+.xlui-start{display:inline-flex;align-items:center;gap:.4em}
+.xlui-start select{font:inherit;font-size:.8rem;padding:.25em .4em;border:1px solid ${GREEN};border-radius:4px;background:#fff;color:#1d1d1d;max-width:16rem}
 .xlui-table{width:100%;border-collapse:collapse;font-size:.85rem;line-height:1.35;margin-bottom:.5rem}
 .xlui-table th{color:${GREEN};text-transform:uppercase;font-size:.78rem;font-weight:600;text-align:left;padding:.45em .5em;border-bottom:2px solid ${INK}}
 .xlui-table td{padding:.4em .5em;border-bottom:1px solid ${INK};vertical-align:top}
@@ -154,7 +157,9 @@ const mcClass = mc => (mc || '').split('.').filter(Boolean).join(' ')
 /**
  * @param data    response of the api format=data (with layout=1 for the phone)
  * @param options variant ('statement' | 'list'), view ('desktop' | 'phone'), mobileView, col (selected column of the
- *                switch), onCol(i), viewSwitch (show the buttons Desktop / Handy), onView(view), maxRows
+ *                switch), onCol(i), viewSwitch (show the buttons Desktop / Handy), onView(view), maxRows,
+ *                startCol (column of the switch shown first, 1 = first value column, 0 / empty = automatic),
+ *                onStartCol(n) (shows the select «Startspalte» in the phone view with the column switch)
  * @returns element
  */
 export const previewTable = (data, options = {}) => {
@@ -163,7 +168,13 @@ export const previewTable = (data, options = {}) => {
     const rows = data.rows || []
     const cols = data.cols || []
     const mode = phone ? mobileMode(data, options.mobileView) : ''
-    const sel = options.col !== undefined && options.col !== null && options.col < cols.length ? options.col : (data.defaultCol || 0)
+    // column of the switch shown first: startCol (field mobileCol of the beitrag) if valid, otherwise the column
+    // highlighted in excel (defaultCol of the api)
+    const startNr = parseInt(options.startCol)
+    const startFixed = startNr >= 1 && startNr <= cols.length
+    const start = startFixed ? startNr - 1 : (data.defaultCol || 0)
+    const sel = options.col !== undefined && options.col !== null && options.col < cols.length ? options.col : start
+    const colLabel = i => (cols[i] && cols[i].label) || 'Spalte ' + (i + 1)
     const max = options.maxRows || (phone ? 40 : 80)
     const cell = (tag, c) => el(tag, {
         class: [c.n ? 'num' : '', c.b ? 'bold' : '', c.a ? 'al-' + c.a : '', c.f ? 'fill' : '', c.l ? 'l-' + c.l : '', phone ? mcClass(c.mc) : '']
@@ -196,16 +207,32 @@ export const previewTable = (data, options = {}) => {
     const notes = phone && (data.notes || []).length ? el('div', {class: 'xlui-notes'}, data.notes.map(n => el('p', {
         html: (n.head ? '<b class="xlui-note-head">' + n.head + '</b>' : '') + (n.term ? '<strong>' + n.term + '</strong>' : '') + n.text
     }))) : null
+    const colSwitch = mode === 'switch' ? el('div', {class: 'xlui-colswitch'}, cols.map((c, i) => el('button', {
+        type: 'button', class: 'xlui-colswitch-btn' + (i === sel ? ' active' : ''),
+        onClick: () => options.onCol && options.onCol(i)
+    }, colLabel(i)))) : null
+    // the selected button into view (only the row of buttons scrolls, not the page)
+    if (colSwitch) requestAnimationFrame(() => {
+        const active = colSwitch.querySelector('.active')
+        if (!active) return
+        const b = colSwitch.getBoundingClientRect(), r = active.getBoundingClientRect()
+        if (r.left < b.left || r.right > b.right) colSwitch.scrollLeft += r.left - b.left - 8
+    })
+    // column switch: which column is selected when the page is opened (stored in the beitrag)
+    const startSelect = mode === 'switch' && options.onStartCol && cols.length ? el('label', {
+        class: 'xlui-start', title: 'Diese Spalte ist auf dem Handy gewählt, wenn die Seite geöffnet wird'
+    }, ['Startspalte', el('select', {onChange: e => options.onStartCol(parseInt(e.target.value) || 0)}, [
+        el('option', {value: 0, selected: !startFixed}, 'Automatisch (' + colLabel(data.defaultCol || 0) + ')'),
+        cols.map((c, i) => el('option', {value: i + 1, selected: startFixed && i === start}, colLabel(i)))
+    ])]) : null
     return el('div', {class: 'xlui-preview'}, [
-        options.viewSwitch ? el('div', {class: 'xlui-bar'}, [
-            el('span', {class: 'xlui-segs'}, [viewBtn('desktop', 'Desktop'), viewBtn('phone', 'Handy')]),
-            phone ? el('span', {class: 'xlui-hint'}, 'Handy: ' + MOBILE_NAMES[mode] + (MOBILE_MODES.includes(options.mobileView) ? '' : ' (automatisch)')) : null
+        options.viewSwitch || startSelect ? el('div', {class: 'xlui-bar'}, [
+            options.viewSwitch ? el('span', {class: 'xlui-segs'}, [viewBtn('desktop', 'Desktop'), viewBtn('phone', 'Handy')]) : null,
+            options.viewSwitch && phone ? el('span', {class: 'xlui-hint'}, 'Handy: ' + MOBILE_NAMES[mode] + (MOBILE_MODES.includes(options.mobileView) ? '' : ' (automatisch)')) : null,
+            startSelect
         ]) : null,
         phone ? el('div', {class: 'xlui-phone'}, [
-            mode === 'switch' ? el('div', {class: 'xlui-colswitch'}, cols.map((c, i) => el('button', {
-                type: 'button', class: 'xlui-colswitch-btn' + (i === sel ? ' active' : ''),
-                onClick: () => options.onCol && options.onCol(i)
-            }, c.label || 'Spalte ' + (i + 1)))) : null,
+            colSwitch,
             el('div', {class: 'xlui-phone-scroll'}, content),
             notes
         ]) : content,
