@@ -148,10 +148,7 @@ export const removePreloadedIncludes = (cmsPage, preloadedSlugs) => {
 
 // slugs of the Cms components at the root of a template that are rendered unconditionally
 // and request exactly {dynamic: true, slug} - the same variables (= cache key) the client uses
-export const findPreloadComponents = (template) => {
-    if (!template || template.indexOf('"Cms"') < 0) {
-        return []
-    }
+const parsePreloadComponents = (template) => {
     let json
     try {
         json = JSON.parse(template)
@@ -182,6 +179,41 @@ export const findPreloadComponents = (template) => {
         }
     }
     return slugs
+}
+
+// The result only depends on the template, so it is kept per template: the template is then not
+// parsed again on every request of the page. The key is the template itself - a changed template
+// is a different key, nothing has to be invalidated. LRU, bounded by entries and by the total
+// length of the templates (they are the keys); a very long template is parsed as before.
+const PRELOAD_TEMPLATE_MEMO_MAX_ENTRIES = 200
+const PRELOAD_TEMPLATE_MEMO_MAX_CHARS = 4 * 1024 * 1024
+const PRELOAD_TEMPLATE_MEMO_MAX_TEMPLATE_CHARS = 512 * 1024
+const preloadTemplateMemo = new Map()
+let preloadTemplateMemoChars = 0
+
+export const findPreloadComponents = (template) => {
+    if (!template || template.indexOf('"Cms"') < 0) {
+        return []
+    }
+    if (typeof template !== 'string' || template.length > PRELOAD_TEMPLATE_MEMO_MAX_TEMPLATE_CHARS) {
+        return parsePreloadComponents(template)
+    }
+    let slugs = preloadTemplateMemo.get(template)
+    if (slugs) {
+        // re-insert: the first key of the Map is always the least recently used one
+        preloadTemplateMemo.delete(template)
+    } else {
+        slugs = parsePreloadComponents(template)
+        preloadTemplateMemoChars += template.length
+    }
+    preloadTemplateMemo.set(template, slugs)
+    while (preloadTemplateMemo.size > PRELOAD_TEMPLATE_MEMO_MAX_ENTRIES || preloadTemplateMemoChars > PRELOAD_TEMPLATE_MEMO_MAX_CHARS) {
+        const oldest = preloadTemplateMemo.keys().next().value
+        preloadTemplateMemo.delete(oldest)
+        preloadTemplateMemoChars -= oldest.length
+    }
+    // a copy, so a caller can never change the kept result
+    return slugs.slice()
 }
 
 const {UPLOAD_DIR} = config
@@ -380,6 +412,7 @@ const trackStaticFileTiming = (req, res) => {
 export const sendFileFromDir = async (req, res, {
     send404 = false,
     filename,
+    fileStat, // optional: stats of filename if the caller already has them (saves a stat call)
     indexFiles, // e.g. ['index.html', 'index.htm']
     headers = {},
     parsedUrl,
@@ -388,7 +421,7 @@ export const sendFileFromDir = async (req, res, {
 }) => {
 
     const fileTiming = trackStaticFileTiming(req, res)
-    let statMain = await statSafe(filename)
+    let statMain = fileStat || await statSafe(filename)
     if (fileTiming) {
         fileTiming.stat = performance.now() - fileTiming.start
     }
@@ -432,7 +465,8 @@ export const sendFileFromDir = async (req, res, {
         // Reuse the initial stat unless filename was swapped to a variant
         let stat
         if (modImage.exists || (transcodeOptions && transcodeOptions.exists)) {
-            stat = await statSafe(filename)
+            // an existing image variant comes with its stats (resizeImage has just read them)
+            stat = modImage.stat && filename === modImage.filename ? modImage.stat : await statSafe(filename)
             if (!stat) {
                 sendError(res, 404)
                 return true
@@ -1107,6 +1141,27 @@ const ACTIVE_CONTENT_MIME_TYPES = new Set([
     'text/javascript', 'application/javascript', 'application/x-javascript'
 ])
 
+// Cache policy of uploads. A media can be replaced under the same url (same _id), so the browser
+// must not keep it for long without asking:
+// - max-age: for this time the browser uses its copy without asking the server at all. It is also
+//   the time a replaced file can stay invisible for someone who has just loaded the old one
+// - stale-while-revalidate: afterwards the browser still shows its copy at once and checks it in the
+//   background (304 or the new file) instead of waiting for the server - a replaced file is shown
+//   with the next load. Before: 'max-age=60, must-revalidate' (the browser waited for the check)
+// LUNUC_UPLOAD_MAX_AGE / LUNUC_UPLOAD_STALE_WHILE_REVALIDATE in seconds,
+// LUNUC_UPLOAD_STALE_WHILE_REVALIDATE=0 -> must-revalidate as before
+const envSeconds = (name, defaultValue) => {
+    const value = parseInt(process.env[name])
+    return isNaN(value) || value < 0 ? defaultValue : value
+}
+const UPLOAD_MAX_AGE = envSeconds('LUNUC_UPLOAD_MAX_AGE', 300) // 5 min
+const UPLOAD_STALE_WHILE_REVALIDATE = envSeconds('LUNUC_UPLOAD_STALE_WHILE_REVALIDATE', 30 * 24 * 60 * 60) // 30 days
+const UPLOAD_CACHE_CONTROL = `public, max-age=${UPLOAD_MAX_AGE}` +
+    (UPLOAD_STALE_WHILE_REVALIDATE > 0 ? `, stale-while-revalidate=${UPLOAD_STALE_WHILE_REVALIDATE}` : ', must-revalidate')
+// private uploads (the access is checked by the server): unchanged - after max-age the browser must
+// always wait for that check before it shows its copy
+const PRIVATE_UPLOAD_CACHE_CONTROL = 'public, max-age=60, must-revalidate'
+
 export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
 
     // remove pretty url part
@@ -1134,9 +1189,12 @@ export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
         return
     }
 
-    let filename = baseFilename
+    let filename = baseFilename, isPrivateUpload = false
 
-    if (!(await statSafe(filename))) {
+    // the stats are read once and handed on (before: up to three stat calls for the same file)
+    let fileStat = await statSafe(filename)
+
+    if (!fileStat) {
         // check for private upload
         let context
         if (USE_COOKIES) {
@@ -1154,6 +1212,8 @@ export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
                 for (let i = 0; i < Hook.hooks['UploadedFilePrivateAccess'].length; ++i) {
                     if (await Hook.hooks['UploadedFilePrivateAccess'][i].callback({name: urlWithoutUploadDir, context})) {
                         filename = path.join(ABS_UPLOAD_DIR, 'private' + urlWithoutUploadDir)
+                        isPrivateUpload = true
+                        fileStat = await statSafe(filename)
                         break
                     }
                 }
@@ -1162,7 +1222,7 @@ export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
     }
 
 
-    if (!(await statSafe(filename)) && (!parsedUrl || parsedUrl.query.remoteserver !== 'false')) {
+    if (!fileStat && (!parsedUrl || parsedUrl.query.remoteserver !== 'false')) {
         if (await getFileFromOtherServer(modUri, baseFilename, res, req)) {
             return
         }
@@ -1178,7 +1238,10 @@ export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
         uploadHeaders['Content-Security-Policy'] = 'sandbox allow-scripts allow-forms allow-popups allow-modals allow-downloads'
     }
 
-    if (await sendFileFromDir(req, res, {filename, parsedUrl, headers: uploadHeaders, cacheControl: 'public, max-age=60, must-revalidate'})) {
+    if (await sendFileFromDir(req, res, {
+        filename, fileStat, parsedUrl, headers: uploadHeaders,
+        cacheControl: isPrivateUpload ? PRIVATE_UPLOAD_CACHE_CONTROL : UPLOAD_CACHE_CONTROL
+    })) {
         // track file access
         Hook.call('UploadedFileAccess', {name: urlWithoutUploadDir, filename})
     } else {

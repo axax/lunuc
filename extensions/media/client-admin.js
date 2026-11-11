@@ -12,6 +12,7 @@ import {translations} from './translations/translations'
 import {CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_ADMIN_OPTIONS} from '../../util/capabilities.mjs'
 import {formatBytes} from '../../client/util/format.mjs'
 import {MediaEditorWrapper} from './components/MediaEditorWrapper.js'
+import {showPendingMediaReplaceHint} from './components/mediaReplaceHint'
 import {MediaUploader} from './components/MediaUploader'
 import GenericForm from '../../client/components/GenericForm'
 import Box from '@mui/material/Box'
@@ -86,6 +87,9 @@ function SearchScopeToggle({onChange, value}) {
 }
 
 export default () => {
+    // hint after a media file was replaced (stored right before the page reload, see MediaEditorWrapper)
+    showPendingMediaReplaceHint()
+
     let fileToUpload
     // add an extra column for Media at the beginning
     Hook.on('TypeTableColumns', ({type, columns}) => {

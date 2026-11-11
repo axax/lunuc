@@ -238,6 +238,16 @@ if (!window.LUNUC_PREPARSED) {
         maxCounter++
         loadThemeMode(onload)
     }
+    if (document.readyState === 'loading') {
+        // This script is async: it can run while the html is still arriving (bundle from the cache or
+        // preloaded with early hints, html in several network packets). The inline script with the
+        // preloaded page data comes AFTER the script tag of the bundle and listens for 'appReady' -
+        // if the app starts before that script has run, the event is missed, the data in the html is
+        // never used and the page is requested once more. So wait until the html is parsed completely
+        // (the rest of it is exactly the data the app needs to render).
+        maxCounter++
+        document.addEventListener('DOMContentLoaded', onload)
+    }
     if (morePolyfill) {
 
         maxCounter++

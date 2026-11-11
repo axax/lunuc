@@ -12,7 +12,9 @@ const DEFAULT_FORMAT = 'jpeg'
 const inFlightResizes = new Map()
 
 export const resizeImage = async (parsedUrl, req, filename) => {
-    let mimeType, exists = false
+    // stat: stats of the returned variant if it already existed (the caller needs them and does
+    // not have to stat the file again) - undefined for a variant that was just generated
+    let mimeType, exists = false, variantStat
 
     // resize image file
     if (parsedUrl &&
@@ -76,9 +78,10 @@ export const resizeImage = async (parsedUrl, req, filename) => {
             mimeType = MimeType.detectByExtension(format)
             exists = true
 
-            let modExists = false
+            let modExists = false, modStat
             try {
-                modExists = (await fs.promises.stat(modfilename)).isFile()
+                modStat = await fs.promises.stat(modfilename)
+                modExists = modStat.isFile()
             } catch (e) {
                 // does not exist yet
             }
@@ -202,10 +205,11 @@ export const resizeImage = async (parsedUrl, req, filename) => {
 
             } else {
                 filename = modfilename
+                variantStat = modStat
             }
         }
     }
-    return {filename, exists, mimeType}
+    return {filename, exists, mimeType, stat: variantStat}
 }
 
 

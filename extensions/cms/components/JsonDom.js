@@ -427,7 +427,9 @@ class JsonDom extends React.Component {
                                           slug={slug}
                                           _props={_props}
                                           _parentRef={_this}
-                                          _parentInlineEditor={!!_this.props.inlineEditor}
+                                          // follow the inline editor switch of the including page, but only if that page is
+                                          // in edit mode itself - otherwise (public page) the component decides on its own
+                                          _parentInlineEditor={_this.props.editMode ? !!_this.props.inlineEditor : undefined}
                                           fetchPolicy='cache-first'
                                           dynamic={true} {...rest}/>
 

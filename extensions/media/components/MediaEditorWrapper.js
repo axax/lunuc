@@ -12,6 +12,7 @@ import {
 import Async from '../../../client/components/Async.js'
 import UploadUtil from "../../../client/util/upload";
 import {getMediaPlaybackSrc, isExternalMedia} from '../../../client/util/media'
+import {rememberMediaReplaceHint, showPendingMediaReplaceHint} from './mediaReplaceHint'
 
 const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch" load={() =>import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const TypePicker = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/TypePicker')}/>
@@ -208,8 +209,10 @@ export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
                                        maxSize={10000}
                                        imagePreview={false}
                                        onSuccess={r => {
-                                           if (meta.TypeContainer) {
-                                               setTimeout(() => {
+                                           // the browser may still show its cached copy of the old file:
+                                           // hint for the editor, kept over the reload (see mediaReplaceHint.js)
+                                           rememberMediaReplaceHint(dataToEdit._id).then(() => {
+                                               if (meta.TypeContainer) {
                                                    /*meta.TypeContainer.setState({
                                                        createEditDialog: false,
                                                        createEditDialogOption: null
@@ -218,10 +221,11 @@ export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
                                                    meta.TypeContainer.getData(meta, false)*/
 
                                                    location.reload()
-
-                                               }, 0)
-
-                                           }
+                                               } else {
+                                                   // no reload here - show the hint right away
+                                                   showPendingMediaReplaceHint()
+                                               }
+                                           })
                                        }}/>}
         </SimpleTabPanel>
     </Box>]
