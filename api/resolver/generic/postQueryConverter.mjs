@@ -28,7 +28,7 @@ export const resolveDynamicFieldQuery = async (db, field, item, setItem) => {
             })
         }
         //let d = new Date().getTime()
-        setItem[field.name] = await db.collection(dyn.type).count(query)
+        setItem[field.name] = await db.collection(dyn.type).countDocuments(query)
         //console.log(`time ${new Date().getTime()-d}ms`)
     }else if(dyn.action==='alias'){
         const aliasField = dyn.path.split('.')[0]
@@ -65,6 +65,9 @@ export const resolveDynamicFieldQuery = async (db, field, item, setItem) => {
     }
 }
 
+// number of items whose dynamic count queries run at the same time
+const DYNAMIC_COUNT_CONCURRENCY = 8
+
 export default async function (response, {typeName, db, graphqlInfo}){
 
     // here is a good place to handle: Cannot return null for non-nullable
@@ -78,8 +81,11 @@ export default async function (response, {typeName, db, graphqlInfo}){
             // (lazily, on the first dynamic field) instead of per row and field
             let requestedFields
 
-            for (let i = 0; i < response.results.length; i++) {
-                const item = response.results[i]
+            // Everything below only touches its own item, so the items can be
+            // converted side by side. That only pays off when a dynamic count
+            // field runs a query per item - otherwise nothing here waits and
+            // the items are simply processed one after the other as before.
+            const convertItem = async (item) => {
 
                 if (item.createdBy === null) {
                     item.createdBy = {_id: 0, username: 'null reference'}
@@ -185,8 +191,25 @@ export default async function (response, {typeName, db, graphqlInfo}){
                 }
 
 
-                if (!repairMode && !hasField) {
-                    break
+            }
+
+            const results = response.results
+            const hasDynamicCount = typeDefinition.fields.some(field => field?.dynamic?.action === 'count')
+            if (hasDynamicCount && results.length > 1) {
+                // a few at a time, not all at once: a list can hold thousands of entries
+                let next = 0
+                const worker = async () => {
+                    while (next < results.length) {
+                        await convertItem(results[next++])
+                    }
+                }
+                await Promise.all(Array.from({length: Math.min(DYNAMIC_COUNT_CONCURRENCY, results.length)}, worker))
+            } else {
+                for (let i = 0; i < results.length; i++) {
+                    await convertItem(results[i])
+                    if (!repairMode && !hasField) {
+                        break
+                    }
                 }
             }
         }

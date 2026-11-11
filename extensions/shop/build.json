@@ -8,13 +8,11 @@
         {
           "name": "name",
           "required": true,
-          "localized": true,
-          "index": "text"
+          "localized": true
         },
         {
           "name": "description",
-          "localized": true,
-          "index": "text"
+          "localized": true
         },
         {
           "name": "price",
@@ -56,8 +54,7 @@
         {
           "name": "name",
           "required": true,
-          "localized": true,
-          "index": "text"
+          "localized": true
         },
         {
           "name": "parentCategory",

@@ -289,14 +289,13 @@ export const addFilterToMatchV2 = async ({ db, debugInfo, filterKey, filterValue
             matchExpression = { [comparator]: filterValue }
 
         } else if (ObjectId.isValid(filterValue)) {
-
-            match.push({
-                $or: [
-                    { [filterKey]: { [comparator]: new ObjectId(filterValue) } },
-                    { [filterKey]: { [comparator]: filterValue.toString() } }
-                ]
-            })
-            return true
+            // The id may be stored as ObjectId or as string. $in matches the
+            // same documents as the former $or of two $eq, but keeps a single
+            // index bound on the field. For $ne it has to be $nin: the former
+            // $or of two $ne was true for every document and filtered nothing.
+            // No early return any more, so a filter on a reference sub field
+            // is resolved through the sub query below like every other value.
+            matchExpression = { [eqOp]: [new ObjectId(filterValue), filterValue.toString()] }
 
         } else {
             if (options.inDoubleQuotes) {

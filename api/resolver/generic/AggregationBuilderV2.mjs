@@ -95,7 +95,7 @@ export default class AggregationBuilderV2 {
      * Creates a $lookup stage and pushes it onto the lookups array.
      * For localized fields, a separate lookup is created for each configured language.
      */
-    createAndAddLookup({ type, name, multi, localized }, lookups, { usePipeline, language }) {
+    createAndAddLookup({ type, name, multi, localized }, lookups, { usePipeline, strictSingle, language }) {
 
         // Dedup on `as`: it is the output slot and must be unique, so two lookups
         // sharing it are always duplicates. The previous check compared localField,
@@ -109,47 +109,36 @@ export default class AggregationBuilderV2 {
         // Localized fields: create one lookup per language
         if (localized) {
             for (const lang of config.LANGUAGES) {
-                this.createAndAddLookup({ type, name, multi }, lookups, { usePipeline, language: lang })
+                this.createAndAddLookup({ type, name, multi }, lookups, { language: lang })
             }
             return {}
         }
 
-        let lookup
-
-        if (usePipeline) {
-            // Pipeline-based lookup: supports multi-value (array) and single-value references
-            const $expr = multi
-                ? {
-                    $in: [
-                        '$_id',
-                        {
-                            $cond: {
-                                if: { $isArray: `$$${name}` },
-                                then: `$$${name}`,
-                                else: [`$$${name}`]
-                            }
-                        }
-                    ]
-                }
-                : { $eq: ['$_id', `$$${name}`] }
-
-            lookup = {
-                $lookup: {
-                    from: type,
-                    as: name,
-                    let: { [name]: `$${name}` },
-                    pipeline: [{ $match: { $and: [{ $expr }] } }]
-                }
+        // localField / foreignField resolve the join through the _id index of the
+        // referenced collection, for a single id and for an array of ids alike.
+        // The former pipeline form matched with $expr: {$in: ['$_id', '$$ids']},
+        // which cannot use an index - a scan of the whole referenced collection
+        // for every document of the result.
+        const lookup = {
+            $lookup: {
+                from: type,
+                localField: language ? `${name}.${language}` : name,
+                foreignField: '_id',
+                as: asField
             }
-        } else {
-            // Simple lookup without pipeline
-            lookup = {
-                $lookup: {
-                    from: type,
-                    localField: language ? `${name}.${language}` : name,
-                    foreignField: '_id',
-                    as: language ? `${name}_${language}` : name
-                }
+        }
+
+        // An additional pipeline (MongoDB 5.0+) runs on the joined documents
+        // only; the caller pushes the $project that trims them.
+        if (usePipeline) {
+            lookup.$lookup.pipeline = []
+            if (strictSingle && !multi) {
+                // The former pipeline form compared a single reference with
+                // $eq, so a single reference field that holds an array (data
+                // not matching the definition) resolved to nothing. Kept as is:
+                // this runs on the already joined documents only.
+                lookup.$lookup.let = { [name]: `$${name}` }
+                lookup.$lookup.pipeline.push({ $match: { $expr: { $eq: ['$_id', `$$${name}`] } } })
             }
         }
 
@@ -1084,7 +1073,14 @@ export default class AggregationBuilderV2 {
                 projectResultData[`${fieldName}._id`] = `$${fieldName}`
                 groups[fieldName] = { $first: `$${fieldName}` }
             } else {
-                const lookup = this.createAndAddLookup(fieldDefinition, lookups, { usePipeline })
+                // A plain lookup (no pipeline) is deliberately NOT trimmed inside
+                // the lookup: adding a pipeline changes the order of the joined
+                // documents of a multi reference (order of the id array -> _id order).
+                const lookup = this.createAndAddLookup(fieldDefinition, lookups, {
+                    usePipeline,
+                    // lookups that used the pipeline form before keep its exact matching
+                    strictSingle: usePipeline
+                })
                 if (lookup?.$lookup?.pipeline) {
                     lookup.$lookup.pipeline.push({ $project: projectPipeline })
                 }

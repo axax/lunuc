@@ -24,6 +24,12 @@ const isPrivateIp = (ip) => {
         if (l === '::' || l === '::1') return true
         const mapped = l.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)
         if (mapped) return isPrivateIp(mapped[1])
+        // same address in hex notation, the form new URL() normalizes to (::ffff:a00:1 = 10.0.0.1)
+        const mappedHex = l.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/)
+        if (mappedHex) {
+            const hi = parseInt(mappedHex[1], 16), lo = parseInt(mappedHex[2], 16)
+            return isPrivateIp(`${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`)
+        }
         return l.startsWith('fc') || l.startsWith('fd') || l.startsWith('fe8') || l.startsWith('fe9') || l.startsWith('fea') || l.startsWith('feb')
     }
     return true
@@ -38,6 +44,82 @@ const safeLookup = (hostname, opts, cb) => {
         if (bad) return cb(new Error(`Blocked request to private address (${hostname})`))
         cb(null, address, family)
     })
+}
+
+// Throws unless the url is http(s) and its host resolves to public addresses only.
+// For code that hands a user supplied url to something other than request() (e.g. puppeteer).
+export const assertPublicUrl = async (url) => {
+    let parsedUrl
+    try {
+        parsedUrl = new URL(url)
+    } catch (e) {
+        throw new Error('Invalid url')
+    }
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+        throw new Error(`Protocol "${parsedUrl.protocol}" not allowed`)
+    }
+    const host = parsedUrl.hostname.replace(/^\[|\]$/g, '')
+    if (net.isIP(host)) {
+        if (isPrivateIp(host)) {
+            throw new Error(`Blocked request to private address (${host})`)
+        }
+        return parsedUrl
+    }
+    const list = await dns.promises.lookup(host, {all: true})
+    if (list.length === 0 || list.some(a => isPrivateIp(a.address))) {
+        throw new Error(`Blocked request to private address (${host})`)
+    }
+    return parsedUrl
+}
+
+// Puppeteer: aborts every request of the page (navigation, redirects, iframes, subresources)
+// that is not a public http(s) target. Origins in `allowOrigins` (e.g. the own server
+// 'http://127.0.0.1:8080') are let through; the returned Set can be extended later.
+export const guardPuppeteerPage = async (page, {allowOrigins = []} = {}) => {
+    const allowed = new Set(allowOrigins)
+    const hostCache = new Map()
+
+    const isAllowed = (url) => {
+        if (/^(data|blob|about):/i.test(url)) {
+            return true
+        }
+        let parsedUrl
+        try {
+            parsedUrl = new URL(url)
+        } catch (e) {
+            return false
+        }
+        if (!['http:', 'https:', 'ws:', 'wss:'].includes(parsedUrl.protocol)) {
+            return false
+        }
+        const origin = parsedUrl.origin.replace(/^ws/, 'http')
+        if (allowed.has(origin)) {
+            return true
+        }
+        if (!hostCache.has(parsedUrl.hostname)) {
+            hostCache.set(parsedUrl.hostname, assertPublicUrl('http://' + parsedUrl.host).then(() => true, () => false))
+        }
+        return hostCache.get(parsedUrl.hostname)
+    }
+
+    await page.setRequestInterception(true)
+    page.on('request', async (interceptedRequest) => {
+        const ok = await isAllowed(interceptedRequest.url())
+        try {
+            if (interceptedRequest.isInterceptResolutionHandled()) {
+                return
+            }
+            if (ok) {
+                await interceptedRequest.continue()
+            } else {
+                console.warn(`Blocked browser request to ${interceptedRequest.url().substring(0, 200)}`)
+                await interceptedRequest.abort('accessdenied')
+            }
+        } catch (e) {
+            // page or request is already gone
+        }
+    })
+    return allowed
 }
 
 export const request = (options) => {

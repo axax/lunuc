@@ -659,7 +659,8 @@ const GenericResolver = {
                     } else {
                         match = await createMatchForCurrentUser({typeName, db, context})
                     }
-                    const lastEntryArray = await db.collection(typeName).find(match).sort({_id: 1}).limit(1).toArray()
+                    // newest entry of the collection the new entry is written to
+                    const lastEntryArray = await db.collection(collectionName).find(match).sort({_id: -1}).limit(1).toArray()
                     if(lastEntryArray.length>0){
                         lastEntry = lastEntryArray[0]
                     }

@@ -722,7 +722,7 @@ export const userResolver = (db) => ({
                 }))
                 if (existingUser != null && existingUser._id.toString() !== _id) {
                     //errors.push({key: 'usernameError', message: `Username ${username} already taken`, messageKey:'username.taken'})
-                    throw new ApiError(`Username ${username} already taken`, 'username.taken', {x: 'sss'})
+                    throw new ApiError(`Username ${username} already taken`, 'username.taken')
                 } else {
                     user.username = username
                 }
@@ -930,7 +930,7 @@ export const userResolver = (db) => ({
             // TODO add domain check
             let existingUser = (await userCollection.findOne({$or: [{'username': user.username}, {'email': user.email}]}))
             if (existingUser != null && existingUser._id.toString() !== context.id) {
-                throw new ApiError(`Username or Email already taken`, 'username.taken', {x: 'sss'})
+                throw new ApiError(`Username or Email already taken`, 'username.taken')
             } else {
 
 

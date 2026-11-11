@@ -27,6 +27,41 @@ export class ValidationError extends GraphQLError {
 }
 
 
+// Request data is written to the Log collection on errors - never store credentials there.
+const SENSITIVE_KEY = /pass|secret|token|authorization|cookie|api[-_]?key/i
+const SENSITIVE_INLINE_ARG = /\b(\w*(?:pass|secret|token|api[-_]?key)\w*)(\s*:\s*)"(?:[^"\\]|\\.)*"/gi
+const REDACTED = '[redacted]'
+
+// returns a redacted deep copy, the original object is not touched
+export function redactSensitive(value, depth = 0) {
+	if (value === null || value === undefined) {
+		return value
+	}
+	if (typeof value === 'string') {
+		// literals written directly into a graphql query, e.g. login(password:"...")
+		return value.replace(SENSITIVE_INLINE_ARG, (match, name, separator) => `${name}${separator}"${REDACTED}"`)
+	}
+	if (typeof value !== 'object') {
+		return value
+	}
+	if (depth > 8) {
+		return '[truncated]'
+	}
+	if (Array.isArray(value)) {
+		return value.map(entry => redactSensitive(entry, depth + 1))
+	}
+	const result = {}
+	for (const key of Object.keys(value)) {
+		const entry = value[key]
+		if (SENSITIVE_KEY.test(key) && entry !== null && entry !== undefined && entry !== '') {
+			result[key] = REDACTED
+		} else {
+			result[key] = redactSensitive(entry, depth + 1)
+		}
+	}
+	return result
+}
+
 /**
  * Given a GraphQLError, format it according to the rules described by the
  * Response Format, Errors section of the GraphQL Specification.
@@ -60,12 +95,13 @@ export function formatAndLogError(db, req, error) {
 			errorContext: {
 				...o,
 				stack: error.stack,
+				// passwords, session cookies and tokens are replaced before logging
 				request: {
-					headers: req.headers,
-					body: req.body,           // Der gesamte Request-Body
-					query: req.query,         // URL-Parameter
-					url: req.url,             // Aufgerufener Pfad
-					method: req.method,       // GET, POST, etc.
+					headers: redactSensitive(req.headers),
+					body: redactSensitive(req.body),    // Request-Body ohne Zugangsdaten
+					query: redactSensitive(req.query),  // URL-Parameter
+					url: req.url,                       // Aufgerufener Pfad
+					method: req.method,                 // GET, POST, etc.
 				}
 			},
 			type: 'generalError'
