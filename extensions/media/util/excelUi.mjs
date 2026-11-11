@@ -120,6 +120,12 @@ const CSS = `
 .xlui-phone .jb-m-switch .vc,.xlui-phone .jb-m-switch .sp{display:none}
 ${switchRules('.xlui-phone .jb-m-switch', 'block')}
 .xlui-phone .jb-m-switch tr:not(.sum) .vc.fill{background:none}
+.xlui-phone .xlui-table.jb-m-switch tr .lc.rs{border-bottom:none}
+.xlui-phone .jb-m-switch tr.rse::before{content:'';flex:1 1 auto;border-bottom:1px solid ${GREEN}}
+.xlui-phone .jb-m-switch tr.rse-h::before{border-bottom-color:rgba(35,148,66,.35)}
+.xlui-phone .jb-m-switch tr.rse-m::before{border-bottom-width:2px;border-bottom-color:${INK}}
+.xlui-phone .jb-m-switch tr.rse-d::before{border-bottom-color:${INK}}
+.xlui-phone .jb-m-switch thead tr.rse-d::before{border-bottom-width:2px}
 .xlui-phone .jb-m-switch tr.tx{display:block}
 .xlui-phone .jb-m-switch tr.tx>td:not(.e){display:block}
 .xlui-phone .xlui-table.jb-m-switch tr.tx>td{padding-top:.2em;padding-bottom:.2em;border:none}
