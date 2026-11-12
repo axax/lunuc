@@ -64,6 +64,48 @@ const formatTime = (time, options) => Util.getDateTimeFormat(options).format(new
 
 const isSameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString()
 
+// at most this many labels on the timeline, period changes in between are shown as ticks without label
+const MAX_TIMELINE_LABELS = 10
+const DAY_MS = 864e5
+const NO_TIME = {hour: undefined, minute: undefined, second: undefined}
+const TIMELINE_UNITS = {
+    year: {
+        key: (d) => d.getFullYear(),
+        format: {...NO_TIME, year: 'numeric', month: undefined, day: undefined}
+    },
+    month: {
+        key: (d) => d.getFullYear() * 12 + d.getMonth(),
+        format: {...NO_TIME, year: '2-digit', month: 'short', day: undefined}
+    },
+    day: {
+        key: (d) => d.getFullYear() * 400 + d.getMonth() * 32 + d.getDate(),
+        format: NO_TIME
+    }
+}
+
+// slider marks: the label granularity depends on the time span, labels keep a minimum distance to each other
+const timelineMarks = (entries) => {
+    const n = entries.length
+    if (n < 2) return []
+    const spanDays = (entries[n - 1].time - entries[0].time) / DAY_MS
+    const unit = TIMELINE_UNITS[spanDays > 730 ? 'year' : spanDays > 60 ? 'month' : 'day']
+    const minGap = n / MAX_TIMELINE_LABELS
+    const marks = []
+    let lastKey, lastLabelIndex = -Infinity
+    for (let i = 0; i < n; i++) {
+        const key = unit.key(new Date(entries[i].time))
+        if (key === lastKey) continue
+        lastKey = key
+        if (i - lastLabelIndex >= minGap) {
+            marks.push({value: i, label: formatTime(entries[i].time, unit.format)})
+            lastLabelIndex = i
+        } else {
+            marks.push({value: i})
+        }
+    }
+    return marks
+}
+
 // "heute 14:05-14:32" / "12.10.2026 14:05-14:32"
 const formatSpan = (start, end) => {
     const from = formatTime(start)
@@ -188,12 +230,7 @@ function CmsRevisionDialog(props) {
     const activeCodeField = codeFields.indexOf(codeField) >= 0 ? codeField : (codeFields[0] || allowedFields[0])
 
     const time = item.time
-    const marks = []
-    filtered.forEach((entry, i) => {
-        if (i === 0 || !isSameDay(filtered[i - 1].time, entry.time)) {
-            marks.push({value: i, label: formatTime(entry.time, {hour: undefined, minute: undefined, second: undefined})})
-        }
-    })
+    const marks = React.useMemo(() => timelineMarks(filtered), [filtered])
 
     const actions = confirm ? [
         {key: 'cancelRestore', label: _t('CmsRevision.cancel')},
