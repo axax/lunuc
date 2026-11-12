@@ -69,6 +69,15 @@ const cronjobUtil = {
         }
         RUNNING_CRONJOBS.set(cronjobId, entry)
 
+        // remember the last start (scheduled and manual runs). Written directly to the collection
+        // so that modifiedAt, history and the typeUpdated hook (re-registering of all jobs) are not affected
+        if (cronjobId && ObjectId.isValid(cronjobId)) {
+            Promise.resolve(db.collection('CronJob').updateOne(
+                {_id: new ObjectId(cronjobId)},
+                {$set: {lastRunAt: entry.startTime}}
+            )).catch(e => console.error(`Error while updating lastRunAt of cronjob ${cronjobId}`, e))
+        }
+
         let dbResult
         if (!noEntry) {
             try {

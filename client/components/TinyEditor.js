@@ -377,6 +377,12 @@ class TinyEditor extends React.Component {
             // tables: no fixed pixel widths from the editor, the site css decides
             table_sizing_mode: 'relative',
             table_default_attributes: {},
+            // class of a table (dialog table properties): table-fit = only as wide as its content (css of the page).
+            // table-full instead of an empty value: tinymce ignores an empty class, the old class would stay
+            table_class_list: [
+                {title: 'Ganze Breite', value: 'table-full'},
+                {title: 'So breit wie der Inhalt', value: 'table-fit'}
+            ],
             table_default_styles: {width: '100%'},
             formats: {
                 // the alignment buttons add a class instead of an inline style
@@ -388,6 +394,8 @@ class TinyEditor extends React.Component {
             file_picker_types: 'file image media',
             file_picker_callback: (callback, value, meta) => this.filePicker(callback, value, meta),
             content_css: '/css/tinymce.css',
+            // class table-fit (see table_class_list): shown in the editor like on the page
+            content_style: 'table.table-fit,table.table-fit col,table.table-fit td,table.table-fit th{width:auto !important;height:auto !important}',
 
             init_instance_callback: (editor) => {
 
@@ -413,6 +421,39 @@ class TinyEditor extends React.Component {
                 // 'LunucAiApply' is fired by the AI plugin after it wrote into
                 // the document, Undo/Redo do not always create a 'Change'
                 editor.on('Change Undo Redo LunucAiApply', () => this.emitChange(editor))
+
+                // class of the table changed (dialog table properties): the inline width of the editor must not
+                // override it. table-fit -> no width / height, back to full width -> 100%
+                const tableFit = new WeakMap()
+                const isFit = table => table.classList.contains('table-fit')
+                editor.on('NodeChange', (e) => {
+                    const table = e.element && e.element.closest && e.element.closest('table')
+                    if (table && !tableFit.has(table)) {
+                        tableFit.set(table, isFit(table))
+                    }
+                })
+                editor.on('TableModified', (e) => {
+                    const table = e.table
+                    if (!table) {
+                        return
+                    }
+                    const fit = isFit(table), before = tableFit.get(table)
+                    tableFit.set(table, fit)
+                    if (fit) {
+                        // also the widths of columns and cells (in %): they would stretch the table again
+                        const sized = [table].concat(Array.from(table.querySelectorAll('colgroup,col,tr,td,th')).filter(n => n.closest('table') === table))
+                        sized.forEach(n => {
+                            editor.dom.setStyles(n, {width: null, height: null})
+                            n.removeAttribute('width')
+                            n.removeAttribute('height')
+                        })
+                    } else if (before === true) {
+                        editor.dom.setStyles(table, {width: '100%', height: null})
+                    } else {
+                        return
+                    }
+                    this.emitChange(editor)
+                })
 
                 editor.on('focus', () => {
                     this.isEditorFocused = true

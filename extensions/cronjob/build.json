@@ -94,6 +94,16 @@
           "label": "Geändert am",
           "hidden": false,
           "type": "Float"
+        },
+        {
+          "tab": "elements.generalTab",
+          "name": "lastRunAt",
+          "label": "Zuletzt gestartet",
+          "type": "Float",
+          "uitype": "datetime",
+          "readOnly": true,
+          "clone": false,
+          "index": 1
         }
       ]
     },

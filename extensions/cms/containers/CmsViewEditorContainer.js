@@ -1783,7 +1783,7 @@ class CmsViewEditorContainer extends React.Component {
                     name: _t('CmsViewEditorContainer.previewResponsive'),
                     icon: 'devices',
                     onClick: () => {
-                        window.open(`/system/responsive-viewer?url=${encodeURIComponent(Util.baseUrl(location.pathname,{...Util.extractQueryParams(),preview:true}))}&preview=true`, '_blank').focus();
+                        window.open(`/system/responsive-viewer?url=${encodeURIComponent(Util.baseUrl('',{...Util.extractQueryParams(),preview:true}))}&preview=true`, '_blank').focus();
                     }
                 },
                 {

@@ -2,6 +2,7 @@ import {
     CAPABILITY_MANAGE_CMS_PAGES
 } from '../../constants/index.mjs'
 import {_t} from '../../../../util/i18n.mjs'
+import {COL_BREAKPOINTS} from '../columnLayout.mjs'
 
 export const DEFAULT_TAB = 'elements.generalTab'
 export const IMAGE_OPTIMIZATION_TAB = 'elements.imageTab'
@@ -325,12 +326,7 @@ export const classLinkStylingOptions = key => ({
     }
 })
 
-const colClasses = [
-    {short: 'xs', long: 'Mobile'},
-    {short: 'sm', long: 'Tablet'},
-    {short: 'md', long: 'Desktop'},
-    {short: 'lg', long: 'Large Desktop'}
-]
+const colClasses = COL_BREAKPOINTS
 
 // the 1..12 enum is constant per breakpoint - build it once instead of
 // re-allocating 12 objects per column per breakpoint on every call
@@ -344,11 +340,29 @@ const COL_ENUMS = colClasses.reduce((acc, col) => {
     return acc
 }, {})
 
+const columnClassKey = (i, bp) => `c_${i}_p_className@${bp}`
+
 export const classLayoutColumnOptions = (count, options = {}) => {
-    const obj = {}
+    const keys = {}
+    for (const col of colClasses) {
+        keys[col.short] = Array.from({length: count}, (_, i) => columnClassKey(i, col.short))
+    }
+    // visual editor (drag the dividers) - it edits the fields below, has no value of its own
+    const obj = {
+        columnLayout: {
+            uitype: 'columnLayout',
+            fullWidth: true,
+            keys,
+            breakpoints: colClasses,
+            tab: RESPONSIVE_TAB,
+            tabPosition: 0
+        }
+    }
     for (let i = 0; i < count; i++) {
         for (const col of colClasses) {
-            obj[`c_${i}_p_className@${col.short}`] = {
+            obj[columnClassKey(i, col.short)] = {
+                // the same values as dropdowns, behind "advanced options"
+                advanced: true,
                 fourthWidth: true,
                 forceOverride: true,
                 label: `${_t('elements.column')} ${i + 1}: ${col.long}`,

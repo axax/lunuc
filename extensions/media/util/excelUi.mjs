@@ -90,6 +90,8 @@ const CSS = `
 .xlui-table tr.section td{font-weight:700;padding-top:1em}
 .xlui-table tr.text td{border-bottom:none;padding-top:1em;font-weight:400;text-align:left;white-space:normal}
 .xlui-table tr.text td p{margin:0 0 .5em}
+.xlui-table tr.gap>td{padding-top:2em}
+.xlui-phone .jb-m-cards tr.gap{margin-top:1.2em}
 .xlui-table th.fill,.xlui-table td.fill{background:${LIGHT}}
 .xlui-list td{border-bottom-color:${GREEN}}
 .xlui-list tr.sum td{background:none;border-top:none;border-bottom:1px solid ${GREEN}}
@@ -200,7 +202,7 @@ export const previewTable = (data, options = {}) => {
         }, [
             el('thead', {}, header.map((r, i) => el('tr', {class: phone ? mcClass(headerMc[i]) || null : null}, r.filter(Boolean).map(c => cell('th', c))))),
             el('tbody', {}, rows.slice(0, max).map(r => el('tr', {
-                class: [r.sum ? 'sum' : '', r.section ? 'section' : '', r.text ? 'text' : '', phone ? mcClass(r.mc) : ''].filter(Boolean).join(' ') || null
+                class: [r.sum ? 'sum' : '', r.section ? 'section' : '', r.text ? 'text' : '', r.gap ? 'gap' : '', phone ? mcClass(r.mc) : ''].filter(Boolean).join(' ') || null
             }, (r.cells || []).filter(Boolean).map(c => cell('td', c)))))
         ])
     } else {

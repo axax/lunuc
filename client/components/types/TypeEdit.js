@@ -111,6 +111,13 @@ class TypeEdit extends React.Component {
         window.addEventListener('beforeunload', this._beforeUnload)
     }
 
+    componentDidUpdate(prevProps) {
+        // opened again (same instance): unsaved changes count again
+        if (this.props.open && !prevProps.open) {
+            this._closed = false
+        }
+    }
+
     componentWillUnmount() {
         this.blocker()
         window.removeEventListener('beforeunload', this._beforeUnload)
@@ -207,6 +214,9 @@ class TypeEdit extends React.Component {
     closeModal = (action, optimisticData) => {
         const {onClose, type} = this.props
         const {dataToEdit} = this.state
+        // saved or discarded: the caller may reload the page now (e.g. after creating / copying an entry in the cms),
+        // the form is still mounted with its changes, but they must not trigger the browser's «leave site?» prompt
+        this._closed = true
         // data saved with "save" (the dialog stays open) is passed on when the dialog is closed later,
         // also with cancel / escape, so the caller can update its view (e.g. the cms page of the entry)
         if (this._savedData) {
@@ -229,7 +239,7 @@ class TypeEdit extends React.Component {
     }
 
     hasUnsavedChanges = () => {
-        return !!(this.props.open && this.createEditForm &&
+        return !!(this.props.open && !this._closed && this.createEditForm &&
             this.createEditForm.state.fieldsDirty &&
             Object.keys(this.createEditForm.state.fieldsDirty).length > 0)
     }

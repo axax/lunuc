@@ -26,6 +26,7 @@ import {
 import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
 import ImageCropper from './ImageCropper'
+import ColumnLayoutEditor from './ColumnLayoutEditor'
 import config from 'gen/config-client'
 import TinyEditor from './TinyEditor'
 import {checkFieldType} from 'util/typesAdmin.mjs'
@@ -727,6 +728,9 @@ class GenericForm extends React.Component {
         }
 
         newState.fieldsDirty[name]=newState.fields[name]
+        // the fields object is changed in place: fields depending on other values (dependsOnForm, e.g. the sheets of
+        // the excel file chosen in another field) need a changed value to be rebuilt (see createInputField)
+        newState.fieldsRevision = (prevState.fieldsRevision || 0) + 1
         return newState
     }
 
@@ -852,6 +856,30 @@ class GenericForm extends React.Component {
         this.setState(Object.assign(newState, formValidation))
     }
 
+
+    // values of the fields edited by a columnLayout field as string (stable cache key for createInputField)
+    columnLayoutValue(field) {
+        const {fields} = this.state, values = {}
+        Object.keys(field.keys).forEach(bp => {
+            values[bp] = field.keys[bp].map(key => fields[key] || '')
+        })
+        return JSON.stringify(values)
+    }
+
+    /** sets several fields at once with a single state update ({name: value}) */
+    handleInputChanges = (changes) => {
+        const {fields, onChange} = this.props
+        let newState = this.state
+        Object.keys(changes).forEach(name => {
+            const originalValue = changes[name]
+            const value = fields[name] ? checkFieldType(originalValue, fields[name]) : originalValue
+            newState = this.newStateForField(newState, {name, value, originalValue})
+            if (onChange) {
+                onChange({name, value, target: {name, value}})
+            }
+        })
+        this.setState(Object.assign(newState, this.validate(newState, false)))
+    }
 
     handleBlur = (e) => {
         const {onBlur, fields} = this.props
@@ -1066,7 +1094,8 @@ class GenericForm extends React.Component {
                 if (this.createInputField({
                     uitype,
                     field,
-                    value,
+                    // the editor shows other form fields: their values are the cache key
+                    value: uitype === 'columnLayout' ? this.columnLayoutValue(field) : value,
                     currentFormFields,
                     fieldKey,
                     fieldIndex
@@ -1534,7 +1563,7 @@ class GenericForm extends React.Component {
             state.cmsElementsWidth,
             props.autoFocus, props.onKeyDown, props.onButtonClick, props.values, props.id,
             ...(cacheExtra || []),
-            ...(dynamic ? [state.fields, state.valuesOri, state.fieldsTmp] : [])]
+            ...(dynamic ? [state.fields, state.fieldsRevision, state.valuesOri, state.fieldsTmp] : [])]
 
         const cached = this._fieldCache[fieldKey]
         if (cached && cached.deps.length === deps.length && cached.deps.every((d, i) => d === deps[i])) {
@@ -1921,6 +1950,14 @@ class GenericForm extends React.Component {
                                                  onChange={(newValue) => this.handleInputChange({
                                                      target: {name: fieldKey, value: newValue}
                                                  })}/>)
+
+        } else if (uitype === 'columnLayout') {
+            currentFormFields.push(<ColumnLayoutEditor key={fieldKey}
+                                                       label={field.label}
+                                                       keys={field.keys}
+                                                       breakpoints={field.breakpoints}
+                                                       values={JSON.parse(value)}
+                                                       onChange={this.handleInputChanges}/>)
 
         } else if (uitype === 'slider') {
 

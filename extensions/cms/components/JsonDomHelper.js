@@ -63,6 +63,7 @@ import {
     StyledHorizontalDivider, StyledRichTextBar, StyledRichTextPlus, StyledDragBar, StyledViewportFrame, getZIndexBasis
 } from './jsondomhelper/JsonDomStyledElements'
 import CmsViewContainer from '../containers/CmsViewContainer'
+import {installColumnResize} from './jsondomhelper/columnResize'
 import {SimpleSwitch} from '../../../client/components/ui/impl/material'
 
 const {DEFAULT_LANGUAGE} = config
@@ -351,6 +352,7 @@ class JsonDomHelper extends React.Component {
     }
 
     componentDidMount() {
+        installColumnResize(JsonDomHelper)
         // the editor chrome is portaled to body - remember whether this element lives inside a dialog
         // (e.g. the cms editor field of a GenericForm), so the overlay is not hidden by its own dialog
         try {
@@ -691,11 +693,14 @@ class JsonDomHelper extends React.Component {
                 return
             }
 
+            // the "+" must stay inside the page area: further left it is covered by the editor sidebar
+            const layout = node.closest && node.closest('[data-layout-content]')
+            const minLeft = (layout ? Math.max(0, layout.getBoundingClientRect().left) : 0) + 4
             this.setState({
                 ...this.clampRichTextBarPosition(rect, !allowMarker),
                 richTextCaretTop: rect.top + (rect.height || 0) / 2,
                 // left of the drag handle (which sits about 8-24px left of the element)
-                richTextPlusLeft: Math.max(4, nodeRect.left - 54)
+                richTextPlusLeft: Math.max(minLeft, nodeRect.left - 54)
             })
         })
     }
