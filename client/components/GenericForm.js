@@ -20,7 +20,8 @@ import {
     ExpandMoreIconButton,
     TranslateIconButton,
     AutoFixHighIconButton,
-    Tooltip
+    Tooltip,
+    CircularProgress
 } from 'ui/admin'
 import FileDrop from './FileDrop'
 import TypePicker from './TypePicker'
@@ -100,6 +101,19 @@ const CmsEditorWithStyles = ({fieldKey, field, children}) => {
     const wrapped = [].concat(field.editorClassName || []).filter(Boolean).reduceRight(
         (inner, className) => <div className={className}>{inner}</div>, content)
     return <div className={scopeClass}>{wrapped}</div>
+}
+
+// preview of an image that is generated on request (uitype timestamp with previewTemplate).
+// The image is requested as soon as this is rendered, a spinner is shown until it is there.
+const TimestampPreview = ({src, loadingText, errorText}) => {
+    const [status, setStatus] = React.useState({})
+    const done = status.src === src
+    return <span style={{display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', marginTop: '0.75rem'}}>
+        {!done && <><CircularProgress size={20}/><small>{loadingText}</small></>}
+        <img src={src} alt="" onLoad={() => setStatus({src})} onError={() => setStatus({src, error: true})}
+             style={{display: done && !status.error ? 'block' : 'none', maxHeight: '10rem', maxWidth: '100%', border: '1px solid rgba(128,128,128,0.4)'}}/>
+        {done && status.error && <small>{errorText}</small>}
+    </span>
 }
 
 const CodeEditor = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "codeeditor" */ './CodeEditor')}/>
@@ -1543,21 +1557,42 @@ class GenericForm extends React.Component {
         }
 
         if(uitype==='timestamp') {
-            // feedback after the click: changedHint as long as the new value is not saved, otherwise the date of the value
-            const changed = value && String(value) !== String(this.state.valuesOri?.[fieldKey])
+            // previewTemplate: the url is built from the current form values right on click (same template
+            // as on save, see JsonDomHelper) and requested immediately, so the generation starts without saving
+            const preview = this._timestampPreview && this._timestampPreview[fieldKey]
             currentFormFields.push(<><Button key={fieldKey}
                                            className={field.className}
                                            color="primary"
                                            variant="contained"
                                            style={field.style}
                                            onClick={() => {
+                                               const timestamp = new Date().getTime()
+                                               if (field.previewTemplate) {
+                                                   try {
+                                                       const comp = {}
+                                                       Object.keys(this.state.fields).forEach(key => {
+                                                           const fieldValue = key === fieldKey ? timestamp : this.state.fields[key]
+                                                           if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
+                                                               setPropertyByPath(fieldValue, key, comp, '_')
+                                                           }
+                                                       })
+                                                       const src = Util.replacePlaceholders(field.previewTemplate, {_comp: comp})
+                                                       if (isString(src) && src.indexOf('/') === 0) {
+                                                           (this._timestampPreview || (this._timestampPreview = {}))[fieldKey] = {timestamp, src}
+                                                       }
+                                                   } catch (e) {
+                                                       console.warn('timestamp preview', e)
+                                                   }
+                                               }
                                                this.handleInputChange({
                                                    target: {
                                                        name: fieldKey,
-                                                       value: new Date().getTime()
+                                                       value: timestamp
                                                    }
                                                })
-                                           }}>{field.label}</Button><small style={{marginLeft: theme.spacing(1.5), fontWeight: changed ? 'bold' : 'normal'}}>{changed && field.changedHint ? field.changedHint : value ? Util.formattedDatetime(value) : ''}</small></>)
+                                           }}>{field.label}</Button><small style={{marginLeft: theme.spacing(1.5)}}>{value ? Util.formattedDatetime(value) : ''}</small>
+                {preview && preview.timestamp === value &&
+                    <TimestampPreview src={preview.src} loadingText={field.loadingText} errorText={field.errorText}/>}</>)
 
         }else if (uitype === 'htmlParser') {
             let html
