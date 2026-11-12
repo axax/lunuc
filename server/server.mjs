@@ -90,6 +90,8 @@ const PORT = (process.env.PORT || process.env.LUNUC_PORT || 8080)
 // Build dir
 const BUILD_DIR = path.join(ROOT_DIR, './build')
 const STATIC_DIR = path.join(ROOT_DIR, './' + config.STATIC_DIR)
+// files shipped with the repo (third-party libs like pdf.js) - unlike STATIC_DIR, which is generated from the db
+const ASSETS_DIR = path.join(ROOT_DIR, './assets')
 const STATIC_TEMPLATE_DIR = path.join(ROOT_DIR, './' + config.STATIC_TEMPLATE_DIR)
 
 const DEFAULT_CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR
@@ -205,7 +207,7 @@ await initAsnBlocker()
 /* ------------------------------------------------------------------ */
 
 // Caches which directory a static url resolves to, so subsequent requests
-// skip the sequential stat attempts across hostrule.paths / STATIC_DIR /
+// skip the sequential stat attempts across hostrule.paths / STATIC_DIR / ASSETS_DIR /
 // WEBROOT / BUILD_DIR. Value: resolved absolute path, or false = known miss.
 const PATH_CACHE_TTL_MS = 60000
 const PATH_CACHE_MAX_ENTRIES = 5000
@@ -1033,7 +1035,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     }
 
                     if (cachedPath !== false) {
-                        const pathsToCheck = [...hostrule.paths, STATIC_DIR, WEBROOT_ABSPATH, BUILD_DIR]
+                        const pathsToCheck = [...hostrule.paths, STATIC_DIR, ASSETS_DIR, WEBROOT_ABSPATH, BUILD_DIR]
 
                         let found = false
                         for (const curPath of pathsToCheck) {

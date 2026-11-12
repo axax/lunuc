@@ -88,3 +88,6 @@ local_tmp
 dbscripts
 server/geo
 Claude outputs
+
+# vendored third-party files in assets/ (pdf.js dist layout uses a build dir)
+!/assets/**/build/
