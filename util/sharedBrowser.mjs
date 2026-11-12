@@ -7,6 +7,8 @@ import puppeteer from 'puppeteer'
  Ignoring certificate errors (acceptInsecureCerts) is set browser wide and applies to all contexts.
  The Chrome is closed after idleCloseMs without jobs and started again when needed.
 
+ launch: own start function instead of puppeteer.launch (e.g. launchStealthBrowser, util/stealthBrowser.mjs).
+
  Not used for the SSR renderer (server/util/web2html.mjs): that Chrome needs its own flags
  (no images, no web security, lowered priority) and health checks.
 
@@ -18,7 +20,7 @@ import puppeteer from 'puppeteer'
  */
 export const BASE_BROWSER_ARGS = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--no-zygote']
 
-export const createSharedBrowser = ({idleCloseMs = 5 * 60 * 1000} = {}) => {
+export const createSharedBrowser = ({idleCloseMs = 5 * 60 * 1000, launch = (options) => puppeteer.launch(options)} = {}) => {
     const state = {browser: null, starting: null, users: 0, idleTimer: null}
 
     // closes the Chrome now (e.g. after a job timeout, it may be the one that hangs)
@@ -55,7 +57,7 @@ export const createSharedBrowser = ({idleCloseMs = 5 * 60 * 1000} = {}) => {
             return state.browser
         }
         if (!state.starting) {
-            state.starting = puppeteer.launch(launchOptions).then(browser => {
+            state.starting = launch(launchOptions).then(browser => {
                 state.browser = browser
                 browser.on('disconnected', () => {
                     if (state.browser === browser) {
