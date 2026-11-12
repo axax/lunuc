@@ -1543,6 +1543,8 @@ class GenericForm extends React.Component {
         }
 
         if(uitype==='timestamp') {
+            // feedback after the click: changedHint as long as the new value is not saved, otherwise the date of the value
+            const changed = value && String(value) !== String(this.state.valuesOri?.[fieldKey])
             currentFormFields.push(<><Button key={fieldKey}
                                            className={field.className}
                                            color="primary"
@@ -1555,7 +1557,7 @@ class GenericForm extends React.Component {
                                                        value: new Date().getTime()
                                                    }
                                                })
-                                           }}>{field.label}</Button><small>{value?Util.formattedDatetime(value):''}</small></>)
+                                           }}>{field.label}</Button><small style={{marginLeft: theme.spacing(1.5), fontWeight: changed ? 'bold' : 'normal'}}>{changed && field.changedHint ? field.changedHint : value ? Util.formattedDatetime(value) : ''}</small></>)
 
         }else if (uitype === 'htmlParser') {
             let html

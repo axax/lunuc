@@ -340,6 +340,7 @@ export const buildBaseElements = () => [
             $set_timestamp: {
                 uitype: 'timestamp',
                 label: _t('elements.screenshot.newVariant'),
+                changedHint: _t('elements.screenshot.newVariantHint'),
                 value: true,
                 tab: SCREENSHOT_TAB,
                 fullWidth: false
