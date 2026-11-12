@@ -321,6 +321,15 @@ export const buildBaseElements = () => [
                 fullWidth: true,
                 tab: SCREENSHOT_TAB
             },
+            p_style_float: {
+                label: _t('elements.alignment'),
+                enum: [
+                    {name: _t('elements.none'), value: 'none'},
+                    {name: _t('elements.right'), value: 'right'},
+                    {name: _t('elements.left'), value: 'left'}
+                ],
+                tab: SCREENSHOT_TAB
+            },
             $set_islink: {
                 type: 'Boolean',
                 label: _t('elements.screenshot.asLink'),
@@ -359,15 +368,6 @@ export const buildBaseElements = () => [
                 template: "${_comp.$set.islink?'Link':'div'}"
             },
             ...marginOptions('p_'),
-            p_style_float: {
-                label: _t('elements.alignment'),
-                enum: [
-                    {name: _t('elements.none'), value: 'none'},
-                    {name: _t('elements.right'), value: 'right'},
-                    {name: _t('elements.left'), value: 'left'}
-                ],
-                tab: DEFAULT_TAB
-            },
             ...classOptions('p_'),
             ...imageOptions('p_'),
             ...lazyImageOptions('$observe_'),

@@ -43,7 +43,7 @@ import {verifyTokenAndResponse} from './util/tokenLink.mjs'
 //import heapdump from 'heapdump'
 import {clientAddress, isFromTrustedProxy} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
-import {decodeURIComponentSafe, regexRedirectUrl, doScreenCapture, createCanonicalSsrQuery} from './util/index.mjs'
+import {decodeURIComponentSafe, regexRedirectUrl, doScreenCapture, removeOtherScreenshotVariants, createCanonicalSsrQuery} from './util/index.mjs'
 import {createSimpleEtag} from './util/etag.mjs'
 import {getDynamicConfig} from '../util/config.mjs'
 import {
@@ -1113,6 +1113,11 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                     return
                                 }
 
+                                // regenerated in the editor (new timestamp): the old variants of this screenshot are not
+                                // needed anymore. Only for logged in users, so that visitors can't remove cached files.
+                                if (data.screenshot.options?.timestamp > 0 && contextByRequest(req).id && await statSafe(absFilename)) {
+                                    removeOtherScreenshotVariants(absFilename)
+                                }
                             }
 
                             await resolveUploadedFile(req, res, `${UPLOAD_URL}/screenshots/${filename}`, parsedUrl)

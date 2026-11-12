@@ -4,6 +4,8 @@ import {getRegexCached} from './regexCache.mjs'
 // This module checks on its own (not only the caller), also after redirects of the page.
 import {isPrivateHostname, isPublicHttpUrl} from '../../util/networkGuard.mjs'
 import {createSharedBrowser, BASE_BROWSER_ARGS} from '../../util/sharedBrowser.mjs'
+import fs from 'fs'
+import path from 'path'
 
 // Reasonable upper bound for viewport/clip dimensions coming from
 // user-supplied options - without this an attacker could request an
@@ -173,6 +175,29 @@ export const doScreenCapture = async (url, filename, options, cookies) => {
         screenshotBrowser.release()
     }
     return {statusCode:200}
+}
+
+
+/*
+ Screenshot file names end with ...timestamp<number>.png ("regenerate" in the editor sets a new timestamp).
+ Removes all other variants of the same screenshot (same url and options, other timestamp).
+ Runs in the background (only when a screenshot is regenerated) and never throws.
+ */
+export const removeOtherScreenshotVariants = (absFilename) => {
+    const filename = path.basename(absFilename)
+    const pos = filename.lastIndexOf('timestamp')
+    if (pos < 0 || !/^timestamp\d+\.png$/.test(filename.substring(pos))) {
+        return
+    }
+    const dir = path.dirname(absFilename), prefix = filename.substring(0, pos + 9)
+    fs.promises.readdir(dir).then(files => {
+        for (const file of files) {
+            if (file !== filename && file.startsWith(prefix) && /^\d+\.png$/.test(file.substring(prefix.length))) {
+                console.log(`remove old screenshot variant ${file}`)
+                fs.unlink(path.join(dir, file), () => {})
+            }
+        }
+    }).catch(e => console.warn('removeOtherScreenshotVariants', e.message))
 }
 
 
