@@ -469,3 +469,6 @@ Hook.on('appready', ({app, db}) => {
 Hook.on(['typeCreated_Api', 'typeUpdated_Api', 'typeCloned_Api', 'typeDeleted_Api'], () => {
     Cache.clearStartWith(CACHE_PREFIX)
 })
+
+// for cronjobs and other server code: call an api script in-process (see callApi above)
+export {callApi}

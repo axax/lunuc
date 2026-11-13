@@ -8,8 +8,9 @@ document.getElementById('downloadMp3').addEventListener('click', () => {
     return false
 })
 
-// ---- Medien-Downloader ----
+// ---- Medien auf der Seite ----
 const listEl = document.getElementById('mediaList')
+const jobListEl = document.getElementById('jobList')
 let currentTab
 
 function formatSize(bytes) {
@@ -18,17 +19,6 @@ function formatSize(bytes) {
     let i = 0
     while (bytes >= 1024 && i < u.length - 1) { bytes /= 1024; i++ }
     return bytes.toFixed(i ? 1 : 0) + ' ' + u[i]
-}
-
-function fileNameFromUrl(url, fallbackExt) {
-    try {
-        const path = new URL(url).pathname
-        let name = decodeURIComponent(path.split('/').pop() || '')
-        if (!name || !/\.\w{2,4}$/.test(name)) name = (name || 'video') + '.' + fallbackExt
-        return name.replace(/[\\/:*?"<>|]+/g, '_')
-    } catch (e) {
-        return 'video.' + fallbackExt
-    }
 }
 
 function safeTitle() {
@@ -55,7 +45,7 @@ async function scanDom() {
     }
 }
 
-async function render() {
+async function renderMedia() {
     const media = await chrome.runtime.sendMessage({command: 'getMedia', tabId: currentTab.id}) || []
     const domUrls = await scanDom()
     domUrls.forEach(url => {
@@ -69,13 +59,14 @@ async function render() {
         listEl.innerHTML = '<li class="empty">Noch keine Medien gefunden.</li>'
         return
     }
-    // grösste Dateien / HLS zuerst
-    media.sort((a, b) => (b.kind !== 'file') - (a.kind !== 'file') || (b.size || 0) - (a.size || 0))
+    // Streams zuerst, Master-Playlists vor Varianten, dann nach Grösse
+    const score = m => (m.kind !== 'file' ? 2 : 0) + (/master|manifest/i.test(m.url) ? 1 : 0)
+    media.sort((a, b) => score(b) - score(a) || (b.size || 0) - (a.size || 0))
 
     media.forEach(m => {
         const li = document.createElement('li')
         const tag = m.kind === 'hls' ? 'HLS-Stream' : m.kind === 'dash' ? 'DASH-Stream' : (m.type || 'Datei')
-        li.innerHTML = `<div class="meta"><span class="tag"></span><span class="size"></span></div><div class="url"></div>`
+        li.innerHTML = '<div class="meta"><span class="tag"></span><span class="size"></span></div><div class="url"></div>'
         li.querySelector('.tag').textContent = tag
         li.querySelector('.size').textContent = formatSize(m.size)
         li.querySelector('.url').textContent = m.url
@@ -83,31 +74,63 @@ async function render() {
         const btn = document.createElement('button')
         btn.className = 'btn small'
         btn.textContent = 'Herunterladen'
-        btn.onclick = () => download(m)
+        btn.onclick = async () => {
+            btn.disabled = true
+            btn.textContent = 'Gestartet'
+            await chrome.runtime.sendMessage({command: 'startDownload', url: m.url, kind: m.kind, name: safeTitle()})
+        }
         li.appendChild(btn)
         listEl.appendChild(li)
     })
 }
 
-function download(m) {
-    if (m.kind === 'hls' || m.kind === 'dash') {
-        // Streams werden in einer eigenen Extension-Seite zusammengesetzt (Popup würde sich schliessen)
-        const params = new URLSearchParams({url: m.url, kind: m.kind, name: safeTitle()})
-        chrome.tabs.create({url: chrome.runtime.getURL('download.html?' + params)})
-    } else {
-        chrome.downloads.download({url: m.url, filename: fileNameFromUrl(m.url, 'mp4'), saveAs: true})
+// ---- laufende Downloads ----
+const STATE_LABEL = {queued: 'Wartet', running: 'Lädt', converting: 'Wandelt um', uploading: 'Lädt hoch', done: 'Fertig', error: 'Fehler'}
+
+async function renderJobs() {
+    const jobs = (await chrome.storage.session.get('jobs')).jobs || []
+    jobListEl.innerHTML = ''
+    if (!jobs.length) {
+        jobListEl.innerHTML = '<li class="empty">Keine Downloads.</li>'
+        return
     }
+    jobs.slice().reverse().forEach(j => {
+        const li = document.createElement('li')
+        li.className = j.state
+        li.innerHTML = '<div class="name"></div><div class="meta"><span class="tag"></span><span class="label"></span></div>'
+        li.querySelector('.name').textContent = j.name
+        li.querySelector('.tag').textContent = STATE_LABEL[j.state] || j.state
+        li.querySelector('.label').textContent = j.state === 'done' || j.state === 'error' ? '' : j.label
+        if (!['done', 'error', 'queued'].includes(j.state)) {
+            const p = document.createElement('progress')
+            p.max = 1
+            p.value = j.progress || 0
+            li.appendChild(p)
+        }
+        if (j.message) {
+            const msg = document.createElement('div')
+            msg.className = 'msg'
+            msg.textContent = j.message
+            li.appendChild(msg)
+        }
+        jobListEl.appendChild(li)
+    })
 }
 
-document.getElementById('rescan').onclick = render
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'session' && changes.jobs) renderJobs()
+})
+
+document.getElementById('rescan').onclick = renderMedia
 document.getElementById('options').onclick = () => chrome.runtime.openOptionsPage()
 document.getElementById('clear').onclick = async () => {
     await chrome.runtime.sendMessage({command: 'clearMedia', tabId: currentTab.id})
-    chrome.action.setBadgeText({tabId: currentTab.id, text: ''})
-    render()
+    renderMedia()
 }
+document.getElementById('clearJobs').onclick = () => chrome.runtime.sendMessage({command: 'clearJobs'})
 
 chrome.tabs.query({active: true, currentWindow: true}, tabs => {
     currentTab = tabs[0]
-    render()
+    renderMedia()
+    renderJobs()
 })

@@ -6,9 +6,13 @@ h3 { margin: 14px 0 4px; font-size: 14px; }
 .btn.small { font-size: 12px; padding: 4px 8px; background: #555; }
 .btn:disabled { background: #aaa; cursor: default; }
 .row { display: flex; gap: 6px; margin-top: 8px; }
-ul { list-style: none; padding: 0; margin: 0; max-height: 320px; overflow: auto; }
+ul { list-style: none; padding: 0; margin: 0; max-height: 260px; overflow: auto; }
 li { border: 1px solid #ddd; border-radius: 4px; padding: 6px; margin-bottom: 6px; }
-li .url { word-break: break-all; font-size: 11px; color: #333; }
+li .url, li .msg { word-break: break-all; font-size: 11px; color: #333; }
 li .meta { color: #777; font-size: 11px; margin: 2px 0 4px; }
 li .tag { display: inline-block; padding: 0 4px; border-radius: 3px; background: #e5eef8; color: #245; margin-right: 4px; }
+li .name { font-weight: 600; }
+li.error .msg { color: #b00020; }
+li.done .tag { background: #e3f3e6; color: #22622f; }
+progress { width: 100%; height: 8px; }
 .empty { color: #888; }
