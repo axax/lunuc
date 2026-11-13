@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Stream Download</title>
+    <style>
+        body { font: 14px/1.5 system-ui, sans-serif; max-width: 640px; margin: 40px auto; }
+        progress { width: 100%; height: 18px; }
+        .url { word-break: break-all; color: #666; font-size: 12px; }
+        .error { color: #b00020; }
+    </style>
+</head>
+<body>
+<h2 id="title">Stream herunterladen</h2>
+<div class="url" id="url"></div>
+<p id="ffmpeg" class="url"></p>
+<p id="status">Lade Playlist…</p>
+<progress id="progress" value="0" max="1"></progress>
+<p>Diesen Tab bis zum Ende offen lassen.</p>
+<script src="download.js"></script>
+</body>
+</html>

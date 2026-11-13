@@ -1,10 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="button.css">
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-<button id="downloadMp3">download mp3</button>
+<button id="downloadMp3" class="btn">YouTube → mp3</button>
+
+<h3>Medien auf dieser Seite</h3>
+<p class="hint">Video einmal abspielen, damit Streams erkannt werden.</p>
+<ul id="mediaList"></ul>
+<div class="row">
+    <button id="rescan" class="btn small">Neu scannen</button>
+    <button id="clear" class="btn small">Liste leeren</button>
+    <button id="options" class="btn small">Einstellungen</button>
+</div>
 <script src="popup.js"></script>
 </body>
 </html>

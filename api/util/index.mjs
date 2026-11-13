@@ -892,6 +892,21 @@ const Util = {
         props.lunuc_group = process.env.LUNUC_GROUP || ''
         return props
     },
+    // "$env:NAME" -> value of the environment variable NAME, any other value is
+    // returned unchanged. Lets settings (e.g. KeyValues) reference a secret
+    // instead of storing it. Resolve right before use and never write the
+    // result back, otherwise the secret ends up in the database.
+    resolveEnvValue: (value) => {
+        if (typeof value !== 'string' || !value.startsWith('$env:')) {
+            return value
+        }
+        const name = value.substring(5)
+        const resolved = process.env[name]
+        if (resolved === undefined) {
+            console.warn(`resolveEnvValue: environment variable ${name} is not set`)
+        }
+        return resolved
+    },
     sleep: (time) => {
         return new Promise((resolve) => setTimeout(resolve, time))
     },

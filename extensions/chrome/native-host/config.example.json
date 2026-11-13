@@ -1,0 +1,9 @@
+{
+  "ftp": {
+    "url": "ftp://ftp.example.com/filme/",
+    "user": "benutzer",
+    "password": "geheim",
+    "ssl": false,
+    "deleteAfterUpload": false
+  }
+}

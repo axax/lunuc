@@ -1,21 +1,35 @@
 {
   "manifest_version": 3,
   "name": "Lunuc Extension",
-  "description": "Lunuc test chrome extension",
-  "version": "0.1",
+  "description": "Lunuc chrome extension (YouTube mp3, Medien-Downloader)",
+  "version": "0.2",
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["http://*/*", "https://*/*"],
-      "run_at":"document_start",
-      "js": ["content.js"]
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "run_at": "document_start",
+      "js": [
+        "content.js"
+      ]
     }
   ],
-  "permissions": ["alarms","storage", "activeTab", "scripting","cookies"],
+  "permissions": [
+    "alarms",
+    "storage",
+    "activeTab",
+    "scripting",
+    "cookies",
+    "webRequest",
+    "downloads",
+    "nativeMessaging"
+  ],
   "host_permissions": [
-    "*://*.youtube.com/*"
+    "<all_urls>"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -29,5 +43,9 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'",
     "sandbox": "sandbox allow-scripts; script-src 'self' 'https://www.lunuc.com'; object-src 'self'"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
   }
 }

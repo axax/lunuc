@@ -237,7 +237,14 @@ export const doPdfCapture = async (html, filename, options = {}) => {
                 // request already handled (e.g. page closed)
             }
         })
-        await page.setContent(html, {waitUntil: 'networkidle0', timeout: 20000})
+        // "load" waits for images and web fonts (JS is off, so nothing loads later). A slow
+        // external resource must not cost the whole PDF: after 10s it is printed as it is.
+        try {
+            await page.setContent(html, {waitUntil: 'load', timeout: 10000})
+        } catch (e) {
+            if (e?.name !== 'TimeoutError') throw e
+            console.warn('doPdfCapture: resources still loading after 10s, printing anyway')
+        }
         await page.emulateMediaType('print')
         await fs.promises.mkdir(path.dirname(filename), {recursive: true})
         // "path" last, never taken from the options
