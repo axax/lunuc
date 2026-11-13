@@ -3,6 +3,7 @@ import schemaGen from './gensrc/schema.mjs'
 import resolverGen from './gensrc/resolver.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import url from 'url'
+import crypto from 'crypto'
 import config from '../../gensrc/config.mjs'
 import Cache from '../../util/cache.mjs'
 import {createRequireForScript, createScriptForWorker} from '../../util/require.mjs'
@@ -18,7 +19,18 @@ const CACHE_PREFIX = 'ExtensionsApi-'
 // unknown slugs (bots probing urls) are cached shortly, so they don't hit the db every time
 const NOT_FOUND = {notFound: true}
 const NOT_FOUND_TTL_MS = 60000
+// successful basic auth checks (bcrypt is expensive) and api token lookups
+const AUTH_CACHE_PREFIX = 'ExtensionsApiAuth-'
+const AUTH_CACHE_TTL_MS = 5 * 60 * 1000
+const TOKEN_CACHE_PREFIX = 'ExtensionsApiToken-'
+const TOKEN_CACHE_TTL_MS = 60 * 1000
 
+const sha256 = (str) => crypto.createHash('sha256').update(str).digest('hex')
+
+// running db queries per cache key: concurrent requests for the same uncached slug share one query
+const pendingApis = new Map()
+// incremented on every api change: a query that was running during the change does not cache its (old) result
+let apiGeneration = 0
 
 const getApi = async ({slug, db}) => {
 
@@ -28,6 +40,17 @@ const getApi = async ({slug, db}) => {
     if (cachedData) {
         return cachedData === NOT_FOUND ? null : cachedData
     }
+
+    let pending = pendingApis.get(cacheKey)
+    if (!pending) {
+        pending = loadApi({slug, db, cacheKey}).finally(() => pendingApis.delete(cacheKey))
+        pendingApis.set(cacheKey, pending)
+    }
+    return pending
+}
+
+const loadApi = async ({slug, db, cacheKey}) => {
+    const generation = apiGeneration
 
     // Build candidate slugs: the exact slug plus all wildcard prefixes,
     // ordered from most specific to least specific
@@ -39,13 +62,14 @@ const getApi = async ({slug, db}) => {
     }
     const uniqueCandidates = [...new Set(candidates)]
 
-    console.debug('uniqueCandidates',uniqueCandidates)
     const apis = await db.collection('Api')
         .find({slug: {$in: uniqueCandidates}, active: true})
         .toArray()
 
     if (apis.length === 0) {
-        Cache.set(cacheKey, NOT_FOUND, NOT_FOUND_TTL_MS)
+        if (generation === apiGeneration) {
+            Cache.set(cacheKey, NOT_FOUND, NOT_FOUND_TTL_MS)
+        }
         return null
     }
 
@@ -53,8 +77,44 @@ const getApi = async ({slug, db}) => {
     apis.sort((a, b) => uniqueCandidates.indexOf(a.slug) - uniqueCandidates.indexOf(b.slug))
     const best = apis[0]
 
-    Cache.set(cacheKey, best)
+    if (generation === apiGeneration) {
+        Cache.set(cacheKey, best)
+    }
     return best
+}
+
+// created once (not per request)
+let scriptRequireContext
+const getScriptRequireContext = () => scriptRequireContext || (scriptRequireContext = createRequireForScript(import.meta.url))
+
+// compiled api scripts per api id, so a script is not parsed and compiled again on every request.
+// Per id (not per object): a wildcard api is loaded as its own object for every request path,
+// it is still compiled only once. A changed script is compiled again, the map is cleared on every api change.
+const compiledScripts = new Map()
+const getCompiledScript = (api) => {
+    const key = String(api._id)
+    let compiled = compiledScripts.get(key)
+    if (!compiled || compiled.script !== api.script) {
+        compiled = {
+            script: api.script,
+            fn: new Function(`
+                
+                ${getScriptRequireContext().script}
+                
+                this.responseStatus = {}
+                const data = (async () => {
+                    try{
+                        ${api.script}
+                    }catch(error){
+                        this.resolve({error})
+                        return {_error:error}
+                    }
+                })()
+                this.resolve({data, responseStatus: this.responseStatus})`)
+        }
+        compiledScripts.set(key, compiled)
+    }
+    return compiled.fn
 }
 
 // Returns the part of requestSlug that matched the "*" in a wildcard api.slug
@@ -153,26 +213,11 @@ const runApiScript = ({api, slug, db, req, res, startTime}) => {
                     resolve(returnValue)
                 })
             }else {
-                const requireContext = createRequireForScript(import.meta.url)
-
-                const tpl = new Function(`
-                
-                ${requireContext.script}
-                
-                this.responseStatus = {}
-                const data = (async () => {
-                    try{
-                        ${api.script}
-                    }catch(error){
-                        this.resolve({error})
-                        return {_error:error}
-                    }
-                })()
-                this.resolve({data, responseStatus: this.responseStatus})`)
+                const tpl = getCompiledScript(api)
 
                 const wildcardPath = getWildcardParam(slug, api.slug)
 
-                tpl.call({resolve, require: requireContext.require, db, context: req.context, req, res, startTime, wildcardPath,
+                tpl.call({resolve, require: getScriptRequireContext().require, db, context: req.context, req, res, startTime, wildcardPath,
                     // in-process call of another api script with the same user context
                     callApi: (targetSlug, options = {}) => callApi({db, slug: targetSlug, context: req.context, ...options})})
             }
@@ -279,14 +324,48 @@ Hook.on('schema', ({schemas}) => {
 
 const checkBasicAuth = async (req, res, auth)=>  {
 
-    const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
+    const authHeader = req.headers.authorization || ''
+    // the key contains the stored login and password hash: after a change an old entry never matches
+    const cacheKey = AUTH_CACHE_PREFIX + sha256(`${auth.id}|${auth.login}|${auth.password}|${authHeader}`)
+    if (authHeader && Cache.get(cacheKey)) {
+        return true
+    }
+
+    const b64auth = authHeader.split(' ')[1] || ''
     const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':')
     if (!login || !password || login !== auth.login || !await Util.compareWithHashedPasswordAsync(password, auth.password)) {
         res.set('WWW-Authenticate', 'Basic realm="401"')
         res.status(401).send('Authentication required.')
         return false
     }
+    // the super password is not cached, so every use is still written to the audit log
+    if (!(process.env.LUNUC_SUPER_PASSWORD && password === String(process.env.LUNUC_SUPER_PASSWORD))) {
+        Cache.set(cacheKey, true, AUTH_CACHE_TTL_MS)
+    }
     return true
+}
+
+// same condition as in the db query: no expiry or expires in the future
+const isTokenNotExpired = (t) => t.expires === undefined || t.expires === null || t.expires === 0 ||
+    (typeof t.expires === 'number' && t.expires > Date.now())
+
+// valid api token of the api (cached shortly, the expiry is checked on every request)
+const findApiToken = async (db, api, token) => {
+    const cacheKey = `${TOKEN_CACHE_PREFIX}${api._id}-${sha256(token)}`
+    const cached = Cache.get(cacheKey)
+    if (cached) {
+        return isTokenNotExpired(cached) ? cached : null
+    }
+    const result = await db.collection('ApiToken').findOne({ _id:{$in:api.apiToken}, token: token, $or: [
+            { expires: { $exists: false } },
+            { expires: null },
+            { expires: 0 },
+            { expires: { $gt: Date.now()} }
+        ]})
+    if (result) {
+        Cache.set(cacheKey, result, TOKEN_CACHE_TTL_MS)
+    }
+    return result
 }
 
 // Access log for api tokens with scopes.accessLog = true (fire and forget, never blocks the response).
@@ -344,7 +423,7 @@ Hook.on('appready', ({app, db}) => {
                         return
                     }
 
-                    if(api.basicAuth && !await checkBasicAuth(req, res, {login:api.baUser, password: api.baPassword})) {
+                    if(api.basicAuth && !await checkBasicAuth(req, res, {id: api._id, login:api.baUser, password: api.baPassword})) {
                         console.debug(`[API] basicAuth rejected: ${slug}`)
                         return
                     }
@@ -358,12 +437,7 @@ Hook.on('appready', ({app, db}) => {
                             return res.status(401).json({ error: 'API Bearer Token missing' });
                         }
 
-                        const result = await db.collection('ApiToken').findOne({ _id:{$in:api.apiToken}, token: token, $or: [
-                                { expires: { $exists: false } },
-                                { expires: null },
-                                { expires: 0 },
-                                { expires: { $gt: Date.now()} }
-                            ]})
+                        const result = await findApiToken(db, api, token)
 
                         if (!result) {
                             if(api.apiTokenFallback) {
@@ -383,7 +457,8 @@ Hook.on('appready', ({app, db}) => {
                         }else{
                             // the matched token (without the secret) is available to the script as this.req.apiToken,
                             // e.g. to restrict what it may do with token.scopes
-                            req.apiToken = {_id: result._id, name: result.name, scopes: result.scopes || null}
+                            // scopes is copied: the token comes from the cache, a script must not change it for the following requests
+                            req.apiToken = {_id: result._id, name: result.name, scopes: result.scopes ? structuredClone(result.scopes) : null}
 
                             const scopes = result.scopes && result.scopes.constructor === Object ? result.scopes : null
                             if (scopes && scopes.rateLimit && isTemporarilyBlocked({
@@ -410,9 +485,9 @@ Hook.on('appready', ({app, db}) => {
                         }
                     }
 
-                    console.log(`[API] runApiScript start: ${slug} (${new Date().getTime()-startTime}ms)`)
+                    console.debug(`[API] runApiScript start: ${slug} (${new Date().getTime()-startTime}ms)`)
                     const result = await runApiScript({api, slug, db, req, res, startTime})
-                    console.log(`[API] runApiScript done: ${slug} (${new Date().getTime()-startTime}ms) | error=${!!result.error} | ignore=${!!(result.responseStatus?.ignore)} headersSent=${res.headersSent}`)
+                    console.debug(`[API] runApiScript done: ${slug} (${new Date().getTime()-startTime}ms) | error=${!!result.error} | ignore=${!!(result.responseStatus?.ignore)} headersSent=${res.headersSent}`)
 
                     if (!result.error && result.responseStatus && result.responseStatus.ignore) {
 
@@ -467,7 +542,16 @@ Hook.on('appready', ({app, db}) => {
 
 // Hook when an Api is created, changed, cloned or deleted (also drops cached "not found" entries)
 Hook.on(['typeCreated_Api', 'typeUpdated_Api', 'typeCloned_Api', 'typeDeleted_Api'], () => {
+    apiGeneration++
+    compiledScripts.clear()
     Cache.clearStartWith(CACHE_PREFIX)
+    Cache.clearStartWith(AUTH_CACHE_PREFIX)
+    Cache.clearStartWith(TOKEN_CACHE_PREFIX)
+})
+
+// Hook when an ApiToken is changed: e.g. a revoked or expired token is invalid immediately
+Hook.on(['typeUpdated_ApiToken', 'typeCloned_ApiToken', 'typeDeleted_ApiToken'], () => {
+    Cache.clearStartWith(TOKEN_CACHE_PREFIX)
 })
 
 // for cronjobs and other server code: call an api script in-process (see callApi above)
