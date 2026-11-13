@@ -398,7 +398,7 @@ export default function CmsPageTools(props) {
 
         {renderIframeTab(
             'serverConsole',
-            '/system/console?preview=true&embedded=true&cmd=luapi',
+            '/system/console?preview=true&embedded=true&fill=true&cmd=luapi',
             'Server console'
         )}
         {renderIframeTab('aiAssistent', aiAssistenUrl, _t('CodeEditor.aiAssistent'))}

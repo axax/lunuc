@@ -513,7 +513,7 @@ export const condition = () => ({
 
 export const styleIndented = () => ({
     'p_className@style': {
-        label: 'Style',
+        label: _t('elements.indentation'),
         tab: DEFAULT_TAB,
         enum: [
             {value: '', name: _t('elements.none')},

@@ -150,7 +150,7 @@ const Util = {
                 second: numeric,
                 timeZone: Util._intl.timeZone || 'UTC'
             }, options),
-            key = lang + Object.values(o).join('')
+            key = lang + Object.values(o).join('|')
 
         if (o.timeZone === 'Europe/Zurich') {
             o.timeZone = 'Europe/Oslo'

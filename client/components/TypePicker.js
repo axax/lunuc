@@ -320,7 +320,7 @@ class TypePicker extends React.Component {
     }
 
     render() {
-        const {slotProps = {}, placeholder, multi, showAlwaysAsImage, fileImport, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, fieldTemplate, metaFields, type, filter, label, genericType, readOnly} = this.props
+        const {slotProps = {}, placeholder, multi, showAlwaysAsImage, fileImport, fileUpload, error, helperText, className, sx, fullWidth, linkTemplate, pickerField, fieldTemplate, metaFields, type, filter, label, genericType, readOnly} = this.props
         const {data, hasFocus, selIdx, value, textValue, showContextMenu} = this.state
         console.log(`render TypePicker | hasFocus=${hasFocus} | pickerField=${pickerField}`, data)
 
@@ -466,6 +466,21 @@ class TypePicker extends React.Component {
                           form.setState({fields: {...form.state.fields, content:dataUrl}})*/
                       }}
                       label={fileImport.label || 'Drop file here'} />}
+            {fileUpload && type === 'Media' && !readOnly && <FileDrop key="fileUpload"
+                      multi={!!multi}
+                      style={{marginTop: '0.5rem'}}
+                      accept={fileUpload.accept || '*/*'}
+                      maxSize={fileUpload.maxSize || 100}
+                      imagePreview={false}
+                      uploadTo="/graphql/upload"
+                      onSuccess={response => {
+                          // upload as Media and select the new file(s) right away
+                          const files = response && response.files
+                          if (files && files.length > 0) {
+                              this.selectValue(multi ? files : files[0], !multi)
+                          }
+                      }}
+                      label={_t(fileUpload.label || 'TypePicker.fileUpload')}/>}
             {value && value.length>0 && <StyledChips isMulti={multi}>
                 {value.map((singleValue, singleValueIndex) => {
 

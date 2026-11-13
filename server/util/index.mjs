@@ -177,6 +177,82 @@ export const doScreenCapture = async (url, filename, options, cookies) => {
     return {statusCode:200}
 }
 
+/*
+ Renders an HTML string to a PDF file (A4 by default) in the shared Chrome, own context per job.
+ JavaScript is off (the HTML is written by an LLM / user, it only needs layout) and every request
+ to a non public host (or file://) is blocked. Images/fonts from public http(s) urls and data: urls work.
+ options: format (A4, Letter, ...), landscape, margin ({top,right,bottom,left}), printBackground,
+ displayHeaderFooter + headerTemplate/footerTemplate, scale. Only these are taken over.
+ Throws on failure (the caller reports it); returns {statusCode:200, pages?}.
+ */
+const PDF_FORMATS = ['A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'Letter', 'Legal', 'Tabloid']
+export const doPdfCapture = async (html, filename, options = {}) => {
+    if (typeof html !== 'string' || !html.trim()) {
+        throw new Error('doPdfCapture: html is empty')
+    }
+    if (html.length > 5 * 1024 * 1024) {
+        throw new Error('doPdfCapture: html is too large (max 5 MB)')
+    }
+    if (isTemporarilyBlocked({requestTimeInMs: 2000, requestPerTime: 6, requestBlockForInMs: 30000, key: 'doPdfCapture'})) {
+        throw new Error('doPdfCapture: server busy, try again later')
+    }
+
+    const pdfOptions = {
+        format: PDF_FORMATS.includes(options.format) ? options.format : 'A4',
+        landscape: !!options.landscape,
+        printBackground: options.printBackground !== false,
+        preferCSSPageSize: options.preferCSSPageSize !== false
+    }
+    if (options.margin && typeof options.margin === 'object') {
+        pdfOptions.margin = {}
+        for (const k of ['top', 'right', 'bottom', 'left']) {
+            if (options.margin[k] !== undefined) pdfOptions.margin[k] = String(options.margin[k])
+        }
+    }
+    if (options.displayHeaderFooter) {
+        pdfOptions.displayHeaderFooter = true
+        if (options.headerTemplate) pdfOptions.headerTemplate = String(options.headerTemplate)
+        if (options.footerTemplate) pdfOptions.footerTemplate = String(options.footerTemplate)
+    }
+    const scale = Number(options.scale)
+    if (scale >= 0.1 && scale <= 2) pdfOptions.scale = scale
+
+    let browser, context
+    try {
+        browser = await screenshotBrowser.acquire(SCREENSHOT_LAUNCH_OPTIONS)
+        context = await browser.createBrowserContext()
+        const page = await context.newPage()
+        await page.setJavaScriptEnabled(false)
+        await page.setRequestInterception(true)
+        page.on('request', async (req) => {
+            try {
+                const reqUrl = req.url()
+                if (reqUrl.startsWith('data:') || reqUrl.startsWith('about:') || await isPublicHttpUrl(reqUrl)) {
+                    req.continue()
+                } else {
+                    console.warn(`doPdfCapture: blocking request ${reqUrl}`)
+                    req.abort()
+                }
+            } catch (e) {
+                // request already handled (e.g. page closed)
+            }
+        })
+        await page.setContent(html, {waitUntil: 'networkidle0', timeout: 20000})
+        await page.emulateMediaType('print')
+        await fs.promises.mkdir(path.dirname(filename), {recursive: true})
+        // "path" last, never taken from the options
+        await page.pdf({...pdfOptions, path: filename})
+    } catch (e) {
+        console.warn('doPdfCapture: failed', e.message)
+        if (isBrowserFailure(e)) screenshotBrowser.close()
+        throw e
+    } finally {
+        if (context) await context.close().catch(() => {})
+        if (browser) screenshotBrowser.release()
+    }
+    return {statusCode: 200}
+}
+
 
 /*
  Screenshot file names end with ...timestamp<number>.png ("regenerate" in the editor sets a new timestamp).

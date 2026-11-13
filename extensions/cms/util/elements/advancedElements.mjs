@@ -4,7 +4,6 @@ import {
     DATA_TAB,
     DEFAULT_TAB,
     ENTRIES_TAB,
-    HTML_TAB,
     TEMPLATE_TAB,
     MEDIA_PROJECTION,
     classOptions,
@@ -508,14 +507,26 @@ export const buildAdvancedElements = () => [
             },
             p: {['data-element-key']: 'web'}
         },
+        // html editor first, everything else is secondary
+        optionOrder: ['$c', 'web_hint', 'p_className@style'],
         options: {
-            t: {label: _t('elements.tag')},
             $c: {
-                tab: HTML_TAB,
-                label: _t('elements.plainHtml'),
+                tab: DEFAULT_TAB,
+                label: _t('elements.web.html'),
                 fullWidth: true,
-                uitype: 'editor',
+                uitype: 'htmlEditor',
                 escapeTemplateVars: true
+            },
+            // only a hint in the dialog, has no value
+            web_hint: {
+                uitype: 'htmlParser',
+                html: `<i style="display:block;margin:0 0 0.75rem;font-size:0.75rem;opacity:0.6;">${_t('elements.web.hint')}</i>`,
+                tab: DEFAULT_TAB
+            },
+            t: {
+                label: _t('elements.web.tag'),
+                placeholder: 'div',
+                tab: EXTENDED_TAB
             },
             ...styleIndented(),
             ...marginOptions('p_'),

@@ -14,6 +14,7 @@ import {draftKey, createDraft, readDraft, writeDraft, removeDraft, pruneDrafts, 
 import Expandable from 'client/components/Expandable'
 import ErrorHandler from 'client/components/layout/ErrorHandler'
 import {isEditableTarget} from '../util/jsonDomUtil'
+import {removeDropAreas} from '../util/jsonDomDragUtil'
 import NotificationHandler from 'client/components/layout/NotificationHandler'
 import DataResolverEditor from '../components/DataResolverEditor'
 import TemplateEditor from '../components/TemplateEditor'
@@ -445,6 +446,8 @@ class CmsViewEditorContainer extends React.Component {
 
     componentWillUnmount() {
         this._isUnmounted = true
+        // dragend is not fired when the drag source is unmounted during the drag
+        removeDropAreas()
         if (this._handleSaveEvent) {
             window.removeEventListener('beforeunload', this._handleSaveEvent)
             window.removeEventListener('blur', this._handleSaveEvent)

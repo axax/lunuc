@@ -1147,17 +1147,37 @@ export const buildBaseElements = () => [
             }
         },
         // main options first in their tab (see arrangeElementOptions in index.mjs)
-        optionOrder: ['p_src', 'p_width', 'p_height', 'p_frameBorder'],
+        optionOrder: ['p_media', 'p_src', 'p_width', 'p_height', 'p_frameBorder', 'p_title'],
         options: {
+            // static html page (Media): rendered by the component HtmlEmbed (extensions/media/components/HtmlEmbed.js)
+            // in a sandboxed iframe with automatic height (if p_height is empty)
+            p_media: {
+                fullWidth: true,
+                value: '',
+                label: _t('elements.iframe.media'),
+                uitype: 'type_picker',
+                type: 'Media',
+                filter: 'mimeType=html',
+                projection: ['_id', 'name', 'mimeType'],
+                fileUpload: {accept: 'text/html', label: 'elements.iframe.upload'},
+                tab: DEFAULT_TAB
+            },
             p_src: {fullWidth: true, value: '', label: 'Url', tab: DEFAULT_TAB},
             p_width: {value: '', label: _t('elements.width'), tab: DEFAULT_TAB, thirdWidth: true},
             p_height: {value: '', label: _t('elements.height'), tab: DEFAULT_TAB, thirdWidth: true},
             p_frameBorder: {value: '', label: 'Frameborder', tab: DEFAULT_TAB, thirdWidth: true},
+            p_title: {fullWidth: true, value: '', label: _t('elements.iframe.title'), tab: DEFAULT_TAB},
             p_style: {value: '', label: 'Style', tab: EXTENDED_TAB},
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...observeOptions(),
-            ...condition()
+            ...condition(),
+            // tag: HtmlEmbed if a html file is chosen, else a plain iframe (computed after p_media, same tab -> later in order)
+            t: {
+                invisible: true,
+                tab: DEFAULT_TAB,
+                template: "${_comp.p && _comp.p.media && _comp.p.media.length ? 'HtmlEmbed' : 'iframe'}"
+            }
         }
     },
     {

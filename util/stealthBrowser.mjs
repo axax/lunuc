@@ -72,7 +72,11 @@ export const prepareStealthPage = async (page) => {
  Bot check pages ("Just a moment..."): Cloudflare marks them with the header cf-mitigated: challenge.
  A plain HTTP request can never pass them (they are a JavaScript test) - a browser has to load the page.
  */
-const CHALLENGE_TITLE_RE = /^(just a moment|einen moment|un instant|attention required|please wait|bitte warten)/i
+// Recognised by the page itself, not by its title: the title is localised ("Just a moment...",
+// "ir.satellos.com", ...). Cloudflare challenge pages load their script from /cdn-cgi/challenge-platform/
+// and set window._cf_chl_opt.
+const isChallengePage = () => !!(window._cf_chl_opt ||
+    document.querySelector('script[src*="/cdn-cgi/challenge-platform/"], #challenge-form, #challenge-stage, #challenge-running, #cf-challenge-running'))
 
 export const isChallengeResponse = (res) => {
     if (!res || !res.headers) return false
@@ -82,14 +86,20 @@ export const isChallengeResponse = (res) => {
 }
 
 // waits until the page is no longer a bot check page; false if it still is after timeoutMs
-export const waitForChallenge = async (page, timeoutMs = 20000) => {
-    const end = Date.now() + timeoutMs
-    while (Date.now() < end) {
-        // title() throws while the challenge navigates to the real page
-        const title = await page.title().catch(() => null)
-        if (title !== null && !CHALLENGE_TITLE_RE.test(title.trim())) return true
+export const waitForChallenge = async (page, timeoutMs = 25000) => {
+    const start = Date.now()
+    let seen = false
+    while (Date.now() - start < timeoutMs) {
+        // evaluate throws while the challenge navigates to the real page
+        const challenge = await page.evaluate(isChallengePage).catch(() => null)
+        if (challenge === false) {
+            if (seen) console.log(`bot check passed after ${Date.now() - start}ms: ${page.url()}`)
+            return true
+        }
+        if (challenge) seen = true
         await new Promise(resolve => setTimeout(resolve, 500))
     }
+    console.log(`bot check not passed within ${timeoutMs}ms: ${page.url()}`)
     return false
 }
 

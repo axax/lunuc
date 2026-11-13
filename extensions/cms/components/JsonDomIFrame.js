@@ -36,13 +36,23 @@ const JsonDomIFrame = ({
         DomUtil.addScript(`/main.bundle.js?v=${config.BUILD_NUMBER}`, {
             id: 'main',
             onload: () => {
-                if (win._app_.JsonDom) {
+                if (!win._app_.JsonDom) {
+                    return
+                }
+                const renderJsonDom = () => {
                     loadedWin.current = win
                     win._app_.JsonDom.render(latestJsonDom.current)
                     win.document.addEventListener('click', (e) => {
                         e.stopPropagation()
                         e.preventDefault()
                     })
+                }
+                // in an admin iframe the bundle initializes asynchronously (theme mode is loaded first),
+                // _app_.config etc. only exist after 'appReady' - rendering before that fails
+                if (win._app_.config) {
+                    renderJsonDom()
+                } else {
+                    win.addEventListener('appReady', renderJsonDom, {once: true})
                 }
             }
         }, {ignoreIfExist: true, document: win.document})

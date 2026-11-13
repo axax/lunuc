@@ -505,14 +505,22 @@ export const onJsonDomDrag = (e) => {
     }
 }
 
+/**
+ * Drop areas are absolutely positioned divs appended to document.body. They must be removed
+ * (not only hidden) once a drag is over - otherwise they stay in the dom, also after leaving
+ * the editor, and stretch the page (e.g. the admin page list gets much higher than its content).
+ * They are cheap to recreate on the next drag (getOrCreateDropArea).
+ */
+export const removeDropAreas = () => {
+    clearTimeout(JsonDomDraggable.onDragTimeout)
+    activeDropAreas.length = 0
+    document.querySelectorAll('[data-drop-area="true"]').forEach(dropArea => dropArea.remove())
+}
+
 export const onJsonDomDragEnd = (dragEvent)=>{
     if(dragEvent) {
         dragEvent.stopPropagation()
     }
-    const dropAreas = document.querySelectorAll('[data-drop-area="true"]')
-    for (let i = 0; i < dropAreas.length; ++i) {
-        const dropArea = dropAreas[i]
-        dropArea.classList.remove(CSS_DROPAREA_ACTIVE)
-    }
+    removeDropAreas()
     JsonDomDraggable.props = JsonDomDraggable.element = null
 }
