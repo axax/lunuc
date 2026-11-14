@@ -1,16 +1,26 @@
 #!/bin/bash
 # Installiert den ffmpeg-Helfer für die Lunuc-Chrome-Erweiterung (Chrome, Brave, Chromium, Edge, Arc).
-# Aufruf: ./install.sh <extension-id>   (ID steht unter chrome://extensions bzw. brave://extensions)
+# Aufruf: ./install.sh [extension-id]
+# Ohne ID wird sie aus dem "key" in ../extension/manifest.json berechnet (feste ID, unabhängig vom Ordner).
 set -e
-EXT_ID="$1"
-if [ -z "$EXT_ID" ]; then
-  echo "Aufruf: $0 <extension-id>"; exit 1
-fi
+# beim Doppelklick (Installieren.command) ist der PATH minimal
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 NODE="$(command -v node || true)"
 FFMPEG="$(command -v ffmpeg || true)"
-[ -z "$NODE" ] && { echo "node nicht gefunden"; exit 1; }
+[ -z "$NODE" ] && { echo "node nicht gefunden (https://nodejs.org oder brew install node)"; exit 1; }
+
+EXT_ID="$1"
+if [ -z "$EXT_ID" ]; then
+  EXT_ID=$("$NODE" -e '
+    const key = require(process.argv[1]).key
+    if (!key) process.exit(1)
+    const h = require("crypto").createHash("sha256").update(Buffer.from(key, "base64")).digest("hex").slice(0, 32)
+    console.log([...h].map(c => String.fromCharCode(97 + parseInt(c, 16))).join(""))
+  ' "$DIR/../extension/manifest.json") || { echo "Kein key in extension/manifest.json – Aufruf: $0 <extension-id>"; exit 1; }
+fi
+echo "Erweiterungs-ID: $EXT_ID"
 [ -z "$FFMPEG" ] && echo "Warnung: ffmpeg nicht gefunden (brew install ffmpeg)"
 
 # Wrapper mit absoluten Pfaden, weil der Browser den Host mit minimalem PATH startet

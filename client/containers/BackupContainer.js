@@ -21,6 +21,7 @@ import {
 } from 'ui/admin'
 import FileDrop from 'client/components/FileDrop'
 import Util from 'client/util/index.mjs'
+import {startDownload, downloadWithAuth} from 'client/util/download.js'
 import {formatBytes} from 'client/util/format.mjs'
 import config from 'gen/config-client'
 import {client, useQuery} from '../middleware/graphql'
@@ -76,26 +77,6 @@ const loadBackups = (type, silent) =>
 const loadTokenLink = (type, name) =>
     client.query({query: TOKEN_QUERY, variables: {filePath: `%BACKUP_DIR%/${type}dumps/${name}`}, fetchPolicy: 'no-cache'})
         .then(response => `/tokenlink/${response.data.getTokenLink.token}/-/${name}`)
-
-const startDownload = (url, name) => {
-    const a = document.createElement('a')
-    a.href = url
-    a.download = name
-    a.click()
-}
-
-// fallback without token link: the whole file is loaded into the memory of the browser first
-const downloadWithAuth = (type, name) => {
-    const token = Util.getAuthToken()
-    return fetch(`${BACKUP_URL}/${type}dumps/${name}`, token ? {headers: {Authorization: token}} : undefined).then(response => {
-        if (!response.ok) throw new Error(`Invalid status ${response.status}`)
-        return response.blob()
-    }).then(blob => {
-        const url = URL.createObjectURL(blob)
-        startDownload(url, name)
-        setTimeout(() => URL.revokeObjectURL(url), 60000)
-    }).catch(e => showError(e.message))
-}
 
 /**
  * Backups of one type. Dumps that are still being written (pending) are watched: the list is polled,
@@ -258,7 +239,7 @@ const LinkDialog = ({type, backup, onClose}) => {
         icon: <ShieldIcon/>,
         primary: tr('downloadAuth'),
         secondary: tr('downloadAuthInfo'),
-        onClick: () => downloadWithAuth(type, backup.name)
+        onClick: () => downloadWithAuth(`${BACKUP_URL}/${type}dumps/${backup.name}`, backup.name).catch(e => showError(e.message))
     }]
     if (url && navigator.clipboard) {
         items.unshift({

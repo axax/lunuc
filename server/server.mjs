@@ -40,6 +40,8 @@ import {isTemporarilyBlocked} from './util/requestBlocker.mjs'
 import {parseWebsite} from './util/web2html.mjs'
 import {proxyToApiServer, proxyWsToApiServer} from './util/apiProxy.mjs'
 import {verifyTokenAndResponse} from './util/tokenLink.mjs'
+import {sendChromeExtensionZip} from './util/chromeExtension.mjs'
+import {CHROME_EXTENSION_ZIP_URL} from '../util/chromeExtension.mjs'
 //import heapdump from 'heapdump'
 import {clientAddress, isFromTrustedProxy} from '../util/host.mjs'
 import Cache from '../util/cache.mjs'
@@ -925,6 +927,12 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     })) {
                         sendError(res, 404)
                     }
+                } else {
+                    sendError(res, 403)
+                }
+            } else if (urlPathname === CHROME_EXTENSION_ZIP_URL) {
+                if (await isValidAdminRequest(req)) {
+                    sendChromeExtensionZip(req, res)
                 } else {
                     sendError(res, 403)
                 }

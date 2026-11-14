@@ -21,6 +21,8 @@ import {client, Query} from '../middleware/graphql'
 import styled from '@emotion/styled'
 import SystemUpdatePanel from './SystemUpdatePanel'
 import {StyledSystemTable} from './systemStyles'
+import {downloadWithAuth} from '../util/download'
+import {CHROME_EXTENSION_ZIP_URL} from '../../util/chromeExtension.mjs'
 
 // only evaluated when the tab is opened (it loads the full type definitions)
 const BackupContainer = lazy(() => import(/* webpackChunkName: "admin" */ './BackupContainer'), {asyncKey: 'BackupContainer'})
@@ -226,6 +228,12 @@ class SystemContainer extends React.Component {
                         })
                     }
                 </ContentBlock>
+
+                <Typography variant="h4" component="h2" gutterBottom sx={{mt: 4}}>{_t('SystemContainer.chromeExtension')}</Typography>
+                <Typography variant="subtitle1" gutterBottom>{_t('SystemContainer.chromeExtensionInfo')}</Typography>
+                <Button color="primary" variant="contained" onClick={() => {
+                    downloadWithAuth(CHROME_EXTENSION_ZIP_URL, 'lunuc-chrome-extension.zip').catch(e => this.setState({message: e.message}))
+                }}>{_t('SystemContainer.chromeExtensionDownload')}</Button>
             </SimpleTabPanel>}
             {isAdmin && <SimpleTabPanel value={tabValue} index="database">
 

@@ -4,16 +4,18 @@ Damit die Erweiterung heruntergeladene Streams automatisch mit
 `ffmpeg -c copy -movflags +faststart` in eine MP4 umwandeln kann, muss dieser
 Helfer einmalig installiert werden. Voraussetzung: `node` und `ffmpeg` (`brew install ffmpeg`).
 
-1. Erweiterung unter `chrome://extensions` (bzw. `brave://extensions`) neu laden und die **ID** kopieren.
-2. `./install.sh <ID>`
-3. Erweiterung nochmals neu laden.
+1. Im Finder auf **`Installieren.command`** doppelklicken (oder im Terminal `./install.sh`).
+   Beim ersten Mal blockiert macOS die Datei evtl.: dann Rechtsklick → „Öffnen“.
+2. Erweiterung unter `chrome://extensions` (bzw. `brave://extensions`) neu laden.
+
+Die Erweiterungs-ID ist fest (`key` in `extension/manifest.json`, erzeugt aus `extension.pem`),
+das Skript berechnet sie selbst. Eine andere ID kann als Argument übergeben werden: `./install.sh <ID>`.
 
 Danach zeigt die Download-Seite „ffmpeg-Helfer gefunden“. Die Teildateien werden dann
 ohne Speichern-Dialog in den Download-Ordner geladen, zu `Titel.mp4` zusammengeführt
 und anschliessend gelöscht.
 
-Hinweis: Die ID einer entpackten Erweiterung hängt vom Ordnerpfad ab. Wird der Ordner
-verschoben, `install.sh` mit der neuen ID erneut ausführen.
+Wird der Ordner verschoben, `Installieren.command` erneut ausführen (der Pfad zum Helfer ändert sich).
 
 ## Automatischer Upload (FTP / FTPS / SFTP)
 

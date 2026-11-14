@@ -31,7 +31,7 @@ chrome.storage.local.get('ftp', ({ftp = {}}) => {
 native({cmd: 'ping'}).then(res => {
     $('helper').textContent = res && res.ok
         ? `ffmpeg-Helfer installiert (${res.ffmpeg}).`
-        : 'ffmpeg-Helfer nicht gefunden – Umwandeln und Upload funktionieren erst nach ./native-host/install.sh ' + chrome.runtime.id
+        : 'ffmpeg-Helfer nicht gefunden – Umwandeln und Upload funktionieren erst nach einem Doppelklick auf native-host/Installieren.command (danach Erweiterung neu laden).'
 })
 
 $('save').onclick = () => {
@@ -47,6 +47,6 @@ $('test').onclick = async () => {
     const res = await native({cmd: 'testFtp', ftp: readForm()})
     if (res && res.ok) msg(`Verbindung OK (${res.files} Einträge im Verzeichnis).`, 'ok')
     else if (res && /native messaging host not found/i.test(res.error || '')) {
-        msg('Der ffmpeg-Helfer ist nicht installiert. Im Terminal ausführen: cd …/lunuc/extensions/chrome/native-host && ./install.sh ' + chrome.runtime.id, 'err')
+        msg('Der ffmpeg-Helfer ist nicht installiert: Doppelklick auf native-host/Installieren.command, danach Erweiterung neu laden.', 'err')
     } else msg('Fehler: ' + (res && res.error || 'unbekannt'), 'err')
 }
