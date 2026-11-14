@@ -51,7 +51,8 @@ import {
     parseAndSendFile,
     sendError,
     sendFile,
-    sendFileFromDir, statSafe
+    sendFileFromDir, statSafe,
+    UPLOAD_CACHE_CONTROL
 } from './util/file.mjs'
 import {actAsReverseProxy, isUrlValidForPorxing} from './util/reverseProxy.mjs'
 import {doTrackingEvent} from './util/tracking.mjs'
@@ -209,25 +210,33 @@ await initAsnBlocker()
 // Caches which directory a static url resolves to, so subsequent requests
 // skip the sequential stat attempts across hostrule.paths / STATIC_DIR / ASSETS_DIR /
 // WEBROOT / BUILD_DIR. Value: resolved absolute path, or false = known miss.
+// cacheControl: policy of the dir the path was found in (undefined = default of sendFileFromDir)
 const PATH_CACHE_TTL_MS = 60000
 const PATH_CACHE_MAX_ENTRIES = 5000
 const pathResolveCache = new Map()
 
+// dirs checked after hostrule.paths (fixed - built once instead of per request)
+const STATIC_FILE_DIRS = [STATIC_DIR, ASSETS_DIR, WEBROOT_ABSPATH, BUILD_DIR]
+// hostrule files (hostrule.paths, fileMapping) can be replaced under the same url (e.g. favicon via
+// system/hostrules) -> same policy as a replaced upload: short max-age + stale-while-revalidate.
+// Before: 1 year cache -> a replaced favicon never reached the clients (iOS home screen icon)
+const HOSTRULE_FILE_CACHE_CONTROL = UPLOAD_CACHE_CONTROL
+
 const pathCacheGet = (key) => {
     const entry = pathResolveCache.get(key)
     if (entry && entry.expires > Date.now()) {
-        return entry.value
+        return entry
     }
     pathResolveCache.delete(key)
     return undefined
 }
 
-const pathCacheSet = (key, value) => {
+const pathCacheSet = (key, value, cacheControl) => {
     // primitive size cap - drop oldest entry when full
     if (pathResolveCache.size >= PATH_CACHE_MAX_ENTRIES) {
         pathResolveCache.delete(pathResolveCache.keys().next().value)
     }
-    pathResolveCache.set(key, {value, expires: Date.now() + PATH_CACHE_TTL_MS})
+    pathResolveCache.set(key, {value, cacheControl, expires: Date.now() + PATH_CACHE_TTL_MS})
 }
 
 
@@ -993,7 +1002,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 if (hostrule.fileMapping && hostrule.fileMapping[urlPathname]) {
                     const mappedFile = path.join(hostrule._basedir, hostrule.fileMapping[urlPathname])
                     //console.log('mapped file: ' + mappedFile)
-                    if (await sendFileFromDir(req, res, {filename: mappedFile, headers, parsedUrl})) {
+                    if (await sendFileFromDir(req, res, {filename: mappedFile, headers, parsedUrl, cacheControl: HOSTRULE_FILE_CACHE_CONTROL})) {
                         return
                     }
                 } else if (urlPathname.length > 1 && templateFiles.has(urlPathname)) {
@@ -1023,10 +1032,10 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     // nowhere) a given url resolves. Keyed per host because
                     // hostrule.paths differ between hosts.
                     const cacheKey = host + ':' + urlPathname
-                    const cachedPath = pathCacheGet(cacheKey)
+                    const cached = pathCacheGet(cacheKey)
 
-                    if (cachedPath) {
-                        if (await sendFileFromDir(req, res, {filename: cachedPath, headers, parsedUrl})) {
+                    if (cached && cached.value) {
+                        if (await sendFileFromDir(req, res, {filename: cached.value, headers, parsedUrl, cacheControl: cached.cacheControl})) {
                             return
                         }
                         // file disappeared since caching - invalidate and fall
@@ -1034,23 +1043,29 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                         pathResolveCache.delete(cacheKey)
                     }
 
-                    if (cachedPath !== false) {
-                        const pathsToCheck = [...hostrule.paths, STATIC_DIR, ASSETS_DIR, WEBROOT_ABSPATH, BUILD_DIR]
+                    if (!cached || cached.value !== false) {
+                        // files of hostrule.paths can be replaced (e.g. via system/hostrules) under the same
+                        // url -> upload cache policy. The other dirs keep the long default cache
+                        const hostPaths = hostrule.paths, hostPathsCount = hostPaths.length
 
                         let found = false
-                        for (const curPath of pathsToCheck) {
+                        for (let i = 0; i < hostPathsCount + STATIC_FILE_DIRS.length; i++) {
+                            const isHostPath = i < hostPathsCount
+                            const curPath = isHostPath ? hostPaths[i] : STATIC_FILE_DIRS[i - hostPathsCount]
                             // traversal-safe: candidate must stay inside curPath
                             const candidate = safeJoin(curPath, urlPathname)
                             if (!candidate) {
                                 continue
                             }
+                            const cacheControl = isHostPath ? HOSTRULE_FILE_CACHE_CONTROL : undefined
                             if (await sendFileFromDir(req, res, {
                                 indexFiles: hostrule.indexFiles,
                                 filename: candidate,
                                 headers,
-                                parsedUrl
+                                parsedUrl,
+                                cacheControl
                             })) {
-                                pathCacheSet(cacheKey, candidate)
+                                pathCacheSet(cacheKey, candidate, cacheControl)
                                 found = true
                                 break
                             }

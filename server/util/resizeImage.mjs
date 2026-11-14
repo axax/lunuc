@@ -11,7 +11,11 @@ const DEFAULT_FORMAT = 'jpeg'
 // two parallel requests for the same modfilename share one sharp run.
 const inFlightResizes = new Map()
 
-export const resizeImage = async (parsedUrl, req, filename) => {
+// a variant older than its source was created from a replaced file -> must be generated again
+// (sourceStat optional: without it an existing variant is always used, as before)
+const isOutdatedVariant = (variantStat, sourceStat) => !!sourceStat && variantStat.mtimeMs < sourceStat.mtimeMs
+
+export const resizeImage = async (parsedUrl, req, filename, sourceStat) => {
     // stat: stats of the returned variant if it already existed (the caller needs them and does
     // not have to stat the file again) - undefined for a variant that was just generated
     let mimeType, exists = false, variantStat
@@ -81,7 +85,7 @@ export const resizeImage = async (parsedUrl, req, filename) => {
             let modExists = false, modStat
             try {
                 modStat = await fs.promises.stat(modfilename)
-                modExists = modStat.isFile()
+                modExists = modStat.isFile() && !isOutdatedVariant(modStat, sourceStat)
             } catch (e) {
                 // does not exist yet
             }
@@ -105,7 +109,8 @@ export const resizeImage = async (parsedUrl, req, filename) => {
                         const heicTarget = `${filename}@${quality}.jpg`
                         let heicExists = false
                         try {
-                            heicExists = (await fs.promises.stat(heicTarget)).isFile()
+                            const heicStat = await fs.promises.stat(heicTarget)
+                            heicExists = heicStat.isFile() && !isOutdatedVariant(heicStat, sourceStat)
                         } catch (e) {}
 
                         if (!heicExists) {

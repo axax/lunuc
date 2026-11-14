@@ -450,7 +450,8 @@ export const sendFileFromDir = async (req, res, {
     if (statMain && statMain.isFile()) {
 
         // Check if there is a modified image
-        let modImage = await resizeImage(parsedUrl, req, filename)
+        // statMain: lets resizeImage regenerate variants of a replaced source file (no extra stat)
+        let modImage = await resizeImage(parsedUrl, req, filename, statMain)
         if (modImage.exists) {
             filename = modImage.filename
         }
@@ -488,7 +489,7 @@ export const sendFileFromDir = async (req, res, {
             // Re-send validators so the cached entry stays fresh.
             res.writeHead(304, {
                 'ETag': etag,
-                'Cache-Control': cacheControl,
+                'Cache-Control': headers['Cache-Control'] || cacheControl,
                 'Last-Modified': stat.mtime.toUTCString()
             })
             res.end()
@@ -1156,7 +1157,7 @@ const envSeconds = (name, defaultValue) => {
 }
 const UPLOAD_MAX_AGE = envSeconds('LUNUC_UPLOAD_MAX_AGE', 300) // 5 min
 const UPLOAD_STALE_WHILE_REVALIDATE = envSeconds('LUNUC_UPLOAD_STALE_WHILE_REVALIDATE', 30 * 24 * 60 * 60) // 30 days
-const UPLOAD_CACHE_CONTROL = `public, max-age=${UPLOAD_MAX_AGE}` +
+export const UPLOAD_CACHE_CONTROL = `public, max-age=${UPLOAD_MAX_AGE}` +
     (UPLOAD_STALE_WHILE_REVALIDATE > 0 ? `, stale-while-revalidate=${UPLOAD_STALE_WHILE_REVALIDATE}` : ', must-revalidate')
 // private uploads (the access is checked by the server): unchanged - after max-age the browser must
 // always wait for that check before it shows its copy
