@@ -117,6 +117,17 @@ export class RouteHistory {
         }
     }
 
+    // same api as window.history - the router reacts via the popstate listener (blockers included)
+    back = () => {
+        window.history.back()
+    }
+    forward = () => {
+        window.history.forward()
+    }
+    go = (delta) => {
+        window.history.go(delta)
+    }
+
     block = (fn) => {
         this._blocker.push(fn)
         return () => {

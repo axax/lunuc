@@ -268,8 +268,16 @@ if (!window.LUNUC_PREPARSED) {
 
     if (_app_.lacksBasicEs6 || _app_.lacksOptionalChaining) {
         maxCounter++
-        // Load polyfill and bable to support old browsers
+        // transpiler for optional chaining / nullish coalescing and the toLegacyJs entry point
         DomUtil.addScript('/legacyjs.js', {
+            async: true,
+            onload
+        })
+    }
+    if (_app_.lacksBasicEs6) {
+        maxCounter++
+        // buble (ES6 -> ES5), 200kb: only needed by browsers without basic ES6 support
+        DomUtil.addScript('/legacyjs-buble.js', {
             async: true,
             onload
         })
