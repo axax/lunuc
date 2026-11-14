@@ -808,6 +808,103 @@ const sendEarlyHints = (req, res, link) => {
     }
 }
 
+// Icon and manifest links of the index html get ?v=<mtime of the hostrule file>. iOS keeps a home
+// screen icon per icon url - without a new url a replaced favicon (system/hostrules) was never picked up.
+// Only for hostrules with own files (fileMapping), the default files only change with a build.
+// The mtime is cached per file for a short time - no stat per request
+const RE_ICON_LINK = /(<link\b[^>]*\bhref="\/(?:favicon|apple-touch-icon)[^"?]*)"/g
+const RE_HAS_ICON_LINK = /<link\b[^>]*\bhref="\/(?:favicon|apple-touch-icon)[^"?]*"/
+const RE_MANIFEST_LINK = /(<link\b[^>]*\bhref="\/manifest\.json)(?:\?[^"]*)?"/
+const RE_HAS_MANIFEST_LINK = /<link\b[^>]*\brel=["']?manifest\b/
+const LINK_VERSION_TTL_MS = 60000
+const LINK_CONTENT_CACHE_MAX = 20
+const ICON_URL_PATHS = ['/favicon-192x192.png', '/favicon.ico']
+const MANIFEST_URL_PATHS = ['/manifest.json']
+
+// Keyed by the fileMapping object: it is stable as long as the hostrule is not reloaded. Subdomain
+// hostrules are a new object per request ({...hostrule, ...subDomain}), but they share the
+// fileMapping object of the subdomain entry -> one entry per (sub)domain, gone with a reload
+const linkVersionsCache = new WeakMap()
+
+const resolveMappedFile = (hostrule, urlPaths) => {
+    for (const urlPath of urlPaths) {
+        const mapped = hostrule.fileMapping[urlPath]
+        if (mapped) {
+            return path.join(hostrule._basedir, mapped)
+        }
+    }
+    return null
+}
+
+const fileVersion = (stat) => stat ? Math.floor(stat.mtimeMs).toString(36) : ''
+
+// {icon, manifest, key} versions of the hostrule files, null if the hostrule has none of them.
+// The files are resolved once, the mtimes checked at most every LINK_VERSION_TTL_MS
+const getLinkVersions = async (hostrule) => {
+    const fileMapping = hostrule && hostrule._basedir && hostrule.fileMapping
+    if (!fileMapping) {
+        return null
+    }
+    let entry = linkVersionsCache.get(fileMapping)
+    if (!entry) {
+        entry = {
+            iconFile: resolveMappedFile(hostrule, ICON_URL_PATHS),
+            manifestFile: resolveMappedFile(hostrule, MANIFEST_URL_PATHS),
+            icon: '', manifest: '', key: '', expires: 0
+        }
+        linkVersionsCache.set(fileMapping, entry)
+    }
+    if (!entry.iconFile && !entry.manifestFile) {
+        return null
+    }
+    const now = Date.now()
+    if (entry.expires < now) {
+        // set first: parallel requests use the current versions instead of starting another stat
+        entry.expires = now + LINK_VERSION_TTL_MS
+        const [iconStat, manifestStat] = await Promise.all([
+            entry.iconFile ? statSafe(entry.iconFile) : null,
+            entry.manifestFile ? statSafe(entry.manifestFile) : null
+        ])
+        entry.icon = fileVersion(iconStat)
+        entry.manifest = fileVersion(manifestStat)
+        entry.key = entry.icon + '|' + entry.manifest
+    }
+    return entry
+}
+
+// index html with versioned icon/manifest links. The result is cached on the template data (a
+// reloaded template is a new object) per version combination -> the regex runs once per change
+const applyLinkVersions = (data, versions) => {
+    if (!versions || (!versions.manifest && !(versions.icon && data.hasIconLinks))) {
+        return data.content
+    }
+    if (!data.linkContent) {
+        data.linkContent = new Map()
+    }
+    let content = data.linkContent.get(versions.key)
+    if (content === undefined) {
+        content = data.content
+        if (versions.icon && data.hasIconLinks) {
+            content = content.replace(RE_ICON_LINK, `$1?v=${versions.icon}"`)
+        }
+        // without a manifest link JsonDom creates one in the browser (page title as name) and the
+        // manifest.json of the hostrule (name, short_name, ...) is never used -> add it
+        if (versions.manifest) {
+            content = data.hasManifestLink
+                ? content.replace(RE_MANIFEST_LINK, `$1?v=${versions.manifest}"`)
+                : content.replace('</head>', `<link rel="manifest" href="/manifest.json?v=${versions.manifest}">\n</head>`)
+        }
+        if (data.linkContent.size >= LINK_CONTENT_CACHE_MAX) {
+            data.linkContent.clear()
+        }
+        data.linkContent.set(versions.key, content)
+    }
+    return content
+}
+
+// a changed index html is active after at most this time
+const INDEX_TEMPLATE_CHECK_MS = 1000
+
 const PRELOAD_DATA_PLACEHOLDER = '<%=preloadData%>'
 const APP_DATA_PLACEHOLDER = '<%=appData%>'
 const HEAD_DATA_PLACEHOLDER = '<%=appHead%>'
@@ -817,26 +914,38 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
 
     let data = Cache.get('IndexFile' + filename)
 
-    // reload the template when there is no cache entry yet or the file on
-    // disk has been modified after the cache entry was created
-    let needsReload = !data
-    if (data) {
-        const currentStat = await statSafe(filename)
-        if (currentStat && currentStat.mtime.getTime() > data.mtime.getTime()) {
-            needsReload = true
+    // reload the template when there is no cache entry yet or the file on disk has changed.
+    // The file is checked at most every INDEX_TEMPLATE_CHECK_MS (no stat per request)
+    const now = Date.now()
+    let currentStat
+    if (data && data.checkedAt + INDEX_TEMPLATE_CHECK_MS < now) {
+        data.checkedAt = now
+        currentStat = await statSafe(filename)
+        if (currentStat && (currentStat.mtimeMs !== data.mtimeMs || currentStat.size !== data.size)) {
+            data = null
         }
     }
 
-    if (needsReload) {
-        data = {mtime: new Date()}
+    if (!data) {
+        data = {checkedAt: now}
         try {
+            if (!currentStat) {
+                currentStat = await fs.promises.stat(filename)
+            }
             data.content = await fs.promises.readFile(filename, 'utf8')
         } catch (err) {
             console.error(`parseAndSendFile: ${filename} does not exist`, err)
             sendError(res, 404)
             return
         }
+        // mtime of the file (Last-Modified), not the time the template was loaded
+        data.mtime = currentStat.mtime
+        data.mtimeMs = currentStat.mtimeMs
+        data.size = currentStat.size
         data.earlyHintLink = getEarlyHintLink(data.content)
+        data.hasIconLinks = RE_HAS_ICON_LINK.test(data.content)
+        data.hasManifestLink = RE_HAS_MANIFEST_LINK.test(data.content)
+        data.hasAppData = data.content.indexOf(APP_DATA_PLACEHOLDER) >= 0
         Cache.set('IndexFile' + filename, data)
     }
 
@@ -846,9 +955,10 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
         <meta name="theme-color" content="${APP_COLOR}">
         <meta name="author" content="lunuc.com">
     */
-    let finalContent = data.content.replace('<%=encodedUrl%>', encodeURIComponent(parsedUrl.href)).replace(HEAD_DATA_PLACEHOLDER, hostrule?.htmlHead || '')
+    let finalContent = applyLinkVersions(data, await getLinkVersions(hostrule))
+        .replace('<%=encodedUrl%>', encodeURIComponent(parsedUrl.href)).replace(HEAD_DATA_PLACEHOLDER, hostrule?.htmlHead || '')
 
-    if (data.content.indexOf(APP_DATA_PLACEHOLDER) >= 0) {
+    if (data.hasAppData) {
         const appData = `_app_ = {redirect404:'/404',start:new Date(),detectLang:${(hostrule?.detectLang !== false)},defaultLang:'${hostrule?.defaultLanguage || config.DEFAULT_LANGUAGE}',languages:['${(hostrule?.languages || config.LANGUAGES).join("','")}'],slugContext:'${hostrule?.slugContext || ''}',login:{hideDomain:${(hostrule?.hideDomain === true)}, defaultDomain:'${(hostrule?.defaultDomain || '')}'}}`
         finalContent = finalContent.replace(APP_DATA_PLACEHOLDER, appData)
     }
