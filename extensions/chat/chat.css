@@ -1566,3 +1566,17 @@ html[data-theme="dark"] .lchat-option--whatsapp .lchat-option-preview i + i {
         font-size: 16px !important;
     }
 }
+
+.lchat-error {
+    max-width: 100%;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--lc-surface);
+    color: var(--lc-error);
+    font-size: 12px;
+    text-align: left;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: text;
+    -webkit-user-select: text;
+}

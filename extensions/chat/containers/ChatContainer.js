@@ -23,7 +23,34 @@ const chatFromHash = () => (typeof location !== 'undefined' && location.hash.ind
  * selected chat is kept in the hash of the url (#chat/<id>), so links, reload, the back button
  * and notifications work on the page as well.
  */
-const ChatContainer = (props) => (_app_.user && _app_.user._id ? <Messenger {...props}/> :
+/* an error while rendering shows what went wrong instead of leaving a white page */
+class ErrorBoundary extends React.Component {
+    state = {error: null}
+
+    static getDerivedStateFromError(error) {
+        return {error}
+    }
+
+    componentDidCatch(error, info) {
+        console.error('Messenger', error, info)
+    }
+
+    render() {
+        const {error} = this.state
+        if (!error) return this.props.children
+        return <div className="lchat lchat--login">
+            <div className="lchat-main lchat-welcome">
+                <Icon name="error" size={64}/>
+                <strong>{_t('Chat.error')}</strong>
+                <code className="lchat-error">{String(error && error.message ? error.message : error)}</code>
+                <code className="lchat-error">{String((error && error.stack) || '').split('\n').slice(0, 4).join('\n')}</code>
+                <button type="button" className="lchat-btn" onClick={() => location.reload()}>{_t('Chat.reload')}</button>
+            </div>
+        </div>
+    }
+}
+
+const ChatContainer = (props) => (_app_.user && _app_.user._id ? <ErrorBoundary><Messenger {...props}/></ErrorBoundary> :
     <div className="lchat lchat--login">
         <div className="lchat-main lchat-welcome">
             <Icon name="chat" size={96}/>

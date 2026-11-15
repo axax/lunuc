@@ -96,6 +96,8 @@ export const translations = {
         'Chat.loginRequired': 'Bitte melde dich an, um den Messenger zu nutzen.',
         'Chat.login': 'Anmelden',
         'Chat.logout': 'Abmelden',
+        'Chat.error': 'Der Messenger konnte nicht angezeigt werden',
+        'Chat.reload': 'Neu laden',
         'Chat.logoutConfirm': '%user% abmelden?'
     },
     en: {
@@ -195,6 +197,8 @@ export const translations = {
         'Chat.loginRequired': 'Please log in to use the messenger.',
         'Chat.login': 'Log in',
         'Chat.logout': 'Log out',
+        'Chat.error': 'The messenger could not be displayed',
+        'Chat.reload': 'Reload',
         'Chat.logoutConfirm': 'Log out %user%?'
     }
 }

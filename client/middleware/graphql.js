@@ -754,6 +754,29 @@ export const client = {
         }
         return res
     },
+    /*
+     * Opens a fresh websocket and starts all subscriptions again. For clients that know the
+     * connection may be dead without a close event - e.g. a (home screen) app on iOS that was
+     * suspended in the background: the socket still reports "open" but nothing arrives anymore.
+     */
+    reconnectWs: () => {
+        if (_app_.ssr || openWsSubscription.length === 0) {
+            return false
+        }
+        const old = wsCurrentConnection
+        if (old) {
+            // no automatic reconnect of the old socket (see onclose in setUpWs)
+            old.onclose = null
+            old.onerror = null
+            try {
+                old.close()
+            } catch (e) {
+            }
+        }
+        setUpWsWasCalled = false
+        setUpWs()
+        return true
+    },
     subscribe: ({query, variables, extensions}) => {
         setUpWs()
         subscribeCount++

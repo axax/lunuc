@@ -29,6 +29,8 @@ const S_EVENT = `subscription subscribeChatEvent{subscribeChatEvent{type chat us
 
 const PAGE_SIZE = 50
 const TYPING_TTL = 4000
+const STALE_AFTER = 30000   // a cached conversation is loaded again when it is opened after this time
+const AWAY_AFTER = 10000    // hidden / suspended for longer: the websocket may be dead, events were missed
 const SETTINGS_KEY = 'lunuc.chat.settings'
 const SOUND_LOCK_KEY = 'lunuc.chat.lastSound'
 const HOME_KEY = 'lunuc.chat.home'
@@ -353,17 +355,36 @@ export const actions = {
                 }
             }
         })
-        // events are lost while the connection is down (standby, network change) -> resync
+        /*
+         * Events are lost while the page is hidden or suspended (standby, app in the background,
+         * network change) - on iOS the websocket even stays "open" without receiving anything.
+         * Coming back: new connection, load the chats again and every conversation that is shown
+         * or opened afterwards.
+         */
+        let awaySince = 0, lastTick = Date.now()
         const resync = () => {
-            if (document.hidden) return
-            if (Date.now() - lastRoomsLoad > 20000) {
-                actions.loadRooms(true)
-                if (state.activeChat) actions.loadMessages(state.activeChat, {refresh: true})
+            if (document.hidden) {
+                awaySince = awaySince || Date.now()
+                return
+            }
+            const away = awaySince ? Date.now() - awaySince : 0
+            awaySince = 0
+            if (away > AWAY_AFTER || Date.now() - lastRoomsLoad > 20000) {
+                actions.resync(away > AWAY_AFTER)
             }
             if (state.activeChat && isLooking(state.activeChat)) actions.markRead(state.activeChat)
         }
         window.addEventListener('focus', resync)
+        window.addEventListener('pageshow', resync)
+        window.addEventListener('online', () => actions.resync(true))
         document.addEventListener('visibilitychange', resync)
+        // a suspended page gets no events at all: timers just stop, so a gap between two ticks
+        // means the page was frozen
+        setInterval(() => {
+            const gap = Date.now() - lastTick
+            lastTick = Date.now()
+            if (gap > AWAY_AFTER + 5000 && !document.hidden) actions.resync(true)
+        }, 5000)
         if (!getPush() && navigator.serviceWorker) {
             // click on a notification that was shown through the service worker
             navigator.serviceWorker.addEventListener('message', (e) => {
@@ -383,11 +404,34 @@ export const actions = {
         subscription = null
         started = false
     },
+    /* reconnect: also open a new websocket (the old one may be dead without knowing it) */
+    resync(reconnect) {
+        if (reconnect && client.reconnectWs) client.reconnectWs()
+        // everything that is cached may be outdated (new messages, edits, reactions, read receipts)
+        const messages = {}
+        Object.keys(state.messages).forEach(chatId => {
+            messages[chatId] = {...state.messages[chatId], stale: true}
+        })
+        setState({messages})
+        if (state.activeChat) actions.loadMessages(state.activeChat, {refresh: true})
+        return actions.loadRooms(true)
+    },
     loadRooms(force) {
         if (!force && state.ready) return Promise.resolve()
         lastRoomsLoad = Date.now()
         return query(Q_ROOMS).then(data => {
             setState({ready: true, error: null, rooms: sortRooms(data.chatRooms || [])})
+            // a cached conversation that does not know the last message of its chat missed something
+            state.rooms.forEach(room => {
+                const cur = state.messages[room._id], last = room.lastMessage
+                if (cur && cur.loaded && !cur.loading && last && !cur.items.some(m => m._id === last._id)) {
+                    if (room._id === state.activeChat) {
+                        actions.loadMessages(room._id, {refresh: true})
+                    } else if (!cur.stale) {
+                        patchMessages(room._id, () => ({stale: true}))
+                    }
+                }
+            })
         }).catch(e => {
             setState({ready: true, error: errorMessage(e)})
         })
@@ -397,8 +441,12 @@ export const actions = {
             setState({activeChat: chatId || null})
         }
         if (chatId) {
-            if (!state.messages[chatId]) {
+            const cur = state.messages[chatId]
+            if (!cur) {
                 actions.loadMessages(chatId)
+            } else if (cur.loaded && (cur.stale || Date.now() - (cur.loadedAt || 0) > STALE_AFTER)) {
+                // shown from the cache at once, updated in the background
+                actions.loadMessages(chatId, {refresh: true})
             }
             actions.markRead(chatId)
         }
@@ -433,6 +481,8 @@ export const actions = {
                         items,
                         loading: false,
                         loaded: true,
+                        stale: older ? !!now.stale : false,
+                        loadedAt: older ? now.loadedAt : Date.now(),
                         hasMore: older || !refresh || !now.loaded ? loaded.length >= PAGE_SIZE : now.hasMore
                     }
                 }
