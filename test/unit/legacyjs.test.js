@@ -102,3 +102,99 @@ describe('legacyjs', () => {
         assert.strictEqual(oc.toLegacyJs(code), oc.toLegacyJs(code))
     })
 })
+
+/*
+ * async/await can't be converted by buble -> static/legacyjs.js lets the server convert it with babel
+ * (server/util/legacyJs.mjs + legacyJsTransform.mjs).
+ */
+describe('legacyjs async/await', () => {
+    let transformLegacyJs, acorn
+    beforeAll(async () => {
+        transformLegacyJs = (await import('../../server/util/legacyJsTransform.mjs')).transformLegacyJs
+        acorn = await import('acorn')
+    })
+
+    const isEs5 = (code) => {
+        acorn.parse(code, {ecmaVersion: 5, allowReturnOutsideFunction: true})
+        return true
+    }
+
+    // browser context with buble, a fake synchronous XMLHttpRequest (-> babel) and a fake localStorage
+    const loadWithServer = (storage = {}, failRequests = false) => {
+        const requests = []
+        const ctx = {
+            _app_: {lacksOptionalChaining: true, lacksBasicEs6: true},
+            console: {log() {}},
+            location: {href: ''},
+            localStorage: {
+                getItem: k => (k in storage ? storage[k] : null),
+                setItem: (k, v) => { storage[k] = String(v) },
+                removeItem: k => { delete storage[k] },
+                key: i => Object.keys(storage)[i],
+                get length() { return Object.keys(storage).length }
+            },
+            XMLHttpRequest: function () {
+                this.open = (method, url, async) => { this.req = {method, url, async} }
+                this.setRequestHeader = () => {}
+                this.send = (body) => {
+                    requests.push({...this.req, body})
+                    this.status = failRequests ? 500 : 200
+                    this.responseText = failRequests ? 'error' : transformLegacyJs(body)
+                }
+            }
+        }
+        ctx.window = ctx
+        ctx.self = ctx
+        vm.createContext(ctx)
+        vm.runInContext(fs.readFileSync(path.join(staticDir, 'legacyjs-buble.js'), 'utf8'), ctx)
+        vm.runInContext(fs.readFileSync(path.join(staticDir, 'legacyjs.js'), 'utf8'), ctx)
+        return {app: ctx._app_, requests, storage}
+    }
+
+    it('server converts async/await, optional chaining and spread to ES5 with the same result', async () => {
+        const code = 'const load = async (x) => { const v = await Promise.resolve(x?.y ?? 2); return {...{v}, w: [...[1, 2]], self: this.name} }\n' +
+            'return load({y: null})'
+        const out = transformLegacyJs(code)
+        assert.ok(isEs5(out), out)
+        assert.ok(!/\bawait\b/.test(out))
+        const scope = {name: 'page'}
+        assert.deepStrictEqual(await new Function(out).call(scope), await new Function(code).call(scope))
+    })
+
+    it('reports syntax errors', () => {
+        assert.throws(() => transformLegacyJs('const a = await ('))
+    })
+
+    it('sends only code with async/await to the server and stores the result', async () => {
+        const {app, requests, storage} = loadWithServer()
+
+        // no async -> buble, no request
+        assert.ok(isEs5(app.toLegacyJs('const a = () => 1')))
+        // async only in a string or comment / as property name -> buble, no request
+        app.toLegacyJs('const s = "async await" // await x\nconst o = {}; o.async = 1')
+        assert.strictEqual(requests.length, 0)
+
+        const code = 'const f = async () => { return await Promise.resolve(this.v) }\nreturn f()'
+        const out = app.toLegacyJs(code)
+        assert.strictEqual(requests.length, 1)
+        assert.deepStrictEqual({method: requests[0].method, url: requests[0].url, async: requests[0].async}, {method: 'POST', url: '/__legacyjs', async: false})
+        assert.ok(isEs5(out), out)
+        assert.strictEqual(await new Function(out).call({v: 7}), 7)
+        assert.strictEqual(Object.keys(storage).length, 1)
+
+        // next page load: from localStorage, no request
+        const second = loadWithServer(storage)
+        assert.strictEqual(second.app.toLegacyJs(code), out)
+        assert.strictEqual(second.requests.length, 0)
+    })
+
+    it('falls back to buble and reports the error if the server fails', () => {
+        const {app, requests, storage} = loadWithServer({}, true)
+        const errors = []
+        app.sendError = e => errors.push(e)
+        assert.strictEqual(typeof app.toLegacyJs('const f = async () => 1'), 'string')
+        assert.strictEqual(requests.length, 1)
+        assert.strictEqual(errors[0].meta.stage, 'server')
+        assert.strictEqual(Object.keys(storage).length, 0)
+    })
+})
