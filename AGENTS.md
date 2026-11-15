@@ -54,6 +54,7 @@ extensions/<name>/
 - Use `GenericResolver` (`api/resolver/generic/genericResolver.mjs`) for list/CRUD queries.
 - Access control: `Util.checkIfUserIsLoggedIn(context)` / `Util.hasCapability` in resolvers and admin UI.
 - Smallest extension to copy from: `extensions/post`.
+- Notifications to users: web push through the extension `push` - `Hook.call('pushSend', {db, userIds, notification})` on the server, `_app_.push` in the browser (see doc.md, «Web push»). Don't add another push implementation.
 
 ## Hooks
 

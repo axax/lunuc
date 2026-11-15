@@ -118,3 +118,58 @@ self.addEventListener('fetch', event => {
         })
     )
 })
+/*
+ * Web push (extensions/push). The payload is the notification as JSON:
+ * {title, body, url, icon, badge, image, tag, renotify, silent, requireInteraction, skipIfFocused, data}
+ * skipIfFocused: not shown while a window showing the url (or a sub path of it; a string = that
+ * path prefix instead) has the focus - the page then shows the news itself.
+ */
+self.addEventListener('push', event => {
+    let n = {}
+    try {
+        n = event.data ? event.data.json() : {}
+    } catch (e) {
+        n = {body: event.data ? event.data.text() : ''}
+    }
+    event.waitUntil((async () => {
+        if (n.skipIfFocused) {
+            const prefix = n.skipIfFocused === true ? n.url : n.skipIfFocused
+            const windows = await self.clients.matchAll({type: 'window', includeUncontrolled: true})
+            if (prefix && windows.some(c => c.focused && new URL(c.url).pathname.indexOf(prefix) === 0)) {
+                return
+            }
+        }
+        await self.registration.showNotification(n.title || self.location.hostname, {
+            body: n.body,
+            icon: n.icon || '/favicon-192x192.png',
+            badge: n.badge,
+            image: n.image,
+            tag: n.tag,
+            renotify: !!n.tag && n.renotify !== false,
+            silent: !!n.silent,
+            requireInteraction: !!n.requireInteraction,
+            data: {...(n.data || {}), url: n.url}
+        })
+    })())
+})
+
+// Click on a notification of the service worker (web push, or pages on Android, where a page
+// can't create notifications itself): focus an open window and show the url of the
+// notification (options.data.url) there, otherwise open a new window.
+self.addEventListener('notificationclick', event => {
+    event.notification.close()
+    const url = event.notification.data && event.notification.data.url
+    event.waitUntil((async () => {
+        const windows = await self.clients.matchAll({type: 'window', includeUncontrolled: true})
+        const client = windows.find(c => c.focused) || windows.find(c => 'focus' in c)
+        if (client) {
+            await client.focus().catch(() => {})
+            if (url) {
+                // handled by the page without a reload (extensions/push/util/pushClient.js)
+                client.postMessage({type: 'lunuc-push-navigate', url})
+            }
+        } else if (url && self.clients.openWindow) {
+            await self.clients.openWindow(url)
+        }
+    })())
+})

@@ -1,0 +1,54 @@
+{
+  "types": [
+    {
+      "name": "PushSubscription",
+      "description": "One entry per device that subscribed to web push. createdBy is the user of the device. Written by pushSubscribe (extensions/push/resolver), not by hand: the endpoint must be a push service",
+      "subscription": false,
+      "backupEssential": false,
+      "access": {
+        "create": "manage_other_users",
+        "update": {
+          "role": "manage_other_users"
+        }
+      },
+      "addMetaDataInQuery": false,
+      "fields": [
+        {
+          "name": "endpoint",
+          "required": true,
+          "index": 1,
+          "unique": true
+        },
+        {
+          "name": "keys",
+          "type": "Object",
+          "uitype": "json",
+          "required": true,
+          "hideColumnInTypes": true
+        },
+        {
+          "name": "topics",
+          "multi": true,
+          "index": 1
+        },
+        {
+          "name": "settings",
+          "type": "Object",
+          "uitype": "json"
+        },
+        {
+          "name": "lang"
+        },
+        {
+          "name": "userAgent"
+        },
+        {
+          "name": "lastPushAt",
+          "type": "Float",
+          "uitype": "datetime",
+          "readOnly": true
+        }
+      ]
+    }
+  ]
+}

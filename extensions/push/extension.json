@@ -1,0 +1,5 @@
+{
+  "name": "Push",
+  "description": "Web push notifications. Generic: other extensions and scripts send through the hook pushSend or sendPush()",
+  "author": "Simon Schärer"
+}

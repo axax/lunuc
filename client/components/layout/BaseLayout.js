@@ -304,6 +304,9 @@ const BaseLayout = props => {
 
     if (user.isAuthenticated) {
 
+        // extensions can add elements to the header (e.g. the messenger icon)
+        Hook.call('HeaderRight', {headerRight})
+
         const userMenuItems= [{
             name: username,
             disabled:true

@@ -1,0 +1,1559 @@
+/*
+ * Messenger (admin/chat) - look and feel of WhatsApp Web.
+ * Colors follow the admin theme (--lunuc-*, light/dark), with fallbacks so the component
+ * also works outside of the admin. .lchat--theme uses the primary color of the theme
+ * instead of the WhatsApp green.
+ */
+.lchat {
+    --lc-surface: var(--lunuc-surface, #fff);
+    --lc-bg: var(--lunuc-bg, #f0f2f5);
+    --lc-subtle: var(--lunuc-subtle, #f0f2f5);
+    --lc-text: var(--lunuc-text, #111b21);
+    --lc-muted: var(--lunuc-text-muted, #667781);
+    --lc-border: var(--lunuc-border, #e9edef);
+    --lc-error: var(--lunuc-error, #d32f2f);
+    --lc-accent: #00a884;
+    --lc-accent-contrast: #fff;
+    --lc-accent-soft: rgba(0, 168, 132, .14);
+    --lc-unread: #25d366;
+    --lc-out: #d9fdd3;
+    --lc-out-text: #111b21;
+    --lc-out-muted: #667781;
+    --lc-in: var(--lc-surface);
+    --lc-wall: #efeae2;
+    --lc-tick: #53bdeb;
+    --lc-shadow: 0 1px .5px rgba(11, 20, 26, .13);
+
+    display: flex;
+    height: 100%;
+    min-height: 320px;
+    overflow: hidden;
+    position: relative;
+    color: var(--lc-text);
+    background: var(--lc-surface);
+    font-family: var(--lunuc-font, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif);
+    font-size: 14.5px;
+    line-height: 1.35;
+    color-scheme: var(--lunuc-color-scheme, light);
+}
+
+html[data-theme="dark"] .lchat {
+    --lc-out: #005c4b;
+    --lc-out-text: #e9edef;
+    --lc-out-muted: rgba(233, 237, 239, .65);
+    --lc-wall: #0b141a;
+    --lc-wall: color-mix(in srgb, var(--lc-bg) 72%, #000);
+    --lc-shadow: 0 1px .5px rgba(0, 0, 0, .4);
+}
+
+.lchat--theme {
+    --lc-accent: var(--lunuc-primary, #1976d2);
+    --lc-accent-contrast: var(--lunuc-primary-contrast, #fff);
+    --lc-accent-soft: var(--lunuc-primary-soft, rgba(25, 118, 210, .14));
+    --lc-unread: var(--lc-accent);
+    --lc-out: #dce9f8;
+    --lc-out: color-mix(in srgb, var(--lc-accent) 18%, var(--lc-surface));
+    --lc-out-text: var(--lc-text);
+    --lc-out-muted: var(--lc-muted);
+    --lc-wall: var(--lc-bg);
+    --lc-tick: var(--lc-accent);
+}
+
+html[data-theme="dark"] .lchat--theme {
+    --lc-out: #1d3a5c;
+    --lc-out: color-mix(in srgb, var(--lc-accent) 38%, var(--lc-surface));
+    --lc-out-text: var(--lc-text);
+    --lc-out-muted: var(--lc-muted);
+    --lc-wall: var(--lc-bg);
+    --lc-tick: #8fd0ff;
+}
+
+.lchat *, .lchat *::before, .lchat *::after {
+    box-sizing: border-box;
+}
+
+.lchat button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.lchat button:disabled {
+    cursor: default;
+}
+
+.lchat-icon {
+    flex: none;
+    display: block;
+}
+
+/* ---------- layout ---------- */
+
+.lchat-side {
+    flex: 0 0 30%;
+    min-width: 300px;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--lc-border);
+    background: var(--lc-surface);
+    min-height: 0;
+}
+
+.lchat-main {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: var(--lc-wall);
+}
+
+.lchat-info {
+    flex: 0 0 340px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-left: 1px solid var(--lc-border);
+    background: var(--lc-surface);
+}
+
+.lchat-bar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 60px;
+    padding: 0 12px;
+    background: var(--lc-subtle);
+    border-bottom: 1px solid var(--lc-border);
+}
+
+.lchat-bar-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lchat-side > .lchat-bar .lchat-bar-title {
+    margin-left: 8px;
+    font-size: 18px;
+}
+
+.lchat-bar-room {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    border: none;
+    background: none;
+    text-align: left;
+}
+
+.lchat-bar-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.lchat-bar-sub {
+    font-size: 13px;
+    color: var(--lc-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lchat-bar-sub.is-typing {
+    color: var(--lc-accent);
+}
+
+.lchat-back {
+    display: none;
+}
+
+.lchat-iconbtn {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--lc-muted) !important;
+    transition: background-color .15s;
+}
+
+.lchat-iconbtn:hover, .lchat-iconbtn.is-active {
+    background: var(--lc-accent-soft);
+}
+
+.lchat-iconbtn:focus-visible, .lchat-item:focus-visible, .lchat-user:focus-visible, .lchat-btn:focus-visible, .lchat-send:focus-visible {
+    outline: 2px solid var(--lc-accent);
+    outline-offset: -2px;
+}
+
+.lchat-avatar {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    object-fit: cover;
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: .02em;
+    user-select: none;
+}
+
+.lchat-avatar--accent {
+    background: var(--lc-accent);
+    color: var(--lc-accent-contrast);
+}
+
+/* ---------- sidebar ---------- */
+
+.lchat-search {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 12px;
+    padding: 0 12px;
+    height: 36px;
+    border-radius: 18px;
+    background: var(--lc-subtle);
+    color: var(--lc-muted);
+}
+
+.lchat-search input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--lc-text);
+    font: inherit;
+}
+
+.lchat-search:focus-within {
+    box-shadow: 0 0 0 2px var(--lc-accent);
+}
+
+.lchat-search--bar {
+    margin: 0;
+    border-radius: 0;
+    height: 44px;
+    background: var(--lc-surface);
+    border-bottom: 1px solid var(--lc-border);
+}
+
+.lchat-search--bar:focus-within {
+    box-shadow: inset 0 -2px 0 var(--lc-accent);
+}
+
+.lchat-chips {
+    flex: none;
+    display: flex;
+    gap: 8px;
+    padding: 0 12px 8px;
+}
+
+.lchat-chip {
+    padding: 5px 12px;
+    border: none;
+    border-radius: 16px;
+    background: var(--lc-subtle);
+    color: var(--lc-muted) !important;
+    font-size: 13.5px !important;
+}
+
+.lchat-chip.is-active {
+    background: var(--lc-accent-soft);
+    color: var(--lc-accent) !important;
+    font-weight: 600 !important;
+}
+
+.lchat--theme .lchat-chip.is-active, html[data-theme="dark"] .lchat-chip.is-active {
+    color: var(--lc-text) !important;
+}
+
+.lchat-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.lchat-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 32px 20px;
+    color: var(--lc-muted);
+    text-align: center;
+}
+
+.lchat-empty.is-error {
+    color: var(--lc-error);
+}
+
+.lchat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 0 12px;
+    height: 72px;
+    border: none;
+    background: transparent;
+    text-align: left;
+}
+
+.lchat-item:hover {
+    background: var(--lc-subtle);
+}
+
+.lchat-item.is-active {
+    background: var(--lc-accent-soft);
+}
+
+.lchat-item-main {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    border-bottom: 1px solid var(--lc-border);
+}
+
+.lchat-item-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    color: var(--lc-muted);
+}
+
+.lchat-item-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 16px;
+    color: var(--lc-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lchat-item-time {
+    flex: none;
+    font-size: 12px;
+}
+
+.lchat-item-time.is-unread {
+    color: var(--lc-unread);
+    font-weight: 600;
+}
+
+.lchat-item-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 13.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lchat-item-text em {
+    font-style: normal;
+    color: var(--lc-accent);
+}
+
+.lchat-item-text .lchat-ticks {
+    margin: 0 3px 0 0;
+    vertical-align: -3px;
+}
+
+.lchat-badge {
+    flex: none;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: var(--lc-unread);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 20px;
+    text-align: center;
+}
+
+.lchat-badge.is-muted {
+    background: var(--lc-muted);
+}
+
+.lchat-banner {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: var(--lc-accent-soft);
+    color: var(--lc-text);
+}
+
+.lchat-banner > .lchat-icon {
+    color: var(--lc-accent);
+}
+
+.lchat-banner strong, .lchat-banner span {
+    display: block;
+}
+
+.lchat-banner span {
+    font-size: 13px;
+    color: var(--lc-muted);
+}
+
+.lchat-banner button {
+    margin: 6px 14px 0 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--lc-accent) !important;
+    font-weight: 600 !important;
+}
+
+.lchat--theme .lchat-banner button, html[data-theme="dark"] .lchat-banner button {
+    color: var(--lc-text) !important;
+    text-decoration: underline;
+}
+
+/* ---------- buttons, inputs ---------- */
+
+.lchat-btn {
+    padding: 9px 22px;
+    border: none;
+    border-radius: 20px;
+    background: var(--lc-accent);
+    color: var(--lc-accent-contrast) !important;
+    font-weight: 600 !important;
+}
+
+.lchat-btn:disabled {
+    opacity: .5;
+}
+
+.lchat-input {
+    width: 100%;
+    padding: 9px 2px;
+    border: none;
+    border-bottom: 2px solid var(--lc-border);
+    outline: none;
+    background: transparent;
+    color: var(--lc-text);
+    font: inherit;
+    font-size: 16px;
+}
+
+.lchat-input:focus {
+    border-bottom-color: var(--lc-accent);
+}
+
+/* ---------- conversation ---------- */
+
+.lchat-welcome {
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px;
+    background: var(--lc-subtle);
+    color: var(--lc-muted);
+    text-align: center;
+}
+
+.lchat-welcome > .lchat-icon {
+    color: var(--lc-accent);
+    opacity: .55;
+}
+
+.lchat-welcome strong {
+    font-size: 26px;
+    font-weight: 300;
+    color: var(--lc-text);
+}
+
+.lchat-body-wrap {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    display: flex;
+}
+
+.lchat-body {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px max(16px, 6%) 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.lchat-body > :first-child {
+    margin-top: auto;
+}
+
+.lchat-body.has-wallpaper {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120' fill='none' stroke='%23808080' stroke-opacity='.13' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 18h16a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4h-9l-5 4v-4h-2a4 4 0 0 1-4-4v-8a4 4 0 0 1 4-4z'/%3E%3Ccircle cx='84' cy='24' r='9'/%3E%3Cpath d='M80 22h.1M88 22h.1M80 27c2 2 6 2 8 0'/%3E%3Cpath d='M58 62l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z'/%3E%3Cpath d='M14 82c0-5 7-6 8-1 1-5 8-4 8 1 0 6-8 10-8 10s-8-4-8-10z'/%3E%3Cpath d='M92 78l14 6-6 3-3 6z'/%3E%3Cpath d='M44 12l6 6m0-6l-6 6M104 50a5 5 0 1 1-10 0 5 5 0 0 1 10 0zM30 56h10M35 51v10M66 104h12M70 98l-6 6 6 6'/%3E%3C/svg%3E");
+    background-size: 240px;
+}
+
+.lchat-day {
+    align-self: center;
+    margin: 10px 0;
+    position: sticky;
+    top: 2px;
+    z-index: 2;
+}
+
+.lchat-day span {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 8px;
+    background: var(--lc-surface);
+    color: var(--lc-muted);
+    font-size: 12.5px;
+    box-shadow: var(--lc-shadow);
+}
+
+.lchat-day.is-error span {
+    color: var(--lc-error);
+}
+
+.lchat-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0 8px;
+    margin-top: 2px;
+    border-radius: 8px;
+    transition: background-color .4s;
+}
+
+.lchat-row.is-first {
+    margin-top: 10px;
+}
+
+.lchat-row.is-own {
+    justify-content: flex-end;
+}
+
+.lchat-row.is-flash {
+    background: var(--lc-accent-soft);
+}
+
+.lchat-row-spacer {
+    flex: none;
+    width: 28px;
+}
+
+.lchat-bubble {
+    position: relative;
+    max-width: min(75%, 640px);
+    min-width: 84px;
+    padding: 6px 9px 7px;
+    border-radius: 8px;
+    background: var(--lc-in);
+    color: var(--lc-text);
+    box-shadow: var(--lc-shadow);
+    overflow-wrap: anywhere;
+}
+
+.lchat-row.is-own .lchat-bubble {
+    background: var(--lc-out);
+    color: var(--lc-out-text);
+}
+
+.lchat-row.is-first:not(.is-own) .lchat-bubble {
+    border-top-left-radius: 0;
+}
+
+.lchat-row.is-first.is-own .lchat-bubble {
+    border-top-right-radius: 0;
+}
+
+.lchat-bubble.is-failed {
+    opacity: .75;
+}
+
+.lchat-bubble-name {
+    margin-bottom: 2px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.lchat-bubble-text {
+    white-space: pre-wrap;
+}
+
+.lchat-bubble-text a {
+    color: #027eb5;
+}
+
+html[data-theme="dark"] .lchat-bubble-text a {
+    color: #53bdeb;
+}
+
+.lchat-bubble-text code {
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: rgba(128, 128, 128, .2);
+    font-size: .92em;
+}
+
+.lchat-bubble-text mark {
+    background: #ffe066;
+    color: #111;
+    border-radius: 2px;
+}
+
+.lchat-bubble.is-emoji .lchat-bubble-text {
+    font-size: 40px;
+    line-height: 1.15;
+}
+
+.lchat-bubble.is-deleted .lchat-bubble-text {
+    color: var(--lc-muted);
+}
+
+.lchat-row.is-own .lchat-bubble.is-deleted .lchat-bubble-text {
+    color: var(--lc-out-muted);
+}
+
+.lchat-bubble.is-deleted .lchat-icon {
+    display: inline-block;
+    vertical-align: -2px;
+}
+
+.lchat-bubble-meta {
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 7px 0 -4px 12px;
+    font-size: 11px;
+    color: var(--lc-muted);
+    white-space: nowrap;
+    user-select: none;
+}
+
+.lchat-row.is-own .lchat-bubble-meta {
+    color: var(--lc-out-muted);
+}
+
+.lchat-bubble::after {
+    content: "";
+    display: block;
+    clear: both;
+}
+
+.lchat-ticks {
+    display: inline-flex;
+    color: inherit;
+}
+
+.lchat-ticks.is-read {
+    color: var(--lc-tick);
+}
+
+.lchat-ticks.is-failed {
+    color: var(--lc-error);
+}
+
+.lchat-quote {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 5px;
+    padding: 5px 10px;
+    border: none;
+    border-left: 4px solid var(--lc-accent);
+    border-radius: 6px;
+    background: rgba(128, 128, 128, .14);
+    font-size: 13px !important;
+    text-align: left;
+}
+
+.lchat-quote strong {
+    color: var(--lc-accent);
+    font-weight: 600;
+}
+
+.lchat-quote span {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    opacity: .8;
+    white-space: pre-wrap;
+}
+
+.lchat-images {
+    margin: -2px -5px 5px;
+}
+
+.lchat-images.is-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+}
+
+.lchat-images button {
+    display: block;
+    padding: 0;
+    border: none;
+    background: none;
+    min-width: 0;
+}
+
+.lchat-images img {
+    display: block;
+    max-width: 100%;
+    max-height: 340px;
+    min-height: 60px;
+    min-width: 120px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.lchat-images.is-grid img {
+    width: 100%;
+    min-width: 0;
+    aspect-ratio: 1;
+}
+
+.lchat-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: rgba(128, 128, 128, .14);
+    color: inherit;
+    text-decoration: none;
+}
+
+.lchat-file span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lchat-reactions {
+    clear: both;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 0 0 -16px;
+    padding-top: 6px;
+    position: relative;
+    top: 2px;
+}
+
+.lchat-reactions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    height: 24px;
+    padding: 0 7px;
+    border: 1px solid var(--lc-border);
+    border-radius: 12px;
+    background: var(--lc-surface);
+    color: var(--lc-muted) !important;
+    font-size: 14px !important;
+    box-shadow: var(--lc-shadow);
+}
+
+.lchat-reactions button span {
+    font-size: 12px;
+}
+
+.lchat-reactions button.is-mine {
+    border-color: var(--lc-accent);
+}
+
+.lchat-row:has(.lchat-reactions) {
+    margin-bottom: 16px;
+}
+
+.lchat-bubble-more {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    display: flex;
+    width: 26px;
+    height: 24px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: var(--lc-in);
+    color: var(--lc-muted) !important;
+    opacity: 0;
+    transition: opacity .12s;
+}
+
+.lchat-row.is-own .lchat-bubble-more {
+    background: var(--lc-out);
+    color: var(--lc-out-muted) !important;
+}
+
+.lchat-bubble:hover .lchat-bubble-more, .lchat-bubble-more:focus-visible {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .lchat-bubble-more {
+        opacity: .7;
+        background: transparent !important;
+    }
+}
+
+.lchat-menu {
+    position: absolute;
+    z-index: 20;
+    top: 26px;
+    left: 20px;
+    min-width: 190px;
+    padding: 6px 0;
+    border-radius: 10px;
+    background: var(--lc-surface);
+    color: var(--lc-text);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, .28);
+}
+
+.lchat-menu.is-own {
+    left: auto;
+    right: 4px;
+}
+
+.lchat-menu.is-up {
+    top: auto;
+    bottom: calc(100% - 22px);
+}
+
+.lchat-menu > button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 9px 16px;
+    border: none;
+    background: none;
+    text-align: left;
+}
+
+.lchat-menu > button:hover {
+    background: var(--lc-subtle);
+}
+
+.lchat-menu > button.is-danger, .lchat-user.is-danger {
+    color: var(--lc-error) !important;
+}
+
+.lchat-menu-reactions {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 10px 8px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--lc-border);
+}
+
+.lchat-menu-reactions button, .lchat-emoji-grid button, .lchat-emoji-tabs button {
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    font-size: 22px !important;
+    line-height: 1.3;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important;
+    transition: transform .1s;
+}
+
+.lchat-menu-reactions button:hover {
+    transform: scale(1.3);
+}
+
+.lchat-failed {
+    flex-basis: 100%;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 3px;
+    font-size: 12.5px;
+    color: var(--lc-error);
+}
+
+.lchat-failed button {
+    padding: 0;
+    border: none;
+    background: none;
+    text-decoration: underline;
+    font-size: inherit !important;
+}
+
+.lchat-to-bottom {
+    position: absolute;
+    right: 18px;
+    bottom: 14px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--lc-surface);
+    color: var(--lc-muted) !important;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, .3);
+}
+
+.lchat-to-bottom .lchat-badge {
+    position: absolute;
+    top: -8px;
+    right: -4px;
+}
+
+.lchat-drop {
+    position: absolute;
+    inset: 10px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 3px dashed var(--lc-accent);
+    border-radius: 14px;
+    background: var(--lc-surface);
+    opacity: .94;
+    color: var(--lc-accent);
+    font-size: 18px;
+    pointer-events: none;
+}
+
+/* ---------- composer ---------- */
+
+.lchat-composer {
+    flex: none;
+    position: relative;
+    background: var(--lc-subtle);
+    border-top: 1px solid var(--lc-border);
+}
+
+.lchat-composer-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    padding: 8px 10px;
+}
+
+.lchat-composer textarea {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    max-height: 140px;
+    margin: 0 4px;
+    padding: 9px 14px;
+    border: none;
+    border-radius: 20px;
+    outline: none;
+    resize: none;
+    background: var(--lc-surface);
+    color: var(--lc-text);
+    font: inherit;
+    font-size: 15px;
+    line-height: 22px;
+}
+
+.lchat-send {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0 0 0 2px;
+    border: none;
+    border-radius: 50%;
+    background: var(--lc-accent);
+    color: var(--lc-accent-contrast) !important;
+    transition: opacity .15s, transform .15s;
+}
+
+.lchat-send:disabled {
+    opacity: .4;
+}
+
+.lchat-send:not(:disabled):active {
+    transform: scale(.92);
+}
+
+.lchat-composer-context {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px 0 18px;
+    color: var(--lc-muted);
+}
+
+.lchat-composer-context .lchat-quote {
+    flex: 1;
+    margin: 0;
+    background: var(--lc-surface);
+    color: var(--lc-text);
+}
+
+.lchat-composer-context .lchat-quote span {
+    -webkit-line-clamp: 2;
+}
+
+.lchat-composer-files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 14px 0;
+}
+
+.lchat-file-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 240px;
+    padding: 4px 6px 4px 10px;
+    border-radius: 14px;
+    background: var(--lc-surface);
+    font-size: 13px;
+}
+
+.lchat-file-chip > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lchat-file-chip small {
+    color: var(--lc-accent);
+}
+
+.lchat-file-chip.is-error {
+    color: var(--lc-error);
+}
+
+.lchat-file-chip button {
+    display: flex;
+    padding: 3px;
+    border: none;
+    border-radius: 50%;
+    background: var(--lc-subtle);
+}
+
+.lchat-emoji {
+    position: absolute;
+    left: 8px;
+    bottom: calc(100% + 6px);
+    z-index: 15;
+    width: min(360px, calc(100% - 16px));
+    border-radius: 12px;
+    background: var(--lc-surface);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, .28);
+    overflow: hidden;
+}
+
+.lchat-emoji-tabs {
+    display: flex;
+    background: var(--lc-subtle);
+}
+
+.lchat-emoji-tabs button {
+    flex: 1;
+    padding: 6px 0;
+    border-radius: 0;
+    border-bottom: 3px solid transparent;
+    font-size: 20px !important;
+}
+
+.lchat-emoji-tabs button.is-active {
+    border-bottom-color: var(--lc-accent);
+}
+
+.lchat-emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    max-height: 220px;
+    padding: 8px;
+    overflow-y: auto;
+}
+
+.lchat-emoji-grid button {
+    aspect-ratio: 1;
+    font-size: 24px !important;
+}
+
+.lchat-emoji-grid button:hover {
+    background: var(--lc-subtle);
+}
+
+/* ---------- info panel, dialogs ---------- */
+
+.lchat-info-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 20px;
+}
+
+.lchat-info-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 20px 18px;
+    text-align: center;
+}
+
+.lchat-info-head small {
+    color: var(--lc-muted);
+    font-size: 14px;
+}
+
+.lchat-info-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    font-size: 22px;
+    overflow-wrap: anywhere;
+}
+
+.lchat-section {
+    margin-top: 10px;
+    padding: 14px 20px 6px;
+    border-top: 8px solid var(--lc-subtle);
+    color: var(--lc-accent);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.lchat-section:empty {
+    padding: 0;
+}
+
+.lchat--theme .lchat-section, html[data-theme="dark"] .lchat-section {
+    color: var(--lc-muted);
+}
+
+.lchat-modal .lchat-section {
+    margin: 12px -20px 0;
+}
+
+.lchat-modal .lchat-section:first-child {
+    margin-top: -12px;
+    border-top: none;
+}
+
+.lchat-user {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    min-height: 56px;
+    padding: 6px 20px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 15.5px !important;
+}
+
+.lchat-user > span:not(.lchat-avatar):not(.lchat-checkbox) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+button.lchat-user:hover {
+    background: var(--lc-subtle);
+}
+
+.lchat-tag {
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--lc-accent-soft);
+    color: var(--lc-muted);
+    font-size: 11.5px;
+}
+
+.lchat-checkbox {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--lc-muted);
+    border-radius: 50%;
+    color: transparent;
+}
+
+.lchat-user.is-selected .lchat-checkbox {
+    border-color: var(--lc-accent);
+    background: var(--lc-accent);
+    color: var(--lc-accent-contrast);
+}
+
+.lchat-userlist {
+    margin: 0 -20px;
+    max-height: 46vh;
+    overflow-y: auto;
+}
+
+.lchat-modal .lchat-search {
+    margin: 12px 0;
+}
+
+.lchat-modal > .lchat-modal-body > button.lchat-user {
+    margin: 0 -20px;
+    width: calc(100% + 40px);
+}
+
+.lchat-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, .45);
+}
+
+.lchat-modal {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 440px;
+    max-height: 100%;
+    border-radius: 12px;
+    background: var(--lc-surface);
+    color: var(--lc-text);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+    overflow: hidden;
+}
+
+.lchat-modal-head {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 56px;
+    padding: 0 10px;
+    background: var(--lc-accent);
+    color: var(--lc-accent-contrast);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.lchat-modal-head .lchat-iconbtn {
+    color: inherit !important;
+}
+
+.lchat-modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 12px 20px 16px;
+}
+
+.lchat-modal-foot {
+    flex: none;
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px 20px;
+    border-top: 1px solid var(--lc-border);
+}
+
+.lchat-switch {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 0;
+    cursor: pointer;
+}
+
+.lchat-info .lchat-switch {
+    padding: 10px 20px;
+}
+
+.lchat-switch.is-disabled {
+    cursor: default;
+    opacity: .65;
+}
+
+.lchat-switch-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    font-size: 15.5px;
+}
+
+.lchat-switch-text small {
+    color: var(--lc-muted);
+    font-size: 13px;
+}
+
+.lchat-switch input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.lchat-switch-track {
+    flex: none;
+    position: relative;
+    width: 40px;
+    height: 22px;
+    border-radius: 11px;
+    background: var(--lc-muted);
+    opacity: .9;
+    transition: background-color .15s;
+}
+
+.lchat-switch-track::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform .15s;
+}
+
+.lchat-switch input:checked + .lchat-switch-track {
+    background: var(--lc-accent);
+}
+
+.lchat-switch input:checked + .lchat-switch-track::after {
+    transform: translateX(18px);
+}
+
+.lchat-switch input:focus-visible + .lchat-switch-track {
+    outline: 2px solid var(--lc-accent);
+    outline-offset: 2px;
+}
+
+.lchat-options {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+}
+
+.lchat-option {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border: 2px solid var(--lc-border);
+    border-radius: 10px;
+    background: none;
+    font-size: 13.5px !important;
+}
+
+.lchat-option.is-active {
+    border-color: var(--lc-accent);
+}
+
+.lchat-option-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    background: var(--lc-wall);
+}
+
+.lchat-option-preview i {
+    width: 62%;
+    height: 14px;
+    border-radius: 5px;
+    background: var(--lc-surface);
+    box-shadow: var(--lc-shadow);
+}
+
+.lchat-option-preview i + i {
+    align-self: flex-end;
+}
+
+.lchat-option--whatsapp .lchat-option-preview {
+    background: #efeae2;
+}
+
+.lchat-option--whatsapp .lchat-option-preview i + i {
+    background: #d9fdd3;
+}
+
+html[data-theme="dark"] .lchat-option--whatsapp .lchat-option-preview {
+    background: #0b141a;
+}
+
+html[data-theme="dark"] .lchat-option--whatsapp .lchat-option-preview i {
+    background: #202c33;
+}
+
+html[data-theme="dark"] .lchat-option--whatsapp .lchat-option-preview i + i {
+    background: #005c4b;
+}
+
+.lchat-option--theme .lchat-option-preview {
+    background: var(--lc-bg);
+}
+
+.lchat-option--theme .lchat-option-preview i + i {
+    background: var(--lunuc-primary, #1976d2);
+    opacity: .55;
+}
+
+.lchat-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, .88);
+}
+
+.lchat-lightbox img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.lchat-lightbox .lchat-iconbtn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    color: #fff !important;
+}
+
+/* ---------- small screens: list or conversation ---------- */
+
+@media (max-width: 1100px) {
+    .lchat.has-info .lchat-info {
+        position: absolute;
+        inset: 0 0 0 auto;
+        z-index: 30;
+        width: min(360px, 100%);
+        box-shadow: -6px 0 24px rgba(0, 0, 0, .25);
+    }
+}
+
+@media (max-width: 760px) {
+    .lchat-side {
+        flex: 1;
+        max-width: none;
+        min-width: 0;
+        border-right: none;
+    }
+
+    .lchat-main {
+        display: none;
+    }
+
+    .lchat.has-chat .lchat-side {
+        display: none;
+    }
+
+    .lchat.has-chat .lchat-main {
+        display: flex;
+    }
+
+    .lchat-back {
+        display: inline-flex;
+    }
+
+    .lchat-body {
+        padding: 8px 10px;
+    }
+
+    .lchat-bubble {
+        max-width: 86%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lchat * {
+        transition: none !important;
+    }
+}
+
+/* ---------- web push (settings) ---------- */
+
+.lchat-inline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 0 8px;
+}
+
+.lchat-inline small {
+    color: var(--lc-muted);
+}
+
+.lchat-link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--lc-text) !important;
+    text-decoration: underline;
+    font-size: 13.5px !important;
+}
+
+/* ---------- not logged in (CmsPage) ---------- */
+
+.lchat--login {
+    min-height: 60vh;
+}
+
+.lchat--login .lchat-btn {
+    text-decoration: none;
+}

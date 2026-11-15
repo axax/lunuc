@@ -125,6 +125,8 @@ Hook.on('Routes.myroute', ({routes}) => {
 | TypeCreateEdit      |  type, props  | Here you can change the behavior of the dialog which is shown when you create or edit data of type  |   
 | TypeCreateEditBeforeSave      |  type, props  | Is called before data are saved  |   
 | ExtensionSystemInfo      |  extension  | Here you can add extension info which are shown in the system menu |   
+| HeaderRight      |  headerRight  | Add elements to the right side of the admin header (logged in users only), e.g. the messenger icon of the chat extension  |   
+| UserMenu      |  menuItems  | Add entries to the user menu of the admin header  |   
 
 
 
@@ -138,6 +140,39 @@ Hook.on('Routes.myroute', ({routes}) => {
 | typeUpdated_{typeName}      | result, db   |Is called when a type gets updated  |  
 | typeDeleted_{typeName}      | _id, db   |Is called when a type gets deleted  |  
 | typeBeforeCreate      | type, _version, data, db, context   |Is called before data gets inserted into type collection  |  
+| pushSend      | db, userIds, topic, notification, ttl, urgency   |Sends a web push notification (extension push, see below). Called by other extensions, nothing happens if the push extension is not active  |  
+
+## Web push (extension push)
+
+Notifications that also arrive while the site / the browser is closed. Generic: any extension or script can send, any page can subscribe.
+Needs the service worker (`serviceworker.js`), which is only registered on a deployed https instance - not in dev mode or on localhost.
+
+**Subscribe (browser)** - `_app_.push` is available on every page for logged in users (`extensions/push/util/pushClient.js`):
+```javascript
+const status = await _app_.push.getStatus()  // {state, subscribed, devices, settings, topics}
+                                             // state: unsupported | no-serviceworker | denied | default | granted
+await _app_.push.subscribe({topics: ['news'], settings: {chatPreview: false}}) // asks for the permission
+await _app_.push.setSettings({chatPreview: true}) // per device, the server reads it as subscription.settings
+await _app_.push.unsubscribe()
+await _app_.push.test()                      // test notification to all own devices
+```
+
+**Send (server)** - `extensions/push/util/push.mjs`:
+```javascript
+// from an extension (no import, so no dependency on the push extension)
+Hook.call('pushSend', {db, userIds: [userId], notification: {title: 'Hello', body: 'World', url: '/admin'}})
+
+// from a script in the db (CronJob, Hook, Api)
+const {sendPush} = await requireAsync('@ext/push/util/push.mjs')
+const {sent, failed, removed} = await sendPush(this.db, {topic: 'news', notification: {title: 'Hello', url: '/'}})
+```
+* `userIds` = all devices of these users, `topic` = all devices that subscribed to the topic (both can be combined)
+* `notification` = `{title, body, url, icon, badge, image, tag, renotify, silent, requireInteraction, skipIfFocused, data}` or a function `(subscription) => notification | null` to build it per device (`subscription.settings`, `subscription.lang`, `subscription.createdBy` = user)
+* `url` is opened on click (an open window navigates without reload). `tag` replaces an older notification with the same tag. `skipIfFocused: true` = not shown while a window with this url has the focus (the page shows it itself)
+* `ttl` = seconds the push service keeps the message for an offline device (default 1 day), `urgency` = very-low | low | normal | high
+* Subscriptions are the type `PushSubscription` (`extensions/push/build.json`, indexes included; visible under Types): one entry per device, `createdBy` = its user, max. 20 per user. Devices that are gone are removed when sending
+* The VAPID keys are created on first use and stored in the collection `PushConfig`. They must not change (all subscriptions would be lost) - include the collection in backups, or set `LUNUC_PUSH_PUBLIC_KEY` / `LUNUC_PUSH_PRIVATE_KEY` (and optionally `LUNUC_PUSH_SUBJECT`, a `mailto:` or `https:` url of the operator)
+* Example: the chat extension (`pushMessage` in `extensions/chat/resolver/index.js`)
 
 ## Content Management
 ### Data Resolver

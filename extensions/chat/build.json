@@ -3,7 +3,7 @@
     {
       "name": "Chat",
       "access": {
-        "subscribe":  {
+        "subscribe": {
           "role": "access_admin_page"
         }
       },
@@ -27,13 +27,17 @@
           "queryFields": [
             "username"
           ]
+        },
+        {
+          "name": "direct",
+          "type": "Boolean"
         }
       ]
     },
     {
       "name": "ChatMessage",
       "access": {
-        "subscribe":  {
+        "subscribe": {
           "role": "access_admin_page"
         }
       },
@@ -63,6 +67,31 @@
           "queryFields": [
             "username"
           ]
+        },
+        {
+          "name": "replyTo",
+          "type": "Object"
+        },
+        {
+          "name": "reactions",
+          "type": "Object"
+        },
+        {
+          "name": "media",
+          "type": "Media",
+          "multi": true,
+          "fields": [
+            "name",
+            "mimeType"
+          ]
+        },
+        {
+          "name": "edited",
+          "type": "Boolean"
+        },
+        {
+          "name": "deleted",
+          "type": "Boolean"
         }
       ]
     }

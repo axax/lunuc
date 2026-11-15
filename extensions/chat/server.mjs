@@ -19,6 +19,12 @@ Hook.on('schema', ({schemas}) => {
     schemas.push(schema)
 })
 
+Hook.on('index', ({db}) => {
+    // messages of a chat, newest first (messenger)
+    db.collection('ChatMessage').createIndex({chat: 1, _id: -1}).catch(e => console.error('chat index', e))
+    db.collection('Chat').createIndex({users: 1}).catch(e => console.error('chat index', e))
+})
+
 Hook.on('typeCreated_ChatMessage', async ({result, db}) => {
     if (result.createdBy) {
         const user = await Util.userById(db,result.createdBy._id)
@@ -75,8 +81,10 @@ Hook.on('ResolverBeforePublishSubscription', async ({context, db, payload, hookR
         }else {
             const chats = await GenericResolver.entities(db, context, 'Chat', [], {limit:100, noLookupFields:['createdBy']})
             //chats.results.map(f=>f._id)
-            const chatId = payload.subscribeChatMessage.data[0].chat._id.toString()
-            if(!chats.results.find(f=>f._id.toString()===chatId)) {
+            // delete payloads have no data, chat can be an id or an object
+            const chat = payload.subscribeChatMessage.data?.[0]?.chat
+            const chatId = chat ? String(chat._id || chat) : null
+            if(!chatId || !chats.results.find(f=>f._id.toString()===chatId)) {
                  hookResponse.abort = true
             }
         }
