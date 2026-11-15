@@ -274,7 +274,7 @@ const cronjobUtil = {
                     await this.db.client.close()
                 }
             })()
-            `, {eval: true, workerData: {context: args.context}})
+            `, {eval: true, workerData: {context: args.context, meta: args.meta}})
 
             // allows the watchdog to really terminate the job
             if (args.registerKill) {

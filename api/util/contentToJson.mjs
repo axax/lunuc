@@ -5,6 +5,7 @@
  *   const {elements, medias, warnings} = await convertContent({db, context, buffer, fileName, mimeType})
  *   const {elements} = await convertContent({db, context, url: 'https://...'})
  *   const {elements} = await convertContent({db, context, html: '<p>..</p>'})   // or text: '...'
+ *   const {text, type} = await contentToText({buffer, fileName, mimeType, maxPages: 10})  // plain text, e.g. for an llm
  *
  * Supported: Word (.docx), PDF (text, tables are recognized by the position of the text), Excel (.xlsx/.xlsm/.xls/.csv
  * -> tables), HTML / web page (url), Markdown / text, pictures. Pages, Numbers, .doc, .odt, .rtf are converted with
@@ -1277,13 +1278,14 @@ const pdfPageHtml = (items) => {
     return parts.join('')
 }
 
-export const pdfToHtml = async (buffer) => {
+export const pdfToHtml = async (buffer, {maxPages} = {}) => {
     const {extractText, getDocumentProxy} = await import('unpdf')
     const pdf = await getDocumentProxy(new Uint8Array(buffer))
+    const numPages = maxPages > 0 ? Math.min(pdf.numPages, maxPages) : pdf.numPages
     try {
         // with the positions of the text: tables and headings are recognized
         const pages = []
-        for (let n = 1; n <= pdf.numPages; n++) {
+        for (let n = 1; n <= numPages; n++) {
             const page = await pdf.getPage(n)
             const content = await page.getTextContent()
             pages.push(pdfPageHtml(content.items))
@@ -1294,7 +1296,7 @@ export const pdfToHtml = async (buffer) => {
         console.warn('pdfToHtml: positions not readable, plain text is used', e.message)
     }
     const {text} = await extractText(pdf, {mergePages: false})
-    const pages = Array.isArray(text) ? text : [text]
+    const pages = (Array.isArray(text) ? text : [text]).slice(0, numPages)
     // lines of a paragraph are joined, an empty line (or a short line ending with no punctuation) starts a new one
     return pages.map(page => textToHtml(String(page || '')
         .replace(/-\n(?=[a-zäöü])/g, '')
@@ -1413,13 +1415,14 @@ const typeOf = (fileName, mimeType) => {
 }
 
 /**
- * converts a file (buffer + fileName/mimeType), a web page (url), html or text into elements
- * options: {importImages: true, uploadDir, resolver, allowPrivateUrls: false}
- * returns {elements, medias, warnings, title, type}
+ * converts a file (buffer + fileName/mimeType), a web page (url), html or text into blocks
+ * ({type: 'html', html} / {type: 'image', media}), neighbouring text blocks are merged
+ * options: {importImages: true, uploadDir, resolver, allowPrivateUrls: false,
+ *           maxPages (pdf, default all), formatting: true (false: no LibreOffice round trip only for bold cells)}
  */
-export const convertContent = async ({db, context, buffer, fileName = '', mimeType = '', url, html, text, options = {}}) => {
+const contentToBlocks = async ({db, context, buffer, fileName = '', mimeType = '', url, html, text, options = {}}) => {
     const warnings = [], medias = []
-    const {importImages = true, uploadDir, resolver, allowPrivateUrls = false} = options
+    const {importImages = true, uploadDir, resolver, allowPrivateUrls = false, maxPages, formatting = true} = options
     const mediaOpts = {db, context, uploadDir, resolver, warnings}
     let type, title = ''
 
@@ -1500,11 +1503,11 @@ export const convertContent = async ({db, context, buffer, fileName = '', mimeTy
             }
         }
     } else if (type === 'pdf') {
-        const h = await pdfToHtml(buffer)
+        const h = await pdfToHtml(buffer, {maxPages})
         if (h) blocks.push({type: 'html', html: h})
         else warnings.push('Im PDF wurde kein Text gefunden (gescanntes Dokument?)')
     } else if (type === 'excel') {
-        if (['xls', 'ods'].includes(ext(fileName))) {
+        if (formatting && ['xls', 'ods'].includes(ext(fileName))) {
             // SheetJS reads no fonts from these formats: as xlsx (LibreOffice, if installed) bold cells are kept
             // (Numbers is converted to xlsx above already)
             try {
@@ -1557,5 +1560,43 @@ export const convertContent = async ({db, context, buffer, fileName = '', mimeTy
         if (b.type === 'html' && last && last.type === 'html') last.html += b.html
         else merged.push({...b})
     })
-    return {elements: blocksToElements(merged), medias, warnings, title, type}
+    return {blocks: merged, medias, warnings, title, type}
+}
+
+/**
+ * converts a file (buffer + fileName/mimeType), a web page (url), html or text into elements
+ * options: see contentToBlocks
+ * returns {elements, medias, warnings, title, type}
+ */
+export const convertContent = async (params) => {
+    const {blocks, ...rest} = await contentToBlocks(params)
+    return {elements: blocksToElements(blocks), ...rest}
+}
+
+// html of the blocks -> plain text (paragraphs / rows on separate lines, cells separated by tabs)
+const htmlToPlainText = html => cheerio.load(String(html || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/t[dh]>/gi, '\t')
+    .replace(/<\/(p|div|h[1-6]|li|tr|table|ul|ol|blockquote|pre)>/gi, '\n'), null, false).text()
+    .replace(/[ \u00a0]+/g, ' ')
+    .replace(/ ?\t ?/g, '\t')
+    .replace(/\t+\n/g, '\n')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+/**
+ * extracts the plain text of a document (Word, PDF, Excel, csv, text, Pages, Numbers, doc, odt, rtf - see
+ * convertContent), e.g. as input for an llm. No medias are created.
+ * options: maxPages (pdf), maxChars
+ * returns {text, type, warnings}, text is '' when the document has no text (e.g. a scanned pdf)
+ */
+export const contentToText = async ({buffer, fileName = '', mimeType = '', maxPages, maxChars} = {}) => {
+    const {blocks, warnings, type} = await contentToBlocks({
+        buffer, fileName, mimeType,
+        options: {importImages: false, maxPages, formatting: false}
+    })
+    let text = htmlToPlainText(blocks.filter(b => b.type === 'html').map(b => b.html).join(''))
+    if (maxChars > 0 && text.length > maxChars) text = text.substring(0, maxChars)
+    return {text, type, warnings}
 }

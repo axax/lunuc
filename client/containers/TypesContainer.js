@@ -71,6 +71,8 @@ import {parseOrElse} from '../util/json.mjs'
 import {isFieldVisibleForCurrentUser} from '../util/user.mjs'
 import BulkEdit from '../components/BulkEdit'
 import JsonViewer from "../../extensions/cms/components/JsonViewer";
+import SearchHistoryPopper from '../components/SearchHistoryPopper'
+import {addToSearchHistory} from '../util/searchHistory.mjs'
 
 const EXPORT_BATCH_SIZE = 200
 const toIntOr = (v, def) => {
@@ -148,6 +150,9 @@ const MAX_RECENT_TYPES = 8
 const RECENT_TYPES_SAVE_DELAY = 5000
 // debounce for setSettingsForType(..., {lazy: true})
 const LAZY_SETTINGS_SAVE_DELAY = 5000
+// search history of the filter field (per type)
+const MAX_FILTER_HISTORY = 30
+const MAX_FILTER_HISTORY_VISIBLE = 12
 
 class TypesContainer extends React.Component {
 
@@ -189,7 +194,9 @@ class TypesContainer extends React.Component {
             collectionName: '',
             collectionEmpty: false,
             simpleDialog: false,
-            filter: this.pageParams.filter
+            filter: this.pageParams.filter,
+            filterHistoryOpen: false,
+            filterHistoryIndex: -1
         }
 
         // prepare list with types for select box
@@ -955,6 +962,8 @@ class TypesContainer extends React.Component {
             savedQueries = []
         }
 
+        const filterHistory = this.getVisibleFilterHistory(typeSettings)
+
         const renderOptions = {stack:[]}
 
         Hook.call('TypesContainerBeforeRender', {type,renderOptions,typeSettings,_version,pageParams:this.pageParams}, this)
@@ -1011,17 +1020,26 @@ class TypesContainer extends React.Component {
 
                         <Paper elevation={1}
                                component="form"
+                               ref={this.filterAnchorRef}
                                sx={{p: '2px 4px', display: 'flex', alignItems: 'center'}}>
                             <InputBase
                                 value={this.state.filter}
                                 onChange={(e) => {
-                                    this.setState({filter: e.target.value})
+                                    this.setState({filter: e.target.value, filterHistoryOpen: true, filterHistoryIndex: -1})
                                     if(searchOnKeyDown!==false) {
                                         this.handleFilter({value: e.target.value, target: e.target}, false)
                                     }
                                 }}
+                                onFocus={() => {
+                                    this.setState({filterHistoryOpen: true, filterHistoryIndex: -1})
+                                }}
+                                onBlur={() => {
+                                    this.setState({filterHistoryOpen: false})
+                                    // only remember filters that were actually applied
+                                    this.addFilterToHistory(this.pageParams.filter)
+                                }}
                                 onKeyDown={(e) => {
-                                    this.handelFilterKeyDown(e, e.target.value)
+                                    this.handelFilterKeyDown(e, e.target.value, filterHistory)
                                 }}
                                 sx={{ml: 1, flex: 1}}
                                 placeholder={_t('TypesContainer.filter')}
@@ -1067,6 +1085,12 @@ class TypesContainer extends React.Component {
                                 <FilterListIcon/>
                             </IconButton>
                         </Paper>
+                        <SearchHistoryPopper anchorEl={this.filterAnchorRef.current}
+                                             open={this.state.filterHistoryOpen}
+                                             items={filterHistory}
+                                             highlighted={this.state.filterHistoryIndex}
+                                             onSelect={this.selectFilterFromHistory}
+                                             onRemove={this.removeFilterFromHistory}/>
                     </Col>
                 </Row>
                 <Typography color="text.disabled" component="div" key="searchHint"
@@ -2265,11 +2289,73 @@ class TypesContainer extends React.Component {
         }
     }
 
-    handelFilterKeyDown = (e, value) => {
-        if (e.key === 'Enter') {
+    handelFilterKeyDown = (e, value, filterHistory) => {
+        const {filterHistoryOpen, filterHistoryIndex} = this.state
+        const historyLength = filterHistoryOpen && filterHistory ? filterHistory.length : 0
+
+        if (historyLength > 0 && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
             e.preventDefault()
-            this.handleFilter({value}, true)
+            const step = e.key === 'ArrowDown' ? 1 : -1
+            // -1 = nothing selected (cycle: -1, 0 .. n-1, -1)
+            const next = (filterHistoryIndex + 1 + step + historyLength + 1) % (historyLength + 1) - 1
+            this.setState({filterHistoryIndex: next})
+        } else if (e.key === 'Escape' && filterHistoryOpen) {
+            e.preventDefault()
+            this.setState({filterHistoryOpen: false, filterHistoryIndex: -1})
+        } else if (e.key === 'Enter') {
+            e.preventDefault()
+            if (historyLength > 0 && filterHistoryIndex >= 0 && filterHistoryIndex < historyLength) {
+                this.selectFilterFromHistory(filterHistory[filterHistoryIndex])
+            } else {
+                this.setState({filterHistoryOpen: false, filterHistoryIndex: -1})
+                this.handleFilter({value}, true)
+                this.addFilterToHistory(value)
+            }
         }
+    }
+
+    filterAnchorRef = React.createRef()
+
+    // entries of the search history that match the current input (newest first)
+    getVisibleFilterHistory(typeSettings) {
+        const history = typeSettings.searchHistory
+        if (!this.state.filterHistoryOpen || !history || history.length === 0) {
+            return null
+        }
+        const current = (this.state.filter || '').trim().toLowerCase()
+        const result = []
+        for (let i = 0; i < history.length && result.length < MAX_FILTER_HISTORY_VISIBLE; i++) {
+            const entry = history[i]
+            const lower = entry.toLowerCase()
+            if (lower !== current && (!current || lower.indexOf(current) >= 0)) {
+                result.push(entry)
+            }
+        }
+        return result
+    }
+
+    addFilterToHistory(value) {
+        const {type, meta} = this.pageParams
+        const before = this.getSettingsForType(type, meta).searchHistory
+        const searchHistory = addToSearchHistory(before, value, MAX_FILTER_HISTORY)
+        if (searchHistory !== before && searchHistory.length > 0) {
+            // no extra request per search: saved debounced together with the other settings
+            this.setSettingsForType(type, {searchHistory}, {lazy: true})
+        }
+    }
+
+    selectFilterFromHistory = (value) => {
+        clearTimeout(this.handleFilterTimeout)
+        this.setState({filter: value, filterHistoryOpen: false, filterHistoryIndex: -1})
+        this.runFilter(value)
+        this.addFilterToHistory(value)
+    }
+
+    removeFilterFromHistory = (value) => {
+        const {type, meta} = this.pageParams
+        const before = this.getSettingsForType(type, meta).searchHistory || []
+        this.setSettingsForType(type, {searchHistory: before.filter(entry => entry !== value)}, {lazy: true})
+        this.setState({filterHistoryIndex: -1})
     }
 
     handleSortChange = (orderBy) => {

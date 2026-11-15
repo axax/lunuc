@@ -7,7 +7,9 @@ import RadioGroup from '@mui/material/RadioGroup'
 import FormLabel from '@mui/material/FormLabel'
 import FormControl from '@mui/material/FormControl'
 import {downloadAs} from 'client/util/download.js'
-import {getExportAiGuide, setExportAiGuide} from 'client/util/typeFiles.js'
+import {
+    getExportAiGuide, setExportAiGuide, getExportFormat, setExportFormat, getExportFields, setExportFields
+} from 'client/util/typeFiles.js'
 import {_t} from 'util/i18n.mjs'
 import {toCsv as entriesToCsv} from 'util/csv.mjs'
 
@@ -34,8 +36,12 @@ const ExportDialog = ({
         pageTo = Math.max(pageFrom, Math.min(total || page * limit, page * limit))
     const hasSelection = selectedIds.length > 0
 
-    const [format, setFormat] = React.useState('csv')
-    const [fields, setFields] = React.useState('all')
+    const [format, setFormat] = React.useState(() => {
+        const f = getExportFormat()
+        // zip is only available for types with a files handler
+        return f === 'zip' && !exportZip ? 'csv' : f
+    })
+    const [fields, setFields] = React.useState(getExportFields)
     const [scope, setScope] = React.useState(hasSelection ? 'selection' : 'page')
     const [useFilter, setUseFilter] = React.useState(true)
     const [aiGuide, setAiGuide] = React.useState(getExportAiGuide())
@@ -104,6 +110,7 @@ const ExportDialog = ({
             onProgress: p => setProgress(Math.round(p * 100)),
             isCancelled: () => cancelled.current
         }
+        setExportFormat(format)
         try {
             if (format === 'zip') {
                 setExportAiGuide(aiGuide)
@@ -120,6 +127,7 @@ const ExportDialog = ({
                 setProgress(0)
                 await exportZip({ids, aiGuide})
             } else {
+                setExportFields(fields)
                 const entries = await loadEntries({...common, allFields: fields === 'all'})
                 if (cancelled.current) {
                     return

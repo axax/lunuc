@@ -4,6 +4,7 @@ import Autocomplete from '@mui/material/Autocomplete'
 import CircularProgress from '@mui/material/CircularProgress'
 import {setKeyValue, useKeyValues} from '../../../../util/keyvalue'
 import HistoryIcon from '@mui/icons-material/History'
+import {addToSearchHistory} from '../../../../util/searchHistory.mjs'
 
 const contextAwareSplit = (text, separator) => {
     const result = []
@@ -38,14 +39,16 @@ export default function SimpleAutosuggest(props) {
     const settings = keyValueData.data[settingKey] || {}
 
 
-    const finalOptions = options.slice(0)
+    const finalOptions = []
     if(settings.history){
-        settings.history.reverse().forEach(historyText=>{
+        // newest first (without mutating the stored array)
+        settings.history.forEach(historyText=>{
             if(!text || historyText.indexOf(text)>=0) {
-                finalOptions.unshift({name: historyText, history: true})
+                finalOptions.push({name: historyText, history: true})
             }
         })
     }
+    finalOptions.push(...options)
 
     const getData = (searchData)=>{
         if(!props.apiUrl) {
@@ -147,17 +150,10 @@ export default function SimpleAutosuggest(props) {
                 }
                 if(!item.history) {
                     if(props.historyKey) {
-                        if(!settings.history){
-                            settings.history = []
+                        const history = addToSearchHistory(settings.history, text)
+                        if(history !== settings.history) {
+                            setKeyValue({key: settingKey, value: {...settings, history}})
                         }
-                        const index = settings.history.indexOf(text)
-                        if (index !== -1) {
-                            settings.history.splice(index, 1)
-                        }
-                        settings.history.unshift(text)
-                        settings.history.length = Math.min(settings.history.length, 50)
-
-                        setKeyValue({key: settingKey, value: settings})
                     }
 
                     if(props.multipleSeparator){

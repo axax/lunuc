@@ -1120,7 +1120,11 @@ export default class AggregationBuilderV2 {
      * Helper: Handles field projection logic
      */
     _applyProjection(fieldName, fieldDef, projection) {
-        if (fieldDef.fields) {
+        if (fieldDef.dynamic?.action === 'alias' && fieldDef.dynamic.path) {
+            // the alias does not exist in the document: read the value from its path
+            // (only the aliased value is returned, not the whole root object)
+            projection[fieldName] = `$${fieldDef.dynamic.path}`;
+        } else if (fieldDef.fields) {
             this.projectByField(fieldName, fieldDef.fields, projection);
         } else if (fieldDef.projectLocal) {
             if (fieldDef.substr) {

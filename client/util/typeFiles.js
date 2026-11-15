@@ -101,20 +101,32 @@ export const importAllTypeFilesFromZip = (file, {dryRun = false, createMissing =
  * whether exports include the guide for AI assistants (AGENTS.md, CLAUDE.md, _lunuc/ reference).
  * One setting for all exports (pages and "export all"), remembered per browser, default on.
  */
-const AI_GUIDE_KEY = 'exportAiGuide'
-export const getExportAiGuide = () => {
+const EXPORT_PREFIX = 'export'
+const getExportPref = (name, fallback, allowed) => {
     try {
-        return window.localStorage.getItem(AI_GUIDE_KEY) !== '0'
+        const v = window.localStorage.getItem(EXPORT_PREFIX + name)
+        return v !== null && (!allowed || allowed.includes(v)) ? v : fallback
     } catch (e) {
-        return true
+        return fallback
     }
 }
-export const setExportAiGuide = (value) => {
+const setExportPref = (name, value) => {
     try {
-        window.localStorage.setItem(AI_GUIDE_KEY, value ? '1' : '0')
+        window.localStorage.setItem(EXPORT_PREFIX + name, value)
     } catch (e) {
     }
 }
+
+export const getExportAiGuide = () => getExportPref('AiGuide', '1') !== '0'
+export const setExportAiGuide = (value) => setExportPref('AiGuide', value ? '1' : '0')
+
+/**
+ * last chosen export format (csv, json, zip) and field selection (all, visible), remembered per browser
+ */
+export const getExportFormat = () => getExportPref('Format', 'csv', ['csv', 'json', 'zip'])
+export const setExportFormat = (value) => setExportPref('Format', value)
+export const getExportFields = () => getExportPref('Fields', 'all', ['all', 'visible'])
+export const setExportFields = (value) => setExportPref('Fields', value)
 
 /**
  * opens a file picker for a zip file

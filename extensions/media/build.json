@@ -190,6 +190,77 @@
             "action": "alias",
             "path": "info.qwen25vl7b.keyword"
           }
+        },
+        {
+          "tab": "elements.generalTab",
+          "name": "imageDescription",
+          "readOnly": true,
+          "invisible": true,
+          "hideColumnInTypesByDefault": true,
+          "searchable": true,
+          "dynamic": {
+            "action": "alias",
+            "path": "info.qwen25vl7b.description"
+          }
+        },
+        {
+          "tab": "elements.generalTab",
+          "name": "imageEntities",
+          "readOnly": true,
+          "invisible": true,
+          "hideColumnInTypesByDefault": true,
+          "searchable": true,
+          "dynamic": {
+            "action": "alias",
+            "path": "info.qwen25vl7b.name"
+          }
+        },
+        {
+          "tab": "elements.generalTab",
+          "name": "imageRecipient",
+          "readOnly": true,
+          "invisible": true,
+          "hideColumnInTypesByDefault": true,
+          "searchable": true,
+          "dynamic": {
+            "action": "alias",
+            "path": "info.qwen25vl7b.recipient"
+          }
+        },
+        {
+          "tab": "elements.generalTab",
+          "name": "imageClassification",
+          "readOnly": true,
+          "invisible": true,
+          "hideColumnInTypesByDefault": true,
+          "searchable": true,
+          "dynamic": {
+            "action": "alias",
+            "path": "info.qwen25vl7b.classification"
+          }
+        },
+        {
+          "tab": "elements.generalTab",
+          "name": "imageYear",
+          "readOnly": true,
+          "invisible": true,
+          "hideColumnInTypesByDefault": true,
+          "searchable": true,
+          "dynamic": {
+            "action": "alias",
+            "path": "info.qwen25vl7b.year"
+          }
+        },
+        {
+          "tab": "elements.generalTab",
+          "name": "imageText",
+          "readOnly": true,
+          "invisible": true,
+          "hideColumnInTypesByDefault": true,
+          "dynamic": {
+            "action": "alias",
+            "path": "info.qwen25vl7b.text"
+          }
         }
       ]
     },

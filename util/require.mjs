@@ -142,6 +142,7 @@ export const createScriptForWorker = (importPath) => {
             const {workerData,parentPort} = require('worker_threads')
             this.parentPort = parentPort
             this.context = workerData.context
+            this.meta = workerData.meta || {}
             this.log=(msg)=>{
                 parentPort.postMessage({log:msg})
             }
