@@ -248,46 +248,29 @@ if (!window.LUNUC_PREPARSED) {
         maxCounter++
         document.addEventListener('DOMContentLoaded', onload)
     }
-    if (morePolyfill) {
-        // ?v=: these files are cached for a year -> a new build must load the new version
-
+    // ?v=: these files are cached for a year -> a new build must load the new version
+    const loadScript = (file) => {
         maxCounter++
-        DomUtil.addScript('/polyfill/more.js?v=' + config.BUILD_NUMBER, {
+        DomUtil.addScript(file + '?v=' + config.BUILD_NUMBER, {
             async: true,
             onload
         })
-
-
-        if(!window.Intl || !Intl.DateTimeFormat || !Intl.DateTimeFormat().resolvedOptions().timeZone){
-            maxCounter++
-            DomUtil.addScript('/polyfill/intl.js?v=' + config.BUILD_NUMBER, {
-                async: true,
-                onload
-            })
+    }
+    if (morePolyfill) {
+        loadScript('/polyfill/more.js')
+        if (!window.Intl || !Intl.DateTimeFormat || !Intl.DateTimeFormat().resolvedOptions().timeZone) {
+            loadScript('/polyfill/intl.js')
         }
     }
-
     if (_app_.lacksBasicEs6 || _app_.lacksOptionalChaining) {
-        maxCounter++
         // transpiler for optional chaining / nullish coalescing and the toLegacyJs entry point
-        DomUtil.addScript('/legacyjs.js?v=' + config.BUILD_NUMBER, {
-            async: true,
-            onload
-        })
+        loadScript('/legacyjs.js')
     }
     if (_app_.lacksBasicEs6) {
-        maxCounter++
-        // buble (ES6 -> ES5), 200kb: only needed by browsers without basic ES6 support
-        DomUtil.addScript('/legacyjs-buble.js?v=' + config.BUILD_NUMBER, {
-            async: true,
-            onload
-        })
-        maxCounter++
-        // acorn (115kb): parser for the async/await conversion in legacyjs.js
-        DomUtil.addScript('/legacyjs-acorn.js?v=' + config.BUILD_NUMBER, {
-            async: true,
-            onload
-        })
+        // buble (ES6 -> ES5, 200kb) and acorn (115kb, parser for the async/await conversion in
+        // legacyjs.js): only needed by browsers without basic ES6 support
+        loadScript('/legacyjs-buble.js')
+        loadScript('/legacyjs-acorn.js')
     }
 
     if (maxCounter === 0) {

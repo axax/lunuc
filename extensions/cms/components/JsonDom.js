@@ -127,6 +127,8 @@ const CodeEditor = lazy(() => import(/* webpackChunkName: "codeeditor" */ '../..
 const MarkDown = lazy(() => import(/* webpackChunkName: "markdown" */ '../../../client/components/MarkDown'))
 const ShadowRoot = lazy(() => import(/* webpackChunkName: "shadowroot" */ '../../../client/components/ShadowRoot'))
 const AddToBody = lazy(() => import(/* webpackChunkName: "addtobody" */ './AddToBody'))
+// small wrapper (placeholder + load when visible) in its own chunk, Remotion itself in the "remotion" chunk
+const RemotionPlayer = lazy(() => import(/* webpackChunkName: "remotionplayer" */ '../../../client/components/remotion/RemotionPlayer'), {asyncKey: 'RemotionPlayer'})
 
 const hasNativeLazyLoadSupport = !_app_.ssr && window.HTMLImageElement && 'loading' in HTMLImageElement.prototype
 
@@ -277,6 +279,8 @@ class JsonDom extends React.Component {
         MarkDown,
         ShadowRoot,
         AddToBody,
+        // Remotion compositions from the page script (lazy)
+        RemotionPlayer,
         SmartImage: ({src, options, caption, captionFromName, wrapper, inlineSvg, svgData, tagName, figureCaptionClassName, figureProps, ...props}) => {
             const imgTag = () => {
                 let imageData = Util.getImageObject(src, options)
