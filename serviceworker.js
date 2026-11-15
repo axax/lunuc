@@ -165,7 +165,7 @@ self.addEventListener('notificationclick', event => {
         if (client) {
             await client.focus().catch(() => {})
             if (url) {
-                // handled by the page without a reload (extensions/push/util/pushClient.js)
+                // handled by the page without a reload (extensions/push/client.js)
                 client.postMessage({type: 'lunuc-push-navigate', url})
             }
         } else if (url && self.clients.openWindow) {

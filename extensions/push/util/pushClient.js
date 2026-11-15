@@ -1,5 +1,6 @@
 /*
  * Web push in the browser (generic) - available as _app_.push on every page for logged in users.
+ * This file is loaded on demand (chunk "push") by the facade in ../client.js on the first async call.
  *
  *   const status = await _app_.push.getStatus()
  *      -> {state, subscribed, devices, settings, topics}
@@ -14,8 +15,8 @@
  * Sending: see util/push.mjs
  */
 import {client} from '../../../client/middleware/graphql'
+import {FLAG_KEY, isSupported, isSubscribed} from './pushShared'
 
-const FLAG_KEY = 'lunuc.push.subscribed'
 
 const Q_INFO = 'query pushInfo($endpoint:String){pushInfo(endpoint:$endpoint){publicKey subscribed devices settings topics}}'
 const M_SUBSCRIBE = 'mutation pushSubscribe($subscription:String!,$topics:[String],$settings:String){pushSubscribe(subscription:$subscription,topics:$topics,settings:$settings)}'
@@ -34,8 +35,6 @@ const setFlag = (on) => {
     }
 }
 
-const isSupported = () => typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && typeof Notification !== 'undefined'
-
 const getRegistration = async () => (isSupported() ? (await navigator.serviceWorker.getRegistration()) || null : null)
 
 const keyToUint8Array = (base64) => {
@@ -51,14 +50,7 @@ const mutate = (mutation, variables) => client.mutate({mutation, variables, sile
 
 const push = {
     isSupported,
-    isSubscribed: () => {
-        try {
-            const flag = localStorage.getItem(FLAG_KEY)
-            return !!flag && (!_app_.user || !_app_.user._id || flag === '1' || flag === String(_app_.user._id))
-        } catch (e) {
-            return false
-        }
-    },
+    isSubscribed,
     getStatus: async () => {
         const status = {state: 'unsupported', subscribed: false, devices: 0, settings: {}, topics: []}
         if (!isSupported()) return status
@@ -130,21 +122,6 @@ const push = {
         return subscription.unsubscribe()
     },
     test: () => mutate(M_TEST).then(d => d.pushTest)
-}
-
-/* a click on a notification: the service worker asks the open window to navigate (no page reload) */
-export const initPushClient = () => {
-    if (typeof window === 'undefined' || typeof navigator === 'undefined' || !navigator.serviceWorker) return
-    navigator.serviceWorker.addEventListener('message', (event) => {
-        const data = event.data
-        if (data && data.type === 'lunuc-push-navigate' && typeof data.url === 'string' && data.url[0] === '/' && data.url[1] !== '/') {
-            if (_app_.history && _app_.history.push) {
-                _app_.history.push(data.url)
-            } else {
-                location.href = data.url
-            }
-        }
-    })
 }
 
 export default push
