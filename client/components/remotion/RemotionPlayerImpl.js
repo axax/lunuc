@@ -1,10 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react'
 import {Player} from '@remotion/player'
-import * as Remotion from 'remotion'
-import htm from 'htm'
-
-// JSX-like tagged templates without a build step: html`<${AbsoluteFill}>...<//>`
-const html = htm.bind(React.createElement)
+import {compileCode, createComponent} from './factory'
 
 // Compositions are written in the page script (no build). A composition is a factory
 // that receives React, htm and the remotion API and returns the React component:
@@ -13,26 +9,8 @@ const html = htm.bind(React.createElement)
 //   _app_.remotionCompositions.Intro = ({html, useCurrentFrame, interpolate, AbsoluteFill}) =>
 //       ({title}) => html`<${AbsoluteFill}>...<//>`
 //
-// The same factory source can be passed as string ("code" prop) - this is also how the
-// server side renderer gets CMS compositions into a fixed bundle later on.
-
-const codeCache = new Map()
-const CODE_CACHE_MAX = 50
-
-const compileCode = (code) => {
-    let factory = codeCache.get(code)
-    if (!factory) {
-        factory = new Function(`'use strict';return (${code}\n)`)()
-        if (typeof factory !== 'function') {
-            throw new Error('code must evaluate to a factory function: (lib) => (props) => element')
-        }
-        if (codeCache.size >= CODE_CACHE_MAX) {
-            codeCache.delete(codeCache.keys().next().value)
-        }
-        codeCache.set(code, factory)
-    }
-    return factory
-}
+// The same factory source can be passed as string ("code" prop) - the server render
+// (renderRemotionVideo) uses exactly this form.
 
 const resolveFactory = ({composition, code}) => {
     if (typeof composition === 'function') {
@@ -127,11 +105,7 @@ const RemotionPlayerImpl = ({
             return null
         }
         try {
-            const comp = factory({...Remotion, React, html, h: React.createElement, fps: frameRate, width, height, durationInFrames: duration})
-            if (typeof comp !== 'function' && !(comp && comp.$$typeof)) {
-                throw new Error('the composition factory must return a React component')
-            }
-            return comp
+            return createComponent(factory, {fps: frameRate, width, height, durationInFrames: duration})
         } catch (e) {
             return () => <ErrorBox error={e}/>
         }
