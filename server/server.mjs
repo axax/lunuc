@@ -71,7 +71,6 @@ import {
     resetCountryStats
 } from './util/asnBlocker.mjs'
 import {handleChallengeConfirm, renderChallengePage} from './util/botChallenge.mjs'
-import {LEGACY_JS_URL, handleLegacyJsRequest} from './util/legacyJs.mjs'
 import {startEventLoopWatchdog, trackRequestForWatchdog} from '../util/eventLoopWatchdog.mjs'
 
 // diagnostic only: logs event loop stalls with the requests in flight
@@ -903,9 +902,6 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                 sendError(res, 403)
             }
 
-        } else if (urlPathname === LEGACY_JS_URL) {
-            // ES5 conversion of cms scripts with async/await for very old browsers (static/legacyjs.js)
-            handleLegacyJsRequest(req, res, remoteAddress)
         } else if (urlPathname.startsWith('/graphql') || urlPathname.startsWith('/oauth/') ||
             API_PREFIXES.some(prefix => urlPathname.startsWith('/' + prefix + '/'))) {
             // there is also /graphql/upload

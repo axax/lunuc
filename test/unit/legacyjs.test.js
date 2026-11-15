@@ -104,13 +104,12 @@ describe('legacyjs', () => {
 })
 
 /*
- * async/await can't be converted by buble -> static/legacyjs.js lets the server convert it with babel
- * (server/util/legacyJs.mjs + legacyJsTransform.mjs).
+ * async/await can't be converted by buble -> transpileAsync in static/legacyjs.js rewrites it into promise chains
+ * (parser: static/legacyjs-acorn.js). Every case must give the same result and the same order of events as native async.
  */
 describe('legacyjs async/await', () => {
-    let transformLegacyJs, acorn
+    let acorn
     beforeAll(async () => {
-        transformLegacyJs = (await import('../../server/util/legacyJsTransform.mjs')).transformLegacyJs
         acorn = await import('acorn')
     })
 
@@ -119,82 +118,153 @@ describe('legacyjs async/await', () => {
         return true
     }
 
-    // browser context with buble, a fake synchronous XMLHttpRequest (-> babel) and a fake localStorage
-    const loadWithServer = (storage = {}, failRequests = false) => {
-        const requests = []
+    // browser context without basic ES6: buble + acorn + legacyjs, fake localStorage
+    const loadAsync = (storage = {}) => {
         const ctx = {
             _app_: {lacksOptionalChaining: true, lacksBasicEs6: true},
             console: {log() {}},
             location: {href: ''},
+            Promise,
             localStorage: {
                 getItem: k => (k in storage ? storage[k] : null),
                 setItem: (k, v) => { storage[k] = String(v) },
                 removeItem: k => { delete storage[k] },
                 key: i => Object.keys(storage)[i],
                 get length() { return Object.keys(storage).length }
-            },
-            XMLHttpRequest: function () {
-                this.open = (method, url, async) => { this.req = {method, url, async} }
-                this.setRequestHeader = () => {}
-                this.send = (body) => {
-                    requests.push({...this.req, body})
-                    this.status = failRequests ? 500 : 200
-                    this.responseText = failRequests ? 'error' : transformLegacyJs(body)
-                }
             }
         }
         ctx.window = ctx
         ctx.self = ctx
         vm.createContext(ctx)
-        vm.runInContext(fs.readFileSync(path.join(staticDir, 'legacyjs-buble.js'), 'utf8'), ctx)
-        vm.runInContext(fs.readFileSync(path.join(staticDir, 'legacyjs.js'), 'utf8'), ctx)
-        return {app: ctx._app_, requests, storage}
+        for (const file of ['legacyjs-buble.js', 'legacyjs-acorn.js', 'legacyjs.js']) {
+            vm.runInContext(fs.readFileSync(path.join(staticDir, file), 'utf8'), ctx)
+        }
+        const errors = []
+        ctx._app_.sendError = e => errors.push(e)
+        return {app: ctx._app_, ctx, errors, storage}
     }
 
-    it('server converts async/await, optional chaining and spread to ES5 with the same result', async () => {
-        const code = 'const load = async (x) => { const v = await Promise.resolve(x?.y ?? 2); return {...{v}, w: [...[1, 2]], self: this.name} }\n' +
-            'return load({y: null})'
-        const out = transformLegacyJs(code)
-        assert.ok(isEs5(out), out)
-        assert.ok(!/\bawait\b/.test(out))
-        const scope = {name: 'page'}
-        assert.deepStrictEqual(await new Function(out).call(scope), await new Function(code).call(scope))
+    // runs a case (function body with log(), returns a promise) -> result + order of the log calls
+    const run = async (code, app) => {
+        const log = []
+        let result
+        try {
+            result = await new Function('log', '_app_', code)(x => log.push(x), app)
+        } catch (e) {
+            result = 'ERR ' + e.message
+        }
+        return JSON.stringify([result, log])
+    }
+
+    const cases = {
+ sequence: `const f = async (x) => { log('a'); const v = await Promise.resolve(x); log('b' + v); return v * 2 }
+   const p = f(3); log('sync'); return p`,
+ nestedAwait: `const g = async v => v + 1; const f = async () => await g(await g(1)); return f()`,
+ thisArgs: `const o = {v: 5, async m(a) { const r = await Promise.resolve(this.v + a + arguments.length); return r }}; return o.m(2)`,
+ classMethod: `class A { constructor() { this.x = 1 } async get(y) { await null; return this.x + y } static async s() { return await 7 } }
+   return new A().get(2).then(r => A.s().then(s => [r, s]))`,
+ ifElse: `const f = async (c) => { if (c) { log('t'); await null; log('t2') } else if (c === 0) { await null; return 'zero' } else { log('e') } log('after'); return c }
+   return Promise.all([f(1), f(0), f(false)])`,
+ awaitInTest: `const f = async () => { if (await Promise.resolve(false)) return 1; else return 2 }; return f()`,
+ whileBreakContinue: `const f = async () => { let i = 0, s = 0; while (i < 10) { i++; if (i % 2) continue; await null; if (i > 7) break; s += i } return [i, s] }; return f()`,
+ forLoop: `const f = async () => { const r = []; for (let i = 0; i < 4; i++) { r.push(await Promise.resolve(i * i)) } return r }; return f()`,
+ forAwaitTest: `let n = 0; const more = async () => n < 3; const f = async () => { while (await more()) { n++ } return n }; return f()`,
+ doWhile: `const f = async () => { let i = 0; do { await null; i++ } while (i < 3); return i }; return f()`,
+ forOfDestructure: `const f = async () => { let s = ''; for (const [k, v] of [['a', 1], ['b', 2]]) { s += k + await Promise.resolve(v) } return s }; return f()`,
+ forIn: `const f = async () => { const r = []; for (const k in {x: 1, y: 2}) { await null; r.push(k) } return r }; return f()`,
+ labels: `const f = async () => { const r = []; outer: for (let i = 0; i < 3; i++) { for (let j = 0; j < 3; j++) { await null; if (j === 1) continue outer; if (i === 2) break outer; r.push(i + '' + j) } } return r }; return f()`,
+ returnInLoop: `const f = async () => { for (const x of [1, 2, 3]) { await null; if (x === 2) return 'found ' + x } return 'none' }; return f()`,
+ plainLoopInside: `const f = async () => { const r = []; await null; for (let i = 0; i < 3; i++) { if (i === 1) continue; r.push(i); if (i === 2) break } return r }; return f()`,
+ tryCatch: `const f = async () => { try { log('try'); await Promise.reject(new Error('x')); log('never') } catch (e) { log('catch ' + e.message); return 'c' } finally { log('fin') } }; return f()`,
+ tryFinallyReturn: `const f = async () => { try { await null; return 1 } finally { log('fin') } }; return f()`,
+ catchDestructure: `const f = async () => { try { await Promise.reject({code: 42}) } catch ({code}) { return code } }; return f()`,
+ rejectPropagates: `const f = async () => { await null; throw new Error('boom') }; return f().then(() => 'no', e => 'caught ' + e.message)`,
+ syncThrow: `const f = async () => { throw new Error('early') }; const p = f(); log('after call'); return p.catch(e => e.message)`,
+ varHoisting: `const f = async (c) => { if (c) { var x = await Promise.resolve(10) } else { var x = 20 } return x }; return Promise.all([f(true), f(false)])`,
+ conditional: `const f = async (c) => { const v = c ? await Promise.resolve('yes') : 'no'; return v }; return Promise.all([f(1), f(0)])`,
+ logical: `let calls = 0; const g = async () => { calls++; return 'g' }; const f = async (c) => { const a = c && await g(); const b = c || await g(); return [a, b, calls] }; return f(0).then(r => f(1).then(r2 => [r, r2]))`,
+ nullish: `const f = async (v) => v ?? await Promise.resolve('def'); return Promise.all([f(null), f(0)])`,
+ arrowObject: `const f = async () => ({a: await Promise.resolve(1)}); return f()`,
+ asyncInCallback: `const f = async () => { const r = await Promise.all([1, 2].map(async x => { await null; return x * 10 })); return r }; return f()`,
+ functionDecl: `async function f(a, b = 2) { await null; return a + b }; return f(1)`,
+ nestedAsync: `const outer = async () => { const inner = async () => { await null; return 'in' }; const v = await inner(); return v + 'out' }; return outer()`,
+ optionalChaining: `const f = async (o) => { const v = await Promise.resolve(o?.a?.b ?? 'x'); return v }; return Promise.all([f({a: {b: 1}}), f(null)])`,
+ spread: `const f = async (o) => { const r = {...o, x: await Promise.resolve(1)}; return [...Object.keys(r)] }; return f({a: 1})`,
+ template: "const f = async (n) => `n=${await Promise.resolve(n)}`; return f(4)",
+ switchDiscriminant: `const f = async (v) => { switch (await Promise.resolve(v)) { case 1: return 'one'; default: return 'other' } }; return Promise.all([f(1), f(2)])`,
+ noSemicolons: `const f = async () => {
+     let a = 1
+     await null
+     ;[a] = [2]
+     ;(function () { a++ })()
+     return a
+   }
+   return f()`,
+ asyncInsideNonAsync: `function make() { return async () => { await null; return this && this.k } }; return make.call({k: 3})()`,
+ closureInLoop: `const f = async () => { const fns = []; for (const i of [1, 2]) { await null; fns.push(() => i) } return fns.map(g => g()) }; return f()`,
+ ifWithoutBlock: `const f = async (c) => { if (c) await log('in'); else return 'else'; return 'end' }; return Promise.all([f(1), f(0)])`,
+ deepLoop: `const f = async () => { let s = 0; for (let i = 0; i < 20000; i++) { if (i === 19999) await null; s += i } return s }; return f()`,
+}
+
+    Object.keys(cases).forEach(name => {
+        it(name, async () => {
+            const {app, errors} = loadAsync()
+            const out = app.toLegacyJs(cases[name])
+            assert.deepStrictEqual(errors.map(e => e.message), [])
+            assert.ok(isEs5(out), out)
+            assert.strictEqual(await run(out, app), await run(cases[name], app), out)
+        })
     })
 
-    it('reports syntax errors', () => {
-        assert.throws(() => transformLegacyJs('const a = await ('))
+    it('leaves async in strings, comments and property names alone', () => {
+        const {ctx} = loadAsync()
+        assert.strictEqual(ctx.hasAsyncAwait('const s = "async await" // await x\nconst o = {}; o.async = 1'), false)
+        assert.strictEqual(ctx.hasAsyncAwait('const f = async () => 1'), true)
     })
 
-    it('sends only code with async/await to the server and stores the result', async () => {
-        const {app, requests, storage} = loadWithServer()
-
-        // no async -> buble, no request
-        assert.ok(isEs5(app.toLegacyJs('const a = () => 1')))
-        // async only in a string or comment / as property name -> buble, no request
-        app.toLegacyJs('const s = "async await" // await x\nconst o = {}; o.async = 1')
-        assert.strictEqual(requests.length, 0)
-
-        const code = 'const f = async () => { return await Promise.resolve(this.v) }\nreturn f()'
-        const out = app.toLegacyJs(code)
-        assert.strictEqual(requests.length, 1)
-        assert.deepStrictEqual({method: requests[0].method, url: requests[0].url, async: requests[0].async}, {method: 'POST', url: '/__legacyjs', async: false})
-        assert.ok(isEs5(out), out)
-        assert.strictEqual(await new Function(out).call({v: 7}), 7)
-        assert.strictEqual(Object.keys(storage).length, 1)
-
-        // next page load: from localStorage, no request
-        const second = loadWithServer(storage)
+    it('stores the converted code over page loads', () => {
+        const code = 'const f = async () => { return await Promise.resolve(1) }\nreturn f()'
+        const first = loadAsync()
+        const out = first.app.toLegacyJs(code)
+        assert.strictEqual(Object.keys(first.storage).length, 1)
+        // next page load: no conversion (acorn is not even needed)
+        const second = loadAsync(first.storage)
+        second.ctx.acorn = undefined
         assert.strictEqual(second.app.toLegacyJs(code), out)
-        assert.strictEqual(second.requests.length, 0)
+        assert.strictEqual(second.errors.length, 0)
     })
 
-    it('falls back to buble and reports the error if the server fails', () => {
-        const {app, requests, storage} = loadWithServer({}, true)
-        const errors = []
-        app.sendError = e => errors.push(e)
-        assert.strictEqual(typeof app.toLegacyJs('const f = async () => 1'), 'string')
-        assert.strictEqual(requests.length, 1)
-        assert.strictEqual(errors[0].meta.stage, 'server')
+    it('reports unsupported await', () => {
+        const {app, errors, storage} = loadAsync()
+        app.toLegacyJs('const f = async (v) => { switch (v) { case 1: await null } }')
+        assert.strictEqual(errors.length, 1)
+        assert.strictEqual(errors[0].meta.stage, 'async')
+        assert.ok(/switch case/.test(errors[0].message))
         assert.strictEqual(Object.keys(storage).length, 0)
+    })
+})
+
+describe('legacyjs code without semicolons and numeric separators', () => {
+    const {_app_: app} = (() => {
+        const ctx = {_app_: {lacksOptionalChaining: true, lacksBasicEs6: true}, console: {log() {}}, location: {href: ''}}
+        ctx.window = ctx
+        ctx.self = ctx
+        vm.createContext(ctx)
+        vm.runInContext(fs.readFileSync(path.join(staticDir, 'legacyjs-buble.js'), 'utf8'), ctx)
+        vm.runInContext(fs.readFileSync(path.join(staticDir, 'legacyjs.js'), 'utf8'), ctx)
+        return ctx
+    })()
+
+    it('?? ends at a line break without operator', () => {
+        const code = 'const w = (scope.a && scope.a.b) ?? scope.c\nif (w == null) { __r = 0 } else { __r = w }'
+        const out = app.toLegacyJs(code)
+        assert.deepStrictEqual(evaluate(out, {a: null, c: 5}), 5)
+        // operator at the end of the line / at the start of the next line -> the expression goes on
+        assert.deepStrictEqual(evaluate(app.toLegacyJs('var x = scope.a ??\n  scope.b\n  .trim()\nvar __r = x'), {b: ' y '}), 'y')
+    })
+
+    it('removes numeric separators', () => {
+        const out = app.toLegacyJs('var __r = 1_000_000 + 0xFF_FF; var s = "1_0"; var a_1 = 2')
+        assert.strictEqual(evaluate(out, {}), 1065535)
     })
 })
