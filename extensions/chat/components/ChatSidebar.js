@@ -16,7 +16,7 @@ export const Ticks = ({msg, room}) => {
     </span>
 }
 
-const ChatSidebar = ({state, selectedId, onSelect, onNewChat, onSettings, banner}) => {
+const ChatSidebar = ({state, selectedId, onSelect, onNewChat, onSettings, onLogout, banner}) => {
     const [search, setSearch] = useState('')
     const [filter, setFilter] = useState('all')
     const myId = _app_.user._id
@@ -38,6 +38,7 @@ const ChatSidebar = ({state, selectedId, onSelect, onNewChat, onSettings, banner
             <span className="lchat-bar-title">{_t('Chat.title')}</span>
             <IconButton icon="newChat" title={_t('Chat.newChat')} onClick={onNewChat}/>
             <IconButton icon="settings" title={_t('Chat.settings')} onClick={onSettings}/>
+            <IconButton icon="logout" title={_t('Chat.logout')} onClick={onLogout}/>
         </div>
         {banner}
         <div className="lchat-search">

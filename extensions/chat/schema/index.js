@@ -41,6 +41,7 @@ export default `
 
     type Query {
         chatRooms: [ChatRoom]
+        chatUsers(search: String): [UserPublic]
         chatRoomMessages(chat: ID!, before: ID, limit: Int): [ChatMsg]
     }
 

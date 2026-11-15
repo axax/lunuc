@@ -102,13 +102,21 @@ const Messenger = ({match, height: fixedHeight}) => {
         if (!room) setInfoOpen(false)
     }, [selectedId])
 
+    const logout = () => {
+        // eslint-disable-next-line no-alert
+        if (!window.confirm(_t('Chat.logoutConfirm', {user: _app_.user.username}))) return
+        actions.stop()
+        // on a CmsPage come back to it (shows the login hint), in the admin as the admin logout does
+        _app_.history.push(ADMIN_BASE_URL + '/logout' + (hasRoute ? '' : '?forward=' + encodeURIComponent(location.pathname)))
+    }
+
     const {settings} = state
     const showBanner = !settings.notify && !settings.hintDismissed && notificationPermission() === 'default'
 
     return <div ref={rootRef} style={fixedHeight ? {height: fixedHeight} : height ? {height} : undefined}
                 className={'lchat' + (settings.accent === 'theme' ? ' lchat--theme' : '') + (room ? ' has-chat' : '') + (room && infoOpen ? ' has-info' : '')}>
         <ChatSidebar state={state} selectedId={selectedId} onSelect={select}
-                     onNewChat={() => setDialog('new')} onSettings={() => setDialog('settings')}
+                     onNewChat={() => setDialog('new')} onSettings={() => setDialog('settings')} onLogout={logout}
                      banner={showBanner && <div className="lchat-banner">
                          <Icon name="bell" size={28}/>
                          <div>

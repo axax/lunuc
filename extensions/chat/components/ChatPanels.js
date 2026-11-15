@@ -4,22 +4,15 @@ import {_t} from '../../../util/i18n.mjs'
 import {actions, getPush, getRoomPicture, getRoomTitle, notificationPermission} from '../util/chatStore'
 import {Avatar, Icon, IconButton, Modal, Switch} from './common'
 
-const QUERY_USERS = 'query users($sort:String,$limit:Int,$page:Int,$filter:String){users(sort:$sort,limit:$limit,page:$page,filter:$filter){results{_id username picture{_id}}}}'
+const QUERY_USERS = 'query chatUsers{chatUsers{_id username picture}}'
 
-/* users that can be added to a chat (users with access to the admin) */
+/* users that can be added to a chat: same user group (any role), see chatUserMatch in the resolver */
 const useUsers = () => {
     const [users, setUsers] = useState(null)
     useEffect(() => {
         let active = true
-        client.query({
-            query: QUERY_USERS,
-            variables: {filter: 'role.name==[administrator,editor,author]', sort: 'username asc', limit: 500},
-            fetchPolicy: 'cache-and-network'
-        }).then(r => {
-            if (active) {
-                setUsers(((r.data.users && r.data.users.results) || []).filter(u => u && u._id !== _app_.user._id)
-                    .map(u => ({_id: u._id, username: u.username, picture: u.picture ? u.picture._id : null})))
-            }
+        client.query({query: QUERY_USERS, fetchPolicy: 'no-cache'}).then(r => {
+            if (active) setUsers(r.data.chatUsers || [])
         }).catch(() => active && setUsers([]))
         return () => {
             active = false

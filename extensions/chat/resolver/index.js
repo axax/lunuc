@@ -18,6 +18,9 @@ const {ADMIN_BASE_URL} = config
 const EVENT = 'subscribeChatEvent'
 const MAX_MESSAGE_LENGTH = 10000
 const MAX_MEDIA = 10
+const MAX_USERS = 500
+// roles a user with manage_other_users can always chat with (as before)
+const STAFF_ROLES = ['administrator', 'editor', 'author']
 
 const oid = (id, name = 'id') => {
     if (!id || !ObjectId.isValid(String(id))) {
@@ -57,6 +60,42 @@ const loadUsers = async (db, ids) => {
         })
     }
     return map
+}
+
+/*
+ * Who a user can start a chat with / add to a group:
+ * - everybody he shares a user group with, whatever the role (also subscribers)
+ * - with manage_other_users additionally all users with a staff role
+ * Blocked users and the user himself are left out. Returns null if there is nobody.
+ */
+const chatUserMatch = async (db, context) => {
+    const me = await db.collection('User').findOne({_id: oid(context.id)}, {projection: {group: 1}})
+    const or = []
+    if (me && me.group && me.group.length) {
+        or.push({group: {$in: me.group}})
+    }
+    if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+        const roles = await db.collection('UserRole').find({name: {$in: STAFF_ROLES}}).project({_id: 1}).toArray()
+        if (roles.length) {
+            or.push({role: {$in: roles.map(r => r._id)}})
+        }
+    }
+    if (!or.length) {
+        return null
+    }
+    return {$and: [{$or: or}, {_id: {$ne: oid(context.id)}}, {blocked: {$ne: true}}]}
+}
+
+/* throws unless the current user may chat with all of these users */
+const checkChatUsers = async (db, context, userIds) => {
+    const ids = [...new Set(userIds.map(String))].filter(id => id !== String(context.id))
+    if (!ids.length) return
+    const match = await chatUserMatch(db, context)
+    const found = match ? await db.collection('User').find({$and: [match, {_id: {$in: ids.map(id => new ObjectId(id))}}]})
+        .project({_id: 1}).toArray() : []
+    if (found.length !== ids.length) {
+        throw new Error('User doesnt exist')
+    }
 }
 
 const userOrUnknown = (map, id) => map[String(id)] || {_id: String(id), username: '?', picture: null}
@@ -184,10 +223,8 @@ const addUser = async (db, context, chatId, userId) => {
     if (room.direct) {
         throw new Error('Users can not be added to a direct chat')
     }
-    const user = await db.collection('User').findOne({_id: oid(userId, 'user')}, {projection: {_id: 1}})
-    if (!user) {
-        throw new Error('User doesnt exist')
-    }
+    const user = {_id: oid(userId, 'user')}
+    await checkChatUsers(db, context, [userId])
     await db.collection('Chat').updateOne({_id: room._id}, {$addToSet: {users: user._id}})
     const updated = await db.collection('Chat').findOne({_id: room._id})
     const result = await roomForClient(db, updated)
@@ -266,6 +303,20 @@ export default (db) => ({
                 lastMessage: lastByChat[String(r._id)] || null
             }))
         },
+        chatUsers: async ({search}, {context}) => {
+            Util.checkIfUserIsLoggedIn(context)
+            const match = await chatUserMatch(db, context)
+            if (!match) {
+                return []
+            }
+            const term = (search || '').trim().substring(0, 100)
+            if (term) {
+                match.$and.push({username: {$regex: term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i'}})
+            }
+            const users = await db.collection('User').find(match).project({username: 1, picture: 1})
+                .sort({username: 1}).limit(MAX_USERS).toArray()
+            return users.map(u => ({_id: String(u._id), username: u.username, picture: str(u.picture) || null}))
+        },
         chatRoomMessages: async ({chat, before, limit}, {context}) => {
             const room = await getRoom(db, context, chat)
             const match = {chat: room._id}
@@ -283,6 +334,7 @@ export default (db) => ({
             Util.checkIfUserIsLoggedIn(context)
             const me = String(context.id)
             const ids = [...new Set([me, ...(users || []).map(id => String(oid(id, 'user')))])]
+            await checkChatUsers(db, context, ids)
             const existing = await db.collection('User').find({_id: {$in: ids.map(id => new ObjectId(id))}})
                 .project({_id: 1, username: 1}).toArray()
             if (existing.length !== ids.length) {

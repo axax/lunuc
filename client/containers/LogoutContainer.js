@@ -9,7 +9,17 @@ class LogoutContainer extends React.Component {
         super(props)
     }
 
-    logout = () => {
+    logout = async () => {
+
+        // web push (extension push): this device must not get notifications of the user anymore.
+        // Has to happen before the logout, the server only removes subscriptions of the current user.
+        if (_app_.push && _app_.push.isSubscribed()) {
+            try {
+                await _app_.push.unsubscribe()
+            } catch (e) {
+                console.log(e)
+            }
+        }
 
         client.query({
             fetchPolicy: 'network-only',

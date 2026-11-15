@@ -94,7 +94,9 @@ export const translations = {
         'Chat.banner.enable': 'Aktivieren',
         'Chat.banner.later': 'Später',
         'Chat.loginRequired': 'Bitte melde dich an, um den Messenger zu nutzen.',
-        'Chat.login': 'Anmelden'
+        'Chat.login': 'Anmelden',
+        'Chat.logout': 'Abmelden',
+        'Chat.logoutConfirm': '%user% abmelden?'
     },
     en: {
         'Chat.title': 'Messenger',
@@ -191,6 +193,8 @@ export const translations = {
         'Chat.banner.enable': 'Turn on',
         'Chat.banner.later': 'Later',
         'Chat.loginRequired': 'Please log in to use the messenger.',
-        'Chat.login': 'Log in'
+        'Chat.login': 'Log in',
+        'Chat.logout': 'Log out',
+        'Chat.logoutConfirm': 'Log out %user%?'
     }
 }
