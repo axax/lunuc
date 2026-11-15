@@ -4,52 +4,51 @@
  * A composition is the same factory source the RemotionPlayer uses in a CmsPage:
  *   ({html, useCurrentFrame, interpolate, AbsoluteFill}) => (props) => html`...`
  * It is passed to the generic composition "CmsComposition" as inputProps.code, so
- * the bundle (client/components/remotion/server) is built only once per process.
+ * the bundle (client/components/remotion/server) is built only once.
+ *
+ * The work happens in a child process (remotionRenderWorker.mjs, reasons there).
+ * Renders run one after another; the worker exits after REMOTION_IDLE_MS idle.
  *
  * Needs @remotion/bundler and @remotion/renderer (same version as remotion) and a
  * Chrome: by default Remotion downloads Chrome Headless Shell on first use
  * (into node_modules/.remotion), or browserExecutable points to an installed one.
  */
 import path from 'path'
-import fs from 'fs'
-import os from 'os'
-import crypto from 'crypto'
+import {fork} from 'child_process'
 
-const ENTRY_DIR = path.join(path.resolve(), 'client/components/remotion')
-const ENTRY = path.join(ENTRY_DIR, 'server/index.js')
-const BUNDLE_FILES = ['server/index.js', 'server/CmsComposition.js', 'factory.js']
+const WORKER = path.join(path.resolve(), 'api/util/remotionRenderWorker.mjs')
+const IDLE_MS = 10 * 60 * 1000
 
 // survives the re-evaluation of db scripts (they run per request)
-const state = globalThis.__lunucRemotion || (globalThis.__lunucRemotion = {bundle: null, hash: null, bundling: null, queue: Promise.resolve()})
+const state = globalThis.__lunucRemotion || (globalThis.__lunucRemotion = {worker: null, queue: Promise.resolve(), idleTimer: null, seq: 0})
 
-const entryHash = () => {
-    const h = crypto.createHash('sha1')
-    BUNDLE_FILES.forEach(f => h.update(fs.readFileSync(path.join(ENTRY_DIR, f))))
-    return h.digest('hex').slice(0, 12)
+const getWorker = () => {
+    if (state.worker && state.worker.connected) {
+        return state.worker
+    }
+    // no execArgv of the server (loaders, inspector), but enough heap for webpack
+    const worker = fork(WORKER, [], {cwd: path.resolve(), execArgv: ['--max-old-space-size=3072'], stdio: ['ignore', 'inherit', 'inherit', 'ipc']})
+    worker.on('exit', () => {
+        if (state.worker === worker) {
+            state.worker = null
+        }
+    })
+    state.worker = worker
+    return worker
 }
 
-// bundles once, again only when one of the entry files changed
-export const getRemotionBundle = async () => {
-    const hash = entryHash()
-    if (state.bundle && state.hash === hash) {
-        return state.bundle
-    }
-    if (!state.bundling) {
-        state.bundling = (async () => {
-            const {bundle} = await import('@remotion/bundler')
-            const outDir = path.join(os.tmpdir(), 'lunuc-remotion-bundle-' + hash)
-            const serveUrl = await bundle({entryPoint: ENTRY, outDir, enableCaching: true})
-            state.bundle = serveUrl
-            state.hash = hash
-            return serveUrl
-        })().finally(() => {
-            state.bundling = null
-        })
-    }
-    return state.bundling
+const scheduleIdleExit = () => {
+    clearTimeout(state.idleTimer)
+    state.idleTimer = setTimeout(() => {
+        if (state.worker) {
+            state.worker.kill()
+            state.worker = null
+        }
+    }, IDLE_MS)
+    state.idleTimer.unref?.()
 }
 
-// syntax check in node before a browser is started (the code itself runs in chrome)
+// syntax check before a process / browser is started (the code itself runs in chrome)
 export const checkCompositionCode = (code) => {
     if (!code || typeof code !== 'string') {
         throw new Error('code is missing: the composition factory as source string')
@@ -64,34 +63,40 @@ export const checkCompositionCode = (code) => {
 }
 
 /**
- * @returns {Promise<{file, seconds, renderMs}>}
- * Renders run one after another per process (a render uses several cores).
+ * @param args {code, inputProps, durationInFrames, fps, width, height, outputFile, concurrency, browserExecutable, timeoutMs, onProgress}
+ * @returns {Promise<{file, seconds, width, height, fps, renderMs}>}
  */
-export const renderRemotionVideo = ({code, inputProps = {}, durationInFrames, fps = 30, width = 1280, height = 720,
-                                        outputFile, concurrency = 2, browserExecutable = null, timeoutMs = 10 * 60 * 1000,
-                                        onProgress}) => {
-    checkCompositionCode(code)
-    const run = async () => {
-        const started = Date.now()
-        const {selectComposition, renderMedia, makeCancelSignal} = await import('@remotion/renderer')
-        const serveUrl = await getRemotionBundle()
-        const props = {code, inputProps, durationInFrames, fps, width, height}
-        const composition = await selectComposition({serveUrl, id: 'CmsComposition', inputProps: props, browserExecutable})
-        const {cancelSignal, cancel} = makeCancelSignal()
-        const timer = setTimeout(cancel, timeoutMs)
-        try {
-            await fs.promises.mkdir(path.dirname(outputFile), {recursive: true})
-            await renderMedia({
-                composition, serveUrl, codec: 'h264', outputLocation: outputFile, inputProps: props,
-                concurrency, browserExecutable, cancelSignal, muted: false, logLevel: 'warn',
-                onProgress: onProgress ? ({progress}) => onProgress(progress) : undefined
-            })
-        } finally {
-            clearTimeout(timer)
+export const renderRemotionVideo = ({onProgress, ...args}) => {
+    checkCompositionCode(args.code)
+    const run = () => new Promise((resolve, reject) => {
+        clearTimeout(state.idleTimer)
+        const worker = getWorker()
+        const id = ++state.seq
+        const cleanup = () => {
+            worker.off('message', onMessage)
+            worker.off('exit', onExit)
+            scheduleIdleExit()
         }
-        return {file: outputFile, seconds: composition.durationInFrames / composition.fps,
-            width: composition.width, height: composition.height, fps: composition.fps, renderMs: Date.now() - started}
-    }
+        const onMessage = (msg) => {
+            if (!msg || msg.id !== id) return
+            if (msg.type === 'progress') {
+                onProgress && onProgress(msg.progress)
+            } else if (msg.type === 'done') {
+                cleanup()
+                resolve(msg.result)
+            } else if (msg.type === 'error') {
+                cleanup()
+                reject(new Error(msg.message))
+            }
+        }
+        const onExit = (code, signal) => {
+            cleanup()
+            reject(new Error(`render process exited (${signal || code})`))
+        }
+        worker.on('message', onMessage)
+        worker.on('exit', onExit)
+        worker.send({id, type: 'render', args})
+    })
     const job = state.queue.then(run, run)
     state.queue = job.catch(() => {})
     return job
