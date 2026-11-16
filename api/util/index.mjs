@@ -276,6 +276,21 @@ const Util = {
         }
 
         if ((newOption.skipCheck) || await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
+
+            // Partial update of an existing entry, like setKeyValue: options.aggregation is an update document
+            // or pipeline (e.g. [{$set: {'value.files': {$setField: ...}}}]), options.query adds conditions
+            // (e.g. {'value.files': {$type: 'object'}}). Atomic, the value isn't read and written back as a whole.
+            // No upsert and no publish: check matchedCount and fall back to a full write if the entry is missing.
+            // Not for file backed values (asFile).
+            if (newOption.aggregation) {
+                const result = await db.collection('KeyValueGlobal').updateOne(
+                    Object.assign({}, newOption.query, {key}),
+                    newOption.aggregation
+                )
+                Cache.clearStartWith('KeyValueGlobal_' + key)
+                return result
+            }
+
             if(newOption.asFile && Util.ensureDirectoryExistence(KEYVALUE_DIR_ABS, true)){
                 // safeKeyValueFileName throws if "key" contains characters
                 // outside of [a-zA-Z0-9_-] (e.g. "../", "/") - this prevents
