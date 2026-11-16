@@ -100,11 +100,15 @@ export const clientCredentials = req => {
     return {client_id: body.client_id, client_secret: body.client_secret}
 }
 
-export const issuerFromRequest = req => {
-    const host = (req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim()
+// origin of the current request (endpoints, picture urls are served on the host that was called)
+export const originFromRequest = req => {
+    const host = (req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim().toLowerCase()
     const local = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)
-    return `${local ? 'http' : 'https'}://${host}/oauth`
+    return `${local ? 'http' : 'https'}://${host}`
 }
+
+// the issuer is the same with and without www (for all domains) - tokens are valid on both hosts
+export const issuerFromRequest = req => originFromRequest(req).replace('://www.', '://') + '/oauth'
 
 // ---- signing key (env LUNUC_OIDC_PRIVATE_KEY or generated once and stored in KeyValueGlobal) ----
 let keyPromise
@@ -151,7 +155,7 @@ export const resetSigningKeyCache = () => {
 }
 
 // ---- claims ----
-export const userClaims = (user, scopes, issuer) => {
+export const userClaims = (user, scopes, origin) => {
     const claims = {sub: user._id.toString()}
     if (scopes.includes('profile')) {
         const meta = user.meta || {}
@@ -161,7 +165,7 @@ export const userClaims = (user, scopes, issuer) => {
         // the real name only if the player didn't hide it (same rule as on pokerraum.ch)
         claims.name = (!meta.hideName && realName) || user.username
         if (user.picture) {
-            claims.picture = `${issuer.slice(0, -'/oauth'.length)}/uploads/${user.picture.toString()}`
+            claims.picture = `${origin}/uploads/${user.picture.toString()}`
         }
         if (meta.virtualId) {
             claims.virtualId = String(meta.virtualId)
@@ -192,7 +196,7 @@ export const createOidcTokenResponse = async (db, req, {clientData, codeData}) =
     const signOptions = {algorithm: 'RS256', keyid: key.kid, issuer, expiresIn: TOKEN_TTL_S}
 
     const idToken = jwt.sign({
-        ...userClaims(user, scopes, issuer),
+        ...userClaims(user, scopes, originFromRequest(req)),
         azp: clientData.clientId,
         ...(codeData.nonce ? {nonce: codeData.nonce} : {})
     }, key.privateKey, {...signOptions, audience: clientData.clientId})
@@ -241,7 +245,7 @@ export async function oidcUserInfo(db, req, res) {
         if (!user) {
             return unauthorized()
         }
-        return sendJson(res, 200, userClaims(user, splitScopes(payload.scope), issuer))
+        return sendJson(res, 200, userClaims(user, splitScopes(payload.scope), originFromRequest(req)))
     } catch (e) {
         return unauthorized()
     }
@@ -254,14 +258,14 @@ export async function oidcJwks(db, req, res) {
 }
 
 export function oidcDiscovery(req, res) {
-    const issuer = issuerFromRequest(req)
+    const endpoint = originFromRequest(req) + '/oauth'
     res.set('Cache-Control', 'public, max-age=3600')
     res.json({
-        issuer,
-        authorization_endpoint: issuer + '/authorize',
-        token_endpoint: issuer + '/token',
-        userinfo_endpoint: issuer + '/userinfo',
-        jwks_uri: issuer + '/jwks',
+        issuer: issuerFromRequest(req),
+        authorization_endpoint: endpoint + '/authorize',
+        token_endpoint: endpoint + '/token',
+        userinfo_endpoint: endpoint + '/userinfo',
+        jwks_uri: endpoint + '/jwks',
         response_types_supported: ['code'],
         grant_types_supported: ['authorization_code'],
         subject_types_supported: ['public'],

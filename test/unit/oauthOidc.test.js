@@ -106,6 +106,14 @@ describe('oauth oidc', () => {
         const r3 = fakeRes()
         await oidcUserInfo(fakeDb, fakeReq({authorization: 'Bearer ' + body.access_token, host: 'other.ch'}), r3)
         expect(r3.statusCode).toBe(401)
+
+        // with and without www: same issuer, the token is valid on both hosts
+        const r4 = fakeRes()
+        await oidcUserInfo(fakeDb, fakeReq({authorization: 'Bearer ' + body.access_token, host: 'www.pokerraum.ch'}), r4)
+        expect(r4.statusCode).toBe(200)
+        expect(r4.body.picture).toBe(`https://www.pokerraum.ch/uploads/${pictureId}`)
+        const wwwToken = (await createOidcTokenResponse(fakeDb, fakeReq({host: 'www.pokerraum.ch'}), {clientData: oidcClient, codeData})).body.id_token
+        expect(jwt.decode(wwwToken).iss).toBe('https://pokerraum.ch/oauth')
     })
 
     it('hides the real name if the player chose so and refuses blocked users', async () => {
@@ -137,5 +145,9 @@ describe('oauth oidc', () => {
         oidcDiscovery(fakeReq({host: 'localhost:8080'}), res)
         expect(res.body.issuer).toBe('http://localhost:8080/oauth')
         expect(res.body.code_challenge_methods_supported).toEqual(['S256'])
+        const www = fakeRes()
+        oidcDiscovery(fakeReq({host: 'www.pokerraum.ch'}), www)
+        expect(www.body.issuer).toBe('https://pokerraum.ch/oauth')
+        expect(www.body.token_endpoint).toBe('https://www.pokerraum.ch/oauth/token')
     })
 })
