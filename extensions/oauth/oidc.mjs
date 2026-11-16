@@ -7,7 +7,7 @@
 //   accepts HS256 tokens signed with SECRET_KEY).
 // Clients without "openid" in allowedScopes (e.g. BLND, Pokerhelden Office) behave exactly as before.
 import crypto from 'crypto'
-import {promisify} from 'util'
+import {promisify} from 'node:util'
 import jwt from 'jsonwebtoken'
 import {ObjectId} from 'mongodb'
 
