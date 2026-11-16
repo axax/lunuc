@@ -4,9 +4,18 @@ import Util from 'api/util/index.mjs'
 import oAuthResolver from './gensrc/resolver.mjs'
 import {auth} from '../../api/auth.mjs'
 import {ObjectId} from "mongodb";
+import {
+    checkClientParams,
+    checkOidcAuthorizeParams,
+    clientCredentials,
+    createOidcTokenResponse,
+    isOidcClient,
+    oidcCodeData,
+    verifyPkce
+} from './oidc.mjs'
 
 export async function oauthAuthorize(db, req, res) {
-    const { client_id, redirect_uri,  response_type, scope, domain } = req.query
+    const { client_id, redirect_uri,  response_type, scope, domain, state, prompt } = req.query
 
     // 1. Pflichtfelder prüfen
     if (!client_id || !redirect_uri || !response_type) {
@@ -21,44 +30,36 @@ export async function oauthAuthorize(db, req, res) {
     // 3. Client aus DB laden – await nicht vergessen!
     const clientData = await db.collection('OAuthClient').findOne({ clientId: client_id })
 
-    // 4. Client existiert und ist aktiv?
-    if (!clientData || clientData.isActive === false) {
-        return res.status(400).json({ error: 'invalid_client' })
+    // 4.-6. Client aktiv, redirect_uri gegen Whitelist, Scopes
+    const error = checkClientParams(clientData, {redirect_uri, scope})
+    if (error) {
+        return res.status(400).json({ error })
     }
 
-    // 5. redirect_uri gegen Whitelist prüfen
-    const allowedUris = clientData.allowedRedirectUris
-        ? clientData.allowedRedirectUris.split(/[,\n]+/).map(u => u.trim())
-        : []
+    // OpenID Connect Clients (allowedScopes enthält "openid"): PKCE S256 Pflicht
+    if (isOidcClient(clientData)) {
+        const oidcError = checkOidcAuthorizeParams(req.query)
+        if (oidcError) {
+            return res.status(400).json({ error: oidcError })
+        }
 
-    if (allowedUris.length>0 && !allowedUris.includes(redirect_uri)) {
-        return res.status(400).json({ error: 'invalid_redirect_uri' })
-    }
-
-    // 6. Scopes prüfen (falls vorhanden)
-    if (scope && clientData.allowedScopes) {
-        const allowed = clientData.allowedScopes.split(/[\s,]+/).map(s => s.trim())
-        const requested = scope.split(' ')
-        const invalid = requested.filter(s => !allowed.includes(s))
-        if (invalid.length > 0) {
-            return res.status(400).json({ error: 'invalid_scope' })
+        // 7. SSO: Benutzer ist auf dieser Domain bereits eingeloggt -> direkt Code ausstellen
+        if (req.context && req.context.id && prompt !== 'login' && ObjectId.isValid(req.context.id)) {
+            const redirectUrl = await issueCode(db, req, {
+                clientData, scope, state, redirect_uri,
+                user: {_id: new ObjectId(req.context.id)},
+                oidc: oidcCodeData(req.query)
+            })
+            return res.redirect(redirectUrl)
         }
     }
-
-    // 7. Benutzer bereits eingeloggt?
-    //if (Util.isUserLoggedIn(req.context)) {
-    /*    const redirectUrl = await issueCode(db, req, {clientData, scope, state, redirect_uri })
-
-        res.redirect(redirectUrl)
-        return*/
-   // }
 
     // 8. Sonst: zum Login weiterleiten
     const forward = encodeURIComponent(req.originalUrl)
     res.redirect(`/admin/login?forward=${forward}&domain=${domain||''}&oauth=true`)
 }
 
-export async function issueCode(db, req, {clientData, scope, state, redirect_uri, user }) {
+export async function issueCode(db, req, {clientData, scope, state, redirect_uri, user, oidc }) {
 
     // 1. Zufälligen Code generieren
     const code = crypto.randomBytes(32).toString('hex')
@@ -71,7 +72,8 @@ export async function issueCode(db, req, {clientData, scope, state, redirect_uri
         scope:       scope || '',
         redirectUri: redirect_uri || '',
         expiresAt:   new Date(Date.now() + 60 * 1000), // 60 Sekunden
-        used:        false
+        used:        false,
+        ...oidc // nur bei OpenID Connect Clients: codeChallenge, codeChallengeMethod, nonce
     }, req, {skipCheck:true})
 
 
@@ -86,7 +88,9 @@ export async function issueCode(db, req, {clientData, scope, state, redirect_uri
 
 
 export async function oauthToken(db, req, res) {
-    const { grant_type, code, redirect_uri, client_id, client_secret } = req.body
+    const { grant_type, code, redirect_uri, code_verifier } = req.body
+    // client_secret_post wie bisher, zusätzlich client_secret_basic
+    const { client_id, client_secret } = clientCredentials(req)
 
     // 1. Pflichtfelder prüfen
     if (!grant_type || !code || !redirect_uri || !client_id || !client_secret) {
@@ -137,11 +141,26 @@ export async function oauthToken(db, req, res) {
         return res.status(400).json({ error: 'invalid_grant', hint:'redirect_uri_mismatch' })
     }
 
-    // 10. Code als verwendet markieren
-    await db.collection('OAuthCode').updateOne(
-        { code },
+    // 9b. PKCE (nur wenn beim authorize eine code_challenge mitkam)
+    if (!verifyPkce(codeData, code_verifier)) {
+        return res.status(400).json({ error: 'invalid_grant', hint:'pkce_mismatch' })
+    }
+
+    // 10. Code als verwendet markieren (atomar: ein Code kann nur einmal eingelöst werden)
+    const marked = await db.collection('OAuthCode').updateOne(
+        { _id: codeData._id, used: { $ne: true } },
         { $set: { used: true } }
     )
+    if (marked.modifiedCount !== 1) {
+        return res.status(400).json({ error: 'invalid_grant', hint:'already_used' })
+    }
+
+    // OpenID Connect: id_token + eigener, kurzlebiger Access-Token (kein Lunuc-Session-Token)
+    if (isOidcClient(clientData)) {
+        const {status, body} = await createOidcTokenResponse(db, req, {clientData, codeData})
+        res.set({'Cache-Control': 'no-store', Pragma: 'no-cache'})
+        return res.status(status).json(body)
+    }
 
 
     // add user group name
