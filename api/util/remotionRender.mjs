@@ -67,6 +67,12 @@ export const checkCompositionCode = (code) => {
     if (/\bremotion\s*\.|=\s*remotion\b|=\s*Remotion\b/.test(code)) {
         throw new Error('there is no global "remotion" object: destructure the functions from the factory argument, e.g. ({html, useCurrentFrame, interpolate}) => (props) => ...')
     }
+    if (/\brequire\s*\(|^\s*import\s/m.test(code)) {
+        throw new Error('no require/import: everything comes from the factory argument, e.g. ({html, useCurrentFrame, interpolate, AbsoluteFill, Sequence}) => (props) => html`...` - see getDocumentation topic "remotion"')
+    }
+    if (!/\bhtml\s*`/.test(code) && /<[A-Za-z][\w.]*[\s>]/.test(code)) {
+        throw new Error('JSX is not supported: write the markup with the htm tag html`<${AbsoluteFill} style=${{...}}>...<//>` from the factory argument - see getDocumentation topic "remotion"')
+    }
     if (/<\/>/.test(code)) {
         throw new Error('"</>" is not valid htm: close a component with <//>')
     }
