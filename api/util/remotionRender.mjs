@@ -15,6 +15,7 @@
  */
 import path from 'path'
 import {fork} from 'child_process'
+import {createRequire} from 'module'
 
 const WORKER = path.join(path.resolve(), 'api/util/remotionRenderWorker.mjs')
 const IDLE_MS = 10 * 60 * 1000
@@ -48,7 +49,17 @@ const scheduleIdleExit = () => {
     state.idleTimer.unref?.()
 }
 
-// syntax check before a process / browser is started (the code itself runs in chrome)
+// Checks the code before a process / browser is started (the code itself runs in
+// chrome, where a syntax error only says "Unexpected token"): line, column and the
+// line itself, plus hints for the typical mistakes.
+let acorn
+try { acorn = createRequire(import.meta.url)('acorn') } catch (e) { acorn = null }
+
+const locate = (code, line, column) => {
+    const text = code.split('\n')[line - 1] || ''
+    return `line ${line}, column ${column + 1}: ${text.trim().slice(0, 160)}`
+}
+
 export const checkCompositionCode = (code) => {
     if (!code || typeof code !== 'string') {
         throw new Error('code is missing: the composition factory as source string')
@@ -56,7 +67,43 @@ export const checkCompositionCode = (code) => {
     if (/\bremotion\s*\.|=\s*remotion\b|=\s*Remotion\b/.test(code)) {
         throw new Error('there is no global "remotion" object: destructure the functions from the factory argument, e.g. ({html, useCurrentFrame, interpolate}) => (props) => ...')
     }
-    const factory = new Function(`'use strict';return (${code}\n)`)()
+    if (/<\/>/.test(code)) {
+        throw new Error('"</>" is not valid htm: close a component with <//>')
+    }
+    if (/\bclass=/.test(code)) {
+        throw new Error('htm needs className=..., not class=...')
+    }
+    if (acorn) {
+        const opts = {ecmaVersion: 'latest', locations: true}
+        let exprError = null
+        try {
+            // stops after the first expression: anything left over is checked below
+            const node = acorn.parseExpressionAt(code.trim(), 0, opts)
+            const rest = code.trim().slice(node.end).replace(/^[\s;]*/, '')
+            if (rest) throw Object.assign(new SyntaxError('unexpected code after the factory expression'), {loc: node.loc.end})
+        } catch (e) {
+            exprError = e
+        }
+        if (exprError) {
+            let program
+            try {
+                program = acorn.parse(code, {...opts, sourceType: 'script'})
+            } catch (e) {
+                const loc = (exprError.loc && !/after the factory/.test(exprError.message)) ? exprError.loc : e.loc
+                throw new Error(`syntax error (${loc ? locate(code, loc.line, loc.column) : e.message}): ${(e.message || '').replace(/\s*\(\d+:\d+\)$/, '')}`)
+            }
+            const definesFactory = program.body.some(n => n.type === 'VariableDeclaration' && n.declarations.some(d => d.id && d.id.name === 'factory')) ||
+                program.body.some(n => n.type === 'FunctionDeclaration' && n.id && n.id.name === 'factory')
+            if (!definesFactory) {
+                throw new Error('code is not ONE factory expression. Either write only the factory ({html, ...}) => (props) => ..., with helper components INSIDE it, or put helpers first and define const factory = ({html, ...}) => (props) => ...')
+            }
+        }
+    }
+    const factory = (() => {
+        try { return new Function(`'use strict';return (${code}\n)`)() } catch (e) {
+            return new Function(`'use strict';${code}\n;return typeof factory === 'function' ? factory : undefined`)()
+        }
+    })()
     if (typeof factory !== 'function') {
         throw new Error('code must evaluate to a factory function: (lib) => (props) => element')
     }

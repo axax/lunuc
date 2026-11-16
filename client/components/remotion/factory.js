@@ -11,11 +11,28 @@ export const html = htm.bind(React.createElement)
 const codeCache = new Map()
 const CODE_CACHE_MAX = 50
 
+// Two accepted forms:
+//   1. one expression:  ({html, ...}) => (props) => html`...`
+//   2. statements (helpers first) that define `const factory = (...) => ...`
+export const evaluateFactory = (code) => {
+    let expressionError
+    try {
+        return new Function(`'use strict';return (${code}\n)`)()
+    } catch (e) {
+        expressionError = e
+    }
+    try {
+        return new Function(`'use strict';${code}\n;return typeof factory === 'function' ? factory : undefined`)()
+    } catch (e) {
+        throw expressionError
+    }
+}
+
 // factory source "(lib) => (props) => element" → factory function
 export const compileCode = (code) => {
     let factory = codeCache.get(code)
     if (!factory) {
-        factory = new Function(`'use strict';return (${code}\n)`)()
+        factory = evaluateFactory(code)
         if (typeof factory !== 'function') {
             throw new Error('code must evaluate to a factory function: (lib) => (props) => element')
         }
