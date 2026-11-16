@@ -5,6 +5,7 @@ import {
 import {lazy} from 'client/components/Async'
 import compose from '../../../util/compose'
 import DomUtil from '../../../client/util/dom.mjs'
+import {redirectTo404} from '../util/redirect404.mjs'
 import {setPropertyByPath} from '../../../client/util/json.mjs'
 import {client, graphql} from '../../../client/middleware/graphql'
 import {
@@ -203,7 +204,7 @@ export default function (WrappedComponent) {
                         } else {
 
                             if (_app_.redirect404 !== location.pathname) {
-                                location.replace(_app_.redirect404)
+                                redirectTo404()
                                 return null
                             }
 

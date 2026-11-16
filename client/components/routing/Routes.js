@@ -65,7 +65,7 @@ class Routes extends React.Component {
     render() {
         const user = _app_.user
         const capabilities = (user.role && user.role.capabilities) || []
-        if(_app_.redirect404 === location.pathname || _app_.show404){
+        if(_app_.redirect404 === location.pathname || (_app_.show404 && (!_app_.show404Path || _app_.show404Path === location.pathname))){
             return <ErrorPage />
         }
         const refPath = location.pathname + '/'

@@ -123,6 +123,22 @@ export const trackEvent = (raw) => {
             RATE.offenders.set(ip, Date.now())
         }
 
+        let path = raw.path ? String(raw.path) : '',
+            referer = raw.referer || '',
+            data = raw.data !== undefined ? parseOrElse(raw.data) : paramsFromPath(path)
+        const soft404 = parseSoft404(path)
+        if (soft404) {
+            // store the page that was requested instead of /404
+            if (soft404.ref) {
+                referer = soft404.ref
+            } else if (refererPath(referer) === soft404.from) {
+                // referer is the dead page itself (redirect), not where the visitor came from
+                referer = ''
+            }
+            path = soft404.from
+            data = {...paramsFromPath(path), soft404: true}
+        }
+
         const date = new Date()
         const entry = {
             _id: new ObjectId(),
@@ -130,13 +146,13 @@ export const trackEvent = (raw) => {
             agent,
             isBot: !!botReason,
             botReason: botReason || undefined,
-            referer: raw.referer || '',
-            data: raw.data !== undefined ? parseOrElse(raw.data) : paramsFromPath(raw.path),
+            referer,
+            data,
             event: raw.event,
             host: raw.host,
             server: serverName(),
             slug: raw.slug,
-            path: raw.path ? String(raw.path).split('?')[0] : '',
+            path: path.split('?')[0],
             day: date.getDate(),
             month: date.getMonth() + 1,
             year: date.getFullYear(),
@@ -224,6 +240,7 @@ export const trackBeacon = ({req, body}) => {
             s: num(b.s, 100),
             w: num(b.w, 10000),
             lang: typeof b.l === 'string' ? b.l.substring(0, 2).toLowerCase() : '',
+            ...(b.e === 404 && {status: 404}),
             day: date.getDate(),
             month: date.getMonth() + 1,
             year: date.getFullYear()
@@ -291,6 +308,36 @@ function paramsFromPath(path) {
         return data
     } catch (e) {
         return undefined
+    }
+}
+
+/**
+ * soft 404 redirect /404?from=<path>&ref=<referer> (see extensions/cms/util/redirect404.mjs)
+ * @returns {{from: string, ref: string}|null}
+ */
+function parseSoft404(path) {
+    if (!path || !path.startsWith('/404?')) return null
+    try {
+        const params = new URLSearchParams(path.substring(5))
+        const from = params.get('from')
+        if (!from || from.charAt(0) !== '/' || from.charAt(1) === '/') return null
+        const ref = params.get('ref') || ''
+        return {
+            from: from.substring(0, 2000),
+            ref: /^https?:\/\//i.test(ref) ? ref.substring(0, 2000) : ''
+        }
+    } catch (e) {
+        return null
+    }
+}
+
+function refererPath(referer) {
+    if (!referer) return ''
+    try {
+        const u = new URL(referer)
+        return u.pathname + u.search
+    } catch (e) {
+        return ''
     }
 }
 

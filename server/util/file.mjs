@@ -1126,6 +1126,11 @@ window.addEventListener('appReady', function (event) {
 })`
 
                         headers['x-no-serviceworker-cache'] = true
+                        if (slug === '404') {
+                            // the error page itself (also target of soft 404 redirects, see
+                            // extensions/cms/util/redirect404.mjs) always answers with 404
+                            statusCode = 404
+                        }
                     } else {
                         statusCode = 404
                         additionalContent = `_app_.show404=true`

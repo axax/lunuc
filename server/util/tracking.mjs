@@ -63,7 +63,7 @@ const schedule = () => {
 }
 
 /* synchronous, never throws - the returned value is undefined (await is not needed) */
-export const doTrackingEvent = (req, {event, host, isBot}) => {
+export const doTrackingEvent = (req, {event, host, isBot, slug, data}) => {
     try {
         if (QUEUE.length >= MAX_QUEUE) {
             dropped++
@@ -76,7 +76,9 @@ export const doTrackingEvent = (req, {event, host, isBot}) => {
             host: req.headers[HOSTRULE_HEADER] || host,
             path: req.url,
             referer: req.headers.referer || '',
-            isBot: isBot === true
+            isBot: isBot === true,
+            ...(slug && {slug}),
+            ...(data && {data})
         })
         if (QUEUE.length >= MAX_BATCH) {
             setImmediate(flush)

@@ -24,7 +24,10 @@ chrome.runtime.onMessage.addListener((message, sender, callback) => {
             startJob(message).then(callback)
             return true
         case 'clearJobs':
-            mutateJobs(jobs => jobs.filter(j => !['done', 'error'].includes(j.state))).then(() => callback(true))
+            mutateJobs(jobs => jobs.filter(j => !FINISHED.includes(j.state))).then(() => callback(true))
+            return true
+        case 'cancelJob':
+            cancelJob(message.id).then(() => callback(true))
             return true
 
         // ---- vom Offscreen-Dokument ----
@@ -35,10 +38,10 @@ chrome.runtime.onMessage.addListener((message, sender, callback) => {
             updateJob(message.id, {progress: message.progress, label: message.label})
             return
         case 'saveFile':
-            saveBlob(message.blobUrl, message.filename).then(callback, e => callback({error: e.message}))
+            saveBlob(message.id, message.blobUrl, message.filename).then(callback, e => callback({error: e.message}))
             return true
         case 'downloadUrl':
-            startUrlDownload(message.url, message.filename).then(callback, e => callback({error: e.message}))
+            startUrlDownload(message.id, message.url, message.filename).then(callback, e => callback({error: e.message}))
             return true
         case 'downloadState':
             chrome.downloads.search({id: message.downloadId}, ([item]) => callback(item || null))
@@ -49,7 +52,7 @@ chrome.runtime.onMessage.addListener((message, sender, callback) => {
         case 'jobFiles':
             // Status sofort setzen, damit das Offscreen-Dokument danach geschlossen werden kann
             updateJob(message.id, {state: 'converting', progress: 0, label: 'Wandle um…'})
-            finishJob(message.id, message.files, message.name)
+                .then(() => finishJob(message.id, message.files, message.name))
             return
         case 'jobError':
             failJob(message.id, message.message)
@@ -141,11 +144,60 @@ function mutateJobs(fn) {
     })
 }
 
+const FINISHED = ['done', 'error', 'cancelled']
+
+// abgebrochene Aufträge werden nicht mehr verändert (verspätete Meldungen werden ignoriert)
 function updateJob(id, patch) {
     return mutateJobs(jobs => {
         const job = jobs.find(j => j.id === id)
-        if (job) Object.assign(job, patch)
+        if (job && job.state !== 'cancelled') Object.assign(job, patch)
     })
+}
+
+async function getJob(id) {
+    return (await getJobs()).find(j => j.id === id)
+}
+
+// Download-IDs eines Auftrags merken (zum Abbrechen und Aufräumen)
+function addDownloadId(id, downloadId) {
+    return mutateJobs(jobs => {
+        const job = jobs.find(j => j.id === id)
+        if (job) job.downloadIds = [...(job.downloadIds || []), downloadId]
+    })
+}
+
+// laufende Verbindungen zum ffmpeg-Helfer pro Auftrag
+const nativePorts = new Map()
+
+async function cancelJob(id) {
+    const job = await mutateJobs(jobs => {
+        const j = jobs.find(j => j.id === id)
+        if (!j || FINISHED.includes(j.state)) return {job: null}
+        j.state = 'cancelled'
+        j.label = 'Abgebrochen'
+        j.message = ''
+        return {job: {...j}}
+    }).then(r => r.job)
+    if (!job) return
+
+    // laufenden Download im Offscreen-Dokument stoppen
+    chrome.runtime.sendMessage({target: 'offscreen', cmd: 'cancel', id}).catch(() => {})
+    // ffmpeg bzw. Upload stoppen: der Helfer beendet sich, sobald die Verbindung getrennt wird
+    const port = nativePorts.get(id)
+    if (port) {
+        nativePorts.delete(id)
+        port.disconnect()
+    }
+    removeJobDownloads(job.downloadIds)
+}
+
+// Teildateien eines abgebrochenen Auftrags löschen und aus der Download-Liste entfernen
+function removeJobDownloads(downloadIds = []) {
+    for (const downloadId of downloadIds) {
+        chrome.downloads.cancel(downloadId).catch(() => {})
+            .then(() => chrome.downloads.removeFile(downloadId)).catch(() => {})
+            .then(() => chrome.downloads.erase({id: downloadId})).catch(() => {})
+    }
 }
 
 function updateBadge(jobs) {
@@ -185,12 +237,11 @@ function claimJob() {
     }).then(r => r.job)
 }
 
-function failJob(id, message) {
-    updateJob(id, {state: 'error', label: 'Fehler', message})
-    getJobs().then(jobs => {
-        const job = jobs.find(j => j.id === id)
-        notify('Download fehlgeschlagen', `${job ? job.name : ''}: ${message}`)
-    })
+async function failJob(id, message) {
+    const job = await getJob(id)
+    if (!job || job.state === 'cancelled') return
+    await updateJob(id, {state: 'error', label: 'Fehler', message})
+    notify('Download fehlgeschlagen', `${job.name}: ${message}`)
 }
 
 // ===================== Offscreen-Dokument =====================
@@ -246,12 +297,16 @@ function downloadNoDialog(url, filename) {
     })
 }
 
-async function saveBlob(blobUrl, filename) {
-    return waitForDownload(await downloadNoDialog(blobUrl, filename))
+async function saveBlob(id, blobUrl, filename) {
+    const downloadId = await downloadNoDialog(blobUrl, filename)
+    await addDownloadId(id, downloadId)
+    return waitForDownload(downloadId)
 }
 
-async function startUrlDownload(url, filename) {
-    return {downloadId: await downloadNoDialog(url, filename)}
+async function startUrlDownload(id, url, filename) {
+    const downloadId = await downloadNoDialog(url, filename)
+    await addDownloadId(id, downloadId)
+    return {downloadId}
 }
 
 // ===================== ffmpeg-Helfer + Upload =====================
@@ -272,6 +327,7 @@ async function ftpSettings() {
 function convertNative(id, files, name, ftp) {
     return new Promise((resolve, reject) => {
         const port = chrome.runtime.connectNative(NATIVE_HOST)
+        nativePorts.set(id, port)
         let finished = false
         updateJob(id, {state: 'converting', progress: 0, label: 'Wandle um…'})
         port.onMessage.addListener(msg => {
@@ -293,6 +349,7 @@ function convertNative(id, files, name, ftp) {
             }
         })
         port.onDisconnect.addListener(() => {
+            nativePorts.delete(id)
             if (!finished) reject(new Error(chrome.runtime.lastError?.message || 'ffmpeg-Helfer beendet'))
         })
         port.postMessage({
@@ -304,6 +361,12 @@ function convertNative(id, files, name, ftp) {
 }
 
 async function finishJob(id, files, name) {
+    const job = await getJob(id)
+    if (!job || job.state === 'cancelled') {
+        // während des Speicherns abgebrochen
+        removeJobDownloads(job && job.downloadIds)
+        return
+    }
     const ping = await nativeRequest({cmd: 'ping'})
     if (!ping || !ping.ok) {
         const list = files.map(f => f.filename).join(' + ')
@@ -314,6 +377,8 @@ async function finishJob(id, files, name) {
     try {
         const ftp = await ftpSettings()
         const res = await convertNative(id, files, name, ftp)
+        // Teildateien hat der Helfer gelöscht → nur noch aus der Download-Liste entfernen
+        for (const downloadId of (await getJob(id)).downloadIds || []) chrome.downloads.erase({id: downloadId}).catch(() => {})
         const file = res.output.split(/[\\/]/).pop()
         const message = res.uploaded ? `${file} → ${res.uploaded}` : res.output
         updateJob(id, {state: 'done', progress: 1, label: res.uploaded ? 'Hochgeladen' : 'Fertig', message})

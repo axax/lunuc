@@ -44,7 +44,16 @@ import {
     TRACK_USER_AGENT_HEADER, WEB_PARSER_HEADER
 } from '../../api/constants/index.mjs'
 
+const getPathname = (u) => {
+    try {
+        return new URL(u).pathname
+    } catch (e) {
+        return ''
+    }
+}
+
 // keep in sync with the render semaphore in server.mjs
+
 const RENDER_MAX_CONCURRENT = parseInt(process.env.LUNUC_SSR_CONCURRENCY) || 5
 
 // Threshold for the leak cleanup, NOT a hard capacity limit: above this
@@ -472,7 +481,8 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
                 statusCode = response.status()
             }
             // keep soft-404 detection (client side redirect to /404)
-            if (response.status() === 404 && response.request().resourceType() === 'document' && response.url().endsWith('/404')) {
+            // (/404 or /404?from=... see extensions/cms/util/redirect404.mjs)
+            if (response.status() === 404 && response.request().resourceType() === 'document' && getPathname(response.url()) === '/404') {
                 statusCode = 404
             }
         })
@@ -574,6 +584,21 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
             await withTimeout(page.close(), 3000, 'page.close').catch(() => {})
             consecutiveFailures = 0
             return {html: 'render incomplete', statusCode: 503}
+        }
+
+        // soft 404 shown in place (_app_.show404) -> never deliver it as 200
+        let soft404 = false
+        if (statusCode === 200) {
+            soft404 = await withTimeout(page.evaluate(() => !!(window._app_ && window._app_.show404)), 3000, 'show404').catch(() => false)
+            if (soft404) {
+                statusCode = 404
+                // the html is not used for a 404 (server.mjs sends "Error 404")
+                console.log(`url fetched ${urlToFetch} (soft 404) in ${Date.now() - startTime}ms`)
+                clearTimeout(stuckTimer)
+                await withTimeout(page.close(), 3000, 'page.close').catch(() => {})
+                consecutiveFailures = 0
+                return {html: '', statusCode, soft404}
+            }
         }
 
         let html = await page.content()

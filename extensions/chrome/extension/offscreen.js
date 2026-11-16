@@ -9,9 +9,16 @@ const send = message => chrome.runtime.sendMessage(message).catch(e => {
     return null
 })
 
+// AbortController des laufenden Auftrags (es läuft immer nur einer)
+let current = null
+
 chrome.runtime.onMessage.addListener(message => {
-    if (message.target === 'offscreen' && message.cmd === 'wake') pump()
+    if (message.target !== 'offscreen') return
+    if (message.cmd === 'wake') pump()
+    else if (message.cmd === 'cancel' && current && current.id === message.id) current.controller.abort()
 })
+
+const signal = () => current && current.controller.signal
 
 // ---------- Warteschlange ----------
 let busy = false
@@ -32,12 +39,16 @@ async function pump() {
 
 async function runJob(job) {
     const ctx = makeContext(job)
+    current = {id: job.id, controller: new AbortController()}
     try {
         if (job.kind === 'dash') await runDash(ctx)
         else if (job.kind === 'hls') await runHls(ctx)
         else await runFile(ctx)
     } catch (e) {
-        send({command: 'jobError', id: job.id, message: e.message})
+        // abgebrochen: der Service Worker hat den Auftrag schon als abgebrochen markiert
+        if (!signal().aborted) send({command: 'jobError', id: job.id, message: e.message})
+    } finally {
+        current = null
     }
 }
 
@@ -64,7 +75,7 @@ function safeName(name) {
 }
 
 async function fetchText(url) {
-    const res = await fetch(url, {credentials: 'include'})
+    const res = await fetch(url, {credentials: 'include', signal: signal()})
     if (!res.ok) throw new Error(`HTTP ${res.status} für ${url}`)
     return res.text()
 }
@@ -72,10 +83,11 @@ async function fetchText(url) {
 async function fetchBuffer(url, tries = 3) {
     for (let i = 0; i < tries; i++) {
         try {
-            const res = await fetch(url, {credentials: 'include'})
+            const res = await fetch(url, {credentials: 'include', signal: signal()})
             if (!res.ok) throw new Error(`HTTP ${res.status}`)
             return await res.arrayBuffer()
         } catch (e) {
+            if (signal().aborted) throw e
             if (i === tries - 1) throw new Error(`Segment fehlgeschlagen: ${url} (${e.message})`)
             await new Promise(r => setTimeout(r, 1000 * (i + 1)))
         }
@@ -102,7 +114,8 @@ async function saveParts(ctx, parts, filename, mime) {
     ctx.report(`Speichere ${filename}…`, 1, true)
     const blobUrl = URL.createObjectURL(new Blob(parts, {type: mime}))
     try {
-        const res = await send({command: 'saveFile', blobUrl, filename})
+        if (signal().aborted) throw new Error('abgebrochen')
+        const res = await send({command: 'saveFile', id: ctx.job.id, blobUrl, filename})
         if (!res || res.error) throw new Error(res ? res.error : 'Speichern fehlgeschlagen')
         return res
     } finally {
@@ -111,6 +124,7 @@ async function saveParts(ctx, parts, filename, mime) {
 }
 
 function finish(ctx, files) {
+    if (signal().aborted) return
     send({command: 'jobFiles', id: ctx.job.id, files, name: ctx.name})
 }
 
@@ -124,11 +138,13 @@ async function runFile(ctx) {
     // mit ffmpeg-Helfer wird die Datei danach in NAME.mp4 umgewandelt und gelöscht
     const native = await send({command: 'nativeAvailable'})
     const filename = native ? `${ctx.name}.download.${ext}` : `${ctx.name}.${ext}`
-    const res = await send({command: 'downloadUrl', url: ctx.job.url, filename})
+    const res = await send({command: 'downloadUrl', id: ctx.job.id, url: ctx.job.url, filename})
     if (!res || res.error) throw new Error(res ? res.error : 'Download fehlgeschlagen')
 
     for (;;) {
         await new Promise(r => setTimeout(r, 1000))
+        // der Service Worker bricht den Browser-Download selbst ab
+        if (signal().aborted) return
         const item = await send({command: 'downloadState', downloadId: res.downloadId})
         if (!item) throw new Error('Download nicht gefunden')
         if (item.state === 'interrupted') throw new Error('Download unterbrochen: ' + item.error)

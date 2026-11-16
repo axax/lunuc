@@ -90,7 +90,8 @@ function mainInit() {
     // context language
     // we expect the first part of the path to be the language when its length is 2
     contextLanguage = Util.setUrlContext(pathname)
-    basePath = Util.removeTrailingSlash(contextLanguage ? pathname.substring(contextLanguage.length + 1) : pathname) + loc.search + loc.hash
+    const basePathname = Util.removeTrailingSlash(contextLanguage ? pathname.substring(contextLanguage.length + 1) : pathname)
+    basePath = basePathname + loc.search + loc.hash
 
     // if multi languages
     if (hasMultiLanguages) {
@@ -112,13 +113,29 @@ function mainInit() {
             _app_.lang = lang
         }
 
-        if (!contextLanguage && DEFAULT_LANGUAGE !== _app_.lang && basePath !== _app_.redirect404 && loc.protocol !== 'file:') {
+        if (!contextLanguage && DEFAULT_LANGUAGE !== _app_.lang && basePathname !== _app_.redirect404 && loc.protocol !== 'file:') {
             // add language to url and redirect
             window.location = loc.origin + '/' + _app_.lang + (basePath === '/' ? '' : basePath)
             return
         }
     } else {
         _app_.lang = DEFAULT_LANGUAGE
+    }
+
+    // soft 404 (see extensions/cms/util/redirect404.mjs): the server answered /404?from=... with a
+    // 404 status code, now show the error page under the original url again
+    if (pathname === _app_.redirect404 && loc.search) {
+        try {
+            const from = new URLSearchParams(loc.search).get('from')
+            if (from && from.charAt(0) === '/' && from.charAt(1) !== '/' && from.indexOf('\\') < 0) {
+                _app_.show404 = true
+                // only for this url, a navigation to another page renders normally again
+                _app_.show404Path = from.split(/[?#]/)[0]
+                window.history.replaceState(window.history.state, '', from)
+            }
+        } catch (e) {
+            // old browser or invalid url -> the error page stays under /404
+        }
     }
 
     if (typeof window.CustomEvent === 'function') {

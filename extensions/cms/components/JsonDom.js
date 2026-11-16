@@ -20,6 +20,7 @@ import ElementWatch from './ElementWatch'
 import {CAPABILITY_MANAGE_CMS_PAGES} from '../constants/index.mjs'
 import {getKeyValuesFromLS} from '../../../client/util/keyvalue'
 import {createManifest} from '../util/manifest.mjs'
+import {redirectTo404} from '../util/redirect404.mjs'
 import {AppContext} from '../../../client/components/AppContext'
 
 // Steuerzeichen (U+0000-U+001F) sind in JSON-Strings nicht erlaubt. Neben \t \n \r
@@ -2078,7 +2079,7 @@ class JsonDom extends React.Component {
     show404 = () =>{
         DomUtil.noIndexNoFollow()
         this.stopRendering = true
-        window.location.href = _app_.redirect404
+        redirectTo404()
     }
 
 }

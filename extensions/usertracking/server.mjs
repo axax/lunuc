@@ -36,7 +36,10 @@ Hook.on('appready', ({app}) => {
                 path: typeof e.path === 'string' ? e.path.substring(0, 2000) : '',
                 referer: typeof e.referer === 'string' ? e.referer.substring(0, 2000) : '',
                 isBotHeader: e.isBot === true ? true : undefined,
-                event: typeof e.event === 'string' ? e.event : 'visit'
+                event: typeof e.event === 'string' ? e.event : 'visit',
+                slug: typeof e.slug === 'string' ? e.slug.substring(0, 200) : undefined,
+                // only small flat objects (e.g. {soft404: true})
+                data: e.data && typeof e.data === 'object' && !Array.isArray(e.data) && JSON.stringify(e.data).length <= 500 ? e.data : undefined
             })
         }
     })

@@ -21,25 +21,108 @@ function formatSize(bytes) {
     return bytes.toFixed(i ? 1 : 0) + ' ' + u[i]
 }
 
-function safeTitle() {
-    return (currentTab.title || 'video').replace(/[\\/:*?"<>|]+/g, '_').trim().slice(0, 100)
+const nameInput = document.getElementById('fileName')
+
+function safeName(name) {
+    return (name || 'video')
+        .replace(/\s*[:|]\s*/g, ' - ')         // "Eps 4 : Titel" → "Eps 4 - Titel"
+        .replace(/[\\/*?"<>]+/g, '_')           // in Dateinamen nicht erlaubt
+        .replace(/\s+/g, ' ').trim().slice(0, 120) || 'video'
 }
 
-// <video>/<source>-Elemente in allen Frames einsammeln (nur echte URLs, keine blob:)
+// Läuft in jedem Frame der Seite: Medien-URLs und mögliche Titel einsammeln
+function collectFromFrame() {
+    const clean = s => (s || '').replace(/\s+/g, ' ').trim()
+    const short = s => (s = clean(s)) && s.length <= 150 ? s : ''
+
+    const urls = []
+    document.querySelectorAll('video, video source, audio, audio source').forEach(el => {
+        const src = el.currentSrc || el.src
+        if (src && /^https?:/.test(src)) urls.push(src)
+    })
+
+    const info = {urls, top: window === window.top, title: clean(document.title)}
+
+    // 1. Media Session: viele Player setzen hier den Titel der laufenden Folge
+    const ms = navigator.mediaSession && navigator.mediaSession.metadata
+    if (ms && ms.title) info.session = {title: clean(ms.title), artist: clean(ms.artist), album: clean(ms.album)}
+
+    // 2. strukturierte Daten (schema.org Episode / VideoObject / Movie)
+    document.querySelectorAll('script[type="application/ld+json"]').forEach(script => {
+        if (info.ld) return
+        try {
+            const data = JSON.parse(script.textContent)
+            const items = Array.isArray(data) ? data : (data['@graph'] || [data])
+            for (const o of items) {
+                const types = [].concat(o['@type'] || [])
+                if (o.name && types.some(t => /Episode|VideoObject|Movie|Clip/.test(t))) {
+                    const series = o.partOfSeries && o.partOfSeries.name
+                    info.ld = clean([series && series !== o.name ? series : '', o.name].filter(Boolean).join(' - '))
+                    break
+                }
+            }
+        } catch (e) {}
+    })
+
+    // 3. markierter Eintrag in einer Episoden-/Playlist-Liste
+    const candidates = document.querySelectorAll('[aria-current="true"], [aria-current="page"], li.active, li.selected, li.current, ' +
+        '[class*="episode"][class*="active"], [class*="episode"][class*="current"], [class*="playlist"] .active, [class*="item"][class*="active"]')
+    for (const el of candidates) {
+        if (el.closest('nav, header, footer, [role="tablist"], [role="menubar"]')) continue
+        const siblings = el.parentElement ? el.parentElement.children.length : 0
+        const text = short(el.textContent)
+        if (siblings >= 2 && text.length >= 3) {
+            info.active = text
+            break
+        }
+    }
+
+    const meta = n => clean((document.querySelector(`meta[property="${n}"], meta[name="${n}"]`) || {}).content)
+    info.og = meta('og:title')
+    info.site = meta('og:site_name')
+    info.h1 = short((document.querySelector('h1') || {}).textContent)
+    return info
+}
+
+// Tab-Titel ohne angehängten Seitennamen ("Folge 1 - Serie | Play SRF" → "Folge 1 - Serie")
+function stripSiteName(title, site, host) {
+    const parts = title.split(/\s+[|–—-]\s+/)
+    if (parts.length < 2) return title
+    const last = parts[parts.length - 1].toLowerCase().replace(/\s+/g, '')
+    const hostWord = (host || '').replace(/^www\./, '').split('.')[0]
+    if ((site && last === site.toLowerCase().replace(/\s+/g, '')) || (hostWord && last.includes(hostWord))) {
+        return parts.slice(0, -1).join(' - ')
+    }
+    return title
+}
+
+// bester Name aus allen Frames: Media Session > schema.org > aktiver Listeneintrag > Tab-Titel
+function pickName(frames) {
+    const top = frames.find(f => f.top) || frames[0] || {}
+    let host = ''
+    try { host = new URL(currentTab.url).hostname } catch (e) {}
+    const base = stripSiteName(currentTab.title || top.title || '', top.site, host)
+    const contains = (a, b) => a.toLowerCase().includes(b.toLowerCase())
+
+    const session = frames.map(f => f.session).find(Boolean)
+    if (session) {
+        const prefix = [session.album, session.artist].find(p => p && !contains(session.title, p))
+        return prefix ? `${prefix} - ${session.title}` : session.title
+    }
+    const ld = frames.map(f => f.ld).find(Boolean)
+    if (ld) return ld
+    const active = frames.map(f => f.active).find(Boolean)
+    if (active) return base && !contains(base, active) ? `${base} - ${active}` : active
+    return base || top.og || top.h1 || 'video'
+}
+
 async function scanDom() {
     try {
         const results = await chrome.scripting.executeScript({
             target: {tabId: currentTab.id, allFrames: true},
-            func: () => {
-                const urls = []
-                document.querySelectorAll('video, video source, audio, audio source').forEach(el => {
-                    const src = el.currentSrc || el.src
-                    if (src && /^https?:/.test(src)) urls.push(src)
-                })
-                return urls
-            }
+            func: collectFromFrame
         })
-        return results.flatMap(r => r.result || [])
+        return results.map(r => r.result).filter(Boolean)
     } catch (e) {
         return []
     }
@@ -47,8 +130,10 @@ async function scanDom() {
 
 async function renderMedia() {
     const media = await chrome.runtime.sendMessage({command: 'getMedia', tabId: currentTab.id}) || []
-    const domUrls = await scanDom()
-    domUrls.forEach(url => {
+    const frames = await scanDom()
+    // vom Benutzer geänderter Name bleibt beim erneuten Scannen erhalten
+    if (!nameInput.dataset.edited) nameInput.value = safeName(pickName(frames))
+    frames.flatMap(f => f.urls).forEach(url => {
         if (!media.some(m => m.url === url)) {
             media.push({url, kind: /\.m3u8(\?|#|$)/i.test(url) ? 'hls' : /\.mpd(\?|#|$)/i.test(url) ? 'dash' : 'file', size: 0})
         }
@@ -77,7 +162,7 @@ async function renderMedia() {
         btn.onclick = async () => {
             btn.disabled = true
             btn.textContent = 'Gestartet'
-            await chrome.runtime.sendMessage({command: 'startDownload', url: m.url, kind: m.kind, name: safeTitle()})
+            await chrome.runtime.sendMessage({command: 'startDownload', url: m.url, kind: m.kind, name: safeName(nameInput.value)})
         }
         li.appendChild(btn)
         listEl.appendChild(li)
@@ -85,7 +170,8 @@ async function renderMedia() {
 }
 
 // ---- laufende Downloads ----
-const STATE_LABEL = {queued: 'Wartet', running: 'Lädt', converting: 'Wandelt um', uploading: 'Lädt hoch', done: 'Fertig', error: 'Fehler'}
+const STATE_LABEL = {queued: 'Wartet', running: 'Lädt', converting: 'Wandelt um', uploading: 'Lädt hoch', done: 'Fertig', error: 'Fehler', cancelled: 'Abgebrochen'}
+const FINISHED = ['done', 'error', 'cancelled']
 
 async function renderJobs() {
     const jobs = (await chrome.storage.session.get('jobs')).jobs || []
@@ -100,8 +186,8 @@ async function renderJobs() {
         li.innerHTML = '<div class="name"></div><div class="meta"><span class="tag"></span><span class="label"></span></div>'
         li.querySelector('.name').textContent = j.name
         li.querySelector('.tag').textContent = STATE_LABEL[j.state] || j.state
-        li.querySelector('.label').textContent = j.state === 'done' || j.state === 'error' ? '' : j.label
-        if (!['done', 'error', 'queued'].includes(j.state)) {
+        li.querySelector('.label').textContent = FINISHED.includes(j.state) ? '' : j.label
+        if (!FINISHED.includes(j.state) && j.state !== 'queued') {
             const p = document.createElement('progress')
             p.max = 1
             p.value = j.progress || 0
@@ -113,6 +199,16 @@ async function renderJobs() {
             msg.textContent = j.message
             li.appendChild(msg)
         }
+        if (!FINISHED.includes(j.state)) {
+            const cancel = document.createElement('button')
+            cancel.className = 'btn small cancel'
+            cancel.textContent = 'Abbrechen'
+            cancel.onclick = () => {
+                cancel.disabled = true
+                chrome.runtime.sendMessage({command: 'cancelJob', id: j.id})
+            }
+            li.appendChild(cancel)
+        }
         jobListEl.appendChild(li)
     })
 }
@@ -121,7 +217,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'session' && changes.jobs) renderJobs()
 })
 
-document.getElementById('rescan').onclick = renderMedia
+nameInput.addEventListener('input', () => { nameInput.dataset.edited = '1' })
+document.getElementById('rescan').onclick = () => {
+    delete nameInput.dataset.edited
+    renderMedia()
+}
 document.getElementById('options').onclick = () => chrome.runtime.openOptionsPage()
 document.getElementById('clear').onclick = async () => {
     await chrome.runtime.sendMessage({command: 'clearMedia', tabId: currentTab.id})

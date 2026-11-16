@@ -43,7 +43,9 @@ export default () => {
             state = null
             return
         }
-        state = {pv: randomId(), path, nav: navType, visible: 0, since: isVisible() ? now() : 0, scroll: 0}
+        // error page shown (soft 404 under the original url, see client/index.js, or hard 404)
+        const is404 = !!(window._app_ && (_app_.show404 && (!_app_.show404Path || _app_.show404Path === path) || path === _app_.redirect404))
+        state = {pv: randomId(), path, nav: navType, visible: 0, since: isVisible() ? now() : 0, scroll: 0, is404}
     }
 
     const pause = () => {
@@ -80,7 +82,8 @@ export default () => {
                 t: Math.min(state.visible, MAX_VISIBLE_MS),
                 s: state.scroll,
                 w: window.screen ? window.screen.width : 0,
-                l: nav.language || ''
+                l: nav.language || '',
+                e: state.is404 ? 404 : undefined
             })
             // nothing new since the last beacon of this page view (e.g. visibilitychange + pagehide,
             // quick tab switches): only again when at least one more second was visible or more was scrolled

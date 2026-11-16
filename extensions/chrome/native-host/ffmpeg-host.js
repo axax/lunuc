@@ -48,7 +48,7 @@ function curlFtp(ftp, extraArgs, onStderr) {
         const args = ['-K', '-', '--fail', ...extraArgs]
         if (ftp.ssl) args.unshift('--ssl-reqd')
         if (ftp.insecure) args.unshift('--insecure')
-        const proc = spawn(loadConfig().curl || 'curl', args)
+        const proc = track(spawn(loadConfig().curl || 'curl', args))
         const esc = v => String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
         proc.stdin.end(ftp.user ? `user = "${esc(ftp.user)}:${esc(ftp.password || '')}"\n` : (ftp.netrc ? 'netrc\n' : ''))
         let out = '', lastErr = ''
@@ -92,6 +92,23 @@ function toSeconds(h, m, s) {
     return (+h) * 3600 + (+m) * 60 + parseFloat(s)
 }
 
+// laufende Prozesse (ffmpeg, curl) und halbfertige Ausgabe – für den Abbruch
+const children = new Set()
+let partialOutput = null
+
+function track(proc) {
+    children.add(proc)
+    proc.on('close', () => children.delete(proc))
+    return proc
+}
+
+// Die Erweiterung trennt die Verbindung (Abbrechen, Browser beendet): alles stoppen und aufräumen
+process.stdin.on('end', () => {
+    children.forEach(proc => proc.kill('SIGTERM'))
+    if (partialOutput) { try { fs.unlinkSync(partialOutput) } catch (e) {} }
+    process.exit(0)
+})
+
 function convert(msg) {
     const ffmpeg = findFfmpeg()
     if (!ffmpeg) return send({error: 'ffmpeg nicht gefunden (brew install ffmpeg)'})
@@ -111,7 +128,8 @@ function convert(msg) {
     if (inputs.length === 2) args.push('-map', '0:v:0', '-map', '1:a:0')
     args.push('-c', 'copy', '-movflags', '+faststart', output)
 
-    const proc = spawn(ffmpeg, args)
+    const proc = track(spawn(ffmpeg, args))
+    partialOutput = output
     let duration = 0
     let lastErr = ''
     proc.stderr.on('data', chunk => {
@@ -127,6 +145,7 @@ function convert(msg) {
     })
     proc.on('error', e => send({error: e.message}))
     proc.on('close', code => {
+        partialOutput = null
         if (code !== 0) {
             try { fs.unlinkSync(output) } catch (e) {}
             return send({error: `Exit-Code ${code}: ${lastErr.split('\n').filter(Boolean).slice(-3).join(' | ')}`})

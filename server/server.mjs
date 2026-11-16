@@ -403,7 +403,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             res.writeHead(errorFile.statusCode, headers)
             res.write('Error ' + errorFile.statusCode)
             res.end()
-            doTrackingEvent(req, {event: '404', host, isBot})
+            doTrackingEvent(req, errorFile.soft404 ? {event: '404', host, isBot, slug: '404', data: {soft404: true}} : {event: '404', host, isBot})
             return
         }
 
@@ -471,6 +471,11 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         pageData.html = pageData.html.replace(BASE_URL_REGEX, `https://${host}`)
 
 
+        if (pageData.soft404) {
+            // soft 404 inside the prerendering: there was no request to /404 the api could track
+            doTrackingEvent(req, {event: '404', host, isBot, slug: '404', data: {soft404: true}})
+        }
+
         if (pageData.statusCode >= 500 || pageData.statusCode === 404) {
 
             if (sentFromCache) {
@@ -486,7 +491,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                 })
                 console.warn(`background re-render failed (${pageData.statusCode}) for ${cacheFileName} -> keeping stale cache with backoff`)
             } else {
-                Cache.set('ErrorFile' + cacheFileName, {statusCode: pageData.statusCode}, 360000) // 6 min
+                Cache.set('ErrorFile' + cacheFileName, {statusCode: pageData.statusCode, soft404: pageData.soft404}, 360000) // 6 min
 
                 res.writeHead(pageData.statusCode, headers)
                 res.write('Error ' + pageData.statusCode)
