@@ -147,6 +147,8 @@ function mainInit() {
         const root = createRoot(document.getElementById('app'))
         root.render(<App/>)
     }
+    // from now on errors don't switch to the server side rendered page anymore (inline script in index.html)
+    window.__lunucAppStarted = true
 
 
     document.documentElement.setAttribute('lang', _app_.lang)
@@ -270,7 +272,14 @@ if (!window.LUNUC_PREPARSED) {
         maxCounter++
         DomUtil.addScript(file + '?v=' + config.BUILD_NUMBER, {
             async: true,
-            onload
+            onload,
+            // a failed download never fires onload: start anyway instead of leaving the page empty.
+            // If the app then fails before it has started, the inline script of index.html switches
+            // to the server side rendered page
+            onerror: () => {
+                console.warn('could not load ' + file)
+                onload()
+            }
         })
     }
     if (morePolyfill) {
@@ -293,6 +302,9 @@ if (!window.LUNUC_PREPARSED) {
     if (maxCounter === 0) {
         mainInit()
     }
-} else if (isAdminIframe) {
-    loadThemeMode()
+} else {
+    window.__lunucAppStarted = true
+    if (isAdminIframe) {
+        loadThemeMode()
+    }
 }

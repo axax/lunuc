@@ -43,6 +43,8 @@ import {
     TRACK_REFERER_HEADER,
     TRACK_USER_AGENT_HEADER, WEB_PARSER_HEADER
 } from '../../api/constants/index.mjs'
+// the prerendering must run the client bundle, never take over the fallback cookie of an old browser
+import {SSR_FALLBACK_COOKIE} from '../../util/browserSupport.mjs'
 
 const getPathname = (u) => {
     try {
@@ -493,7 +495,7 @@ export const parseWebsite = async (urlToFetch, {host, agent, referer, isBot, rem
         const cookiesToSet = [{domain: 'localhost', name: 'auth', value: ''}]
         if (cookies && Object.keys(cookies).length > 0 && !isBot) {
             console.log(`Taking over the session can be dangerous. ${urlToFetch}`, Object.keys(cookies))
-            cookiesToSet.push(...Object.keys(cookies).filter(k => k !== 'auth').map(k => ({domain: 'localhost', name: k, value: cookies[k]})))
+            cookiesToSet.push(...Object.keys(cookies).filter(k => k !== 'auth' && k !== SSR_FALLBACK_COOKIE).map(k => ({domain: 'localhost', name: k, value: cookies[k]})))
         }
 
         // independent page setup calls run in parallel instead of one CDP

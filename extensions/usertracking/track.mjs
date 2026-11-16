@@ -45,7 +45,8 @@ const DEFAULT_SETTINGS = {
 }
 const USER_TRACKING_SETTINGS = {...DEFAULT_SETTINGS}
 
-const BUFFER = {entries: [], db: null, flushing: false, dropped: 0, anonymousId: null}
+// soft404: soft 404 entries waiting for their visit (see mergeSoft404Visits)
+const BUFFER = {entries: [], soft404: [], db: null, flushing: false, dropped: 0, anonymousId: null}
 
 // requests per ip in the current minute + ips that exceeded the limit (kept for 10 minutes)
 const RATE = {counts: new Map(), offenders: new Map()}
@@ -160,6 +161,13 @@ export const trackEvent = (raw) => {
         }
         if (settings.includeRequestHeader && raw.headers) {
             entry.headers = raw.headers
+        }
+        if (entry.data && entry.data.soft404 === true) {
+            // the dead page was already tracked as 'visit' (track segment of the page) -> that entry
+            // becomes the 404 instead of a second one. Still in the buffer: changed here, otherwise
+            // in the database during the flush (see mergeSoft404Visits)
+            if (mergeSoft404InBuffer(entry)) return
+            entry._soft404 = true
         }
         BUFFER.entries.push(entry)
 
@@ -355,6 +363,105 @@ function getPathFromHeader(req) {
     return req.url
 }
 
+// ------------------------------------------------------------------ soft 404 deduplication
+
+// a soft 404 belongs to a visit of the same page shortly before (render of the page -> js finds out
+// the content doesn't exist -> redirect / 404 in web2html)
+const SOFT404_WINDOW_MS = 3 * 60 * 1000
+// how far back the buffer is searched (newest first)
+const SOFT404_BUFFER_SCAN = 2000
+
+const toSoft404 = (visit, entry) => {
+    visit.event = entry.event
+    visit.slug = entry.slug
+    visit.data = {...(visit.data && visit.data.constructor === Object ? visit.data : {}), soft404: true}
+    // the visit has the referer of the original request, keep it unless it is missing
+    if (!visit.referer && entry.referer) visit.referer = entry.referer
+}
+
+// the same path can arrive differently encoded (e.g. %c3%b6 / %C3%B6 / ö, %2C / ,)
+const decodePathSafe = (path) => {
+    try {
+        return decodeURIComponent(path)
+    } catch (e) {
+        return path
+    }
+}
+const samePath = (a, b) => a === b || decodePathSafe(a) === decodePathSafe(b)
+
+function mergeSoft404InBuffer(entry) {
+    const list = BUFFER.entries, ip = entry.ip
+    for (let i = list.length - 1, n = 0; i >= 0 && n < SOFT404_BUFFER_SCAN; i--, n++) {
+        const e = list[i]
+        // cheap string compares first, the timestamp only for a candidate
+        if (e.ip === ip && e.event === 'visit' && !e._c && e.agent === entry.agent &&
+            e.host === entry.host && samePath(e.path, entry.path)) {
+            if (e._id.getTimestamp().getTime() < Date.now() - SOFT404_WINDOW_MS) return false
+            toSoft404(e, entry)
+            return true
+        }
+    }
+    return false
+}
+
+/**
+ * Soft 404 entries whose visit was not in the buffer any more (already written, or tracked by another
+ * api process): the visit in the database becomes the 404 and the new entry is dropped.
+ * Runs after enrich (ip anonymized, vid set like the stored entries). Rare - one query per soft 404.
+ */
+// a soft 404 without visit is tried once more one flush interval later: the visit can come from the
+// other server (shared database), whose buffer is written up to flushIntervalMs later. One retry is
+// enough (the visit is older than the 404), so a page without visit costs at most 2 queries
+const SOFT404_RETRY_MS = 2.5 * 60 * 1000
+// upper limit of waiting entries (flood of soft 404s), more are written right away
+const SOFT404_MAX_WAITING = 1000
+
+async function mergeSoft404Visits(db, entries, force) {
+    if (!entries.some(e => e._soft404)) return entries
+    const result = []
+    for (const entry of entries) {
+        if (!entry._soft404) {
+            result.push(entry)
+            continue
+        }
+        try {
+            const since = Math.floor((entry._id.getTimestamp().getTime() - SOFT404_WINDOW_MS) / 1000)
+            const filter = {
+                _id: {$gte: ObjectId.createFromTime(since), $lt: entry._id},
+                event: 'visit',
+                host: entry.host,
+                path: entry.path,
+                ...(entry.vid ? {vid: entry.vid} : {ip: entry.ip, agent: entry.agent})
+            }
+            const update = [{
+                $set: {
+                    // $literal: values of the request must never be read as field path or operator
+                    event: {$literal: entry.event},
+                    slug: {$literal: entry.slug},
+                    data: {$mergeObjects: [{$cond: [{$eq: [{$type: '$data'}, 'object']}, '$data', {}]}, {soft404: true}]},
+                    referer: {$cond: [{$gt: [{$strLenCP: {$ifNull: ['$referer', '']}}, 0]}, '$referer', {$literal: entry.referer || ''}]}
+                }
+            }]
+            const visit = await db.collection('UserTracking').findOneAndUpdate(filter, update, {sort: {_id: -1}, projection: {_id: 1}})
+            if (visit) continue
+            if (!force && !entry._retryAt && Date.now() - entry._id.getTimestamp().getTime() < SOFT404_RETRY_MS &&
+                BUFFER.soft404.length < SOFT404_MAX_WAITING) {
+                // try again later (already enriched, see enrich)
+                entry._retryAt = Date.now() + USER_TRACKING_SETTINGS.flushIntervalMs
+                BUFFER.soft404.push(entry)
+                continue
+            }
+        } catch (e) {
+            console.warn('usertracking: soft 404 merge failed', e.message)
+        }
+        delete entry._soft404
+        delete entry._enriched
+        delete entry._retryAt
+        result.push(entry)
+    }
+    return result
+}
+
 // ------------------------------------------------------------------ background flush
 
 const pad = n => (n < 10 ? '0' : '') + n
@@ -403,6 +510,10 @@ const enrich = async (db, entries) => {
             await new Promise(resolve => setImmediate(resolve))
         }
         const entry = entries[i]
+        // soft 404 waiting for its visit (see mergeSoft404Visits): enriched in an earlier flush,
+        // a second run would compute the vid from the anonymized ip
+        if (entry._enriched) continue
+        if (entry._soft404) entry._enriched = true
         const ip = entry.ip
         if (entry._c === BEACON_COLLECTION) {
             // beacons: only visitor id and bot flag, ip and user agent are not stored (they are in UserTracking)
@@ -450,20 +561,31 @@ const flushBuffer = async (force) => {
         }
         return
     }
-    if (!BUFFER.db || BUFFER.entries.length === 0) return
-    const oldest = BUFFER.entries[0]._id.getTimestamp().getTime()
-    if (!force && BUFFER.entries.length < settings.bufferSize && Date.now() - oldest < settings.flushIntervalMs) {
+    if (!BUFFER.db) return
+    const now = Date.now()
+    const soft404Due = BUFFER.soft404.length > 0 && (force || BUFFER.soft404.some(e => e._retryAt <= now))
+    if (BUFFER.entries.length === 0 && !soft404Due) return
+    if (!force && !soft404Due && BUFFER.entries.length < settings.bufferSize &&
+        now - BUFFER.entries[0]._id.getTimestamp().getTime() < settings.flushIntervalMs) {
         return
     }
     BUFFER.flushing = true
-    const entries = BUFFER.entries
+    let entries = BUFFER.entries
     BUFFER.entries = []
+    if (BUFFER.soft404.length > 0) {
+        // waiting soft 404 entries: only those due for the next try (all on exit)
+        const due = force ? BUFFER.soft404 : BUFFER.soft404.filter(e => e._retryAt <= now)
+        if (due.length > 0) {
+            BUFFER.soft404 = force ? [] : BUFFER.soft404.filter(e => e._retryAt > now)
+            entries = entries.concat(due)
+        }
+    }
     let done
     BUFFER.flushPromise = new Promise(resolve => done = resolve)
     try {
         await enrich(BUFFER.db, entries)
         const byCollection = {}
-        for (const entry of entries) {
+        for (const entry of await mergeSoft404Visits(BUFFER.db, entries, force)) {
             const name = entry._c || 'UserTracking'
             delete entry._c
             ;(byCollection[name] || (byCollection[name] = [])).push(entry)

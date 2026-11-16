@@ -14,6 +14,8 @@
 // mid-loop would make the NEXT call start parsing mid-string. The regex
 // is now instantiated per call (cold path only, cost is negligible).
 
+import {isNoJsAgent, needsServerSideRendering} from './browserSupport.mjs'
+
 // /WhatsApp|TelegramBot|AhrefsBot|Applebot|x28-job-bot|bingbot|msnbot|YandexBot|PetalBot|Googlebot|facebookexternalhit|LinkedInBot|Twitterbot|Xing|AdsBot/
 
 // exception if it starts with spiderweb/ because that is a browser
@@ -116,6 +118,9 @@ const computeUserAgentResult = (agent, botRegex, noJsRenderingBotRegex) => {
         } else {
 
             const raw = parseUserAgentRaw(agentLower)
+
+            // os / osVersion: needed for the certificate check in util/browserSupport.mjs
+            Object.assign(result, parseOs(agentLower))
 
             if (raw.mobile) {
                 result.mobile = true
@@ -221,15 +226,23 @@ const computeUserAgentResult = (agent, botRegex, noJsRenderingBotRegex) => {
                     }
                 }
 
+                if (!result.browser) {
+                    const mozillaVersion = parseFloat(raw.mozilla.version)
+                    if (mozillaVersion < 5 && !raw.mozilla.compatible) {
+                        // Netscape Navigator 2 - 4, e.g. "Mozilla/4.8 [en] (Windows NT 5.1; U)"
+                        result.browser = 'netscape'
+                        result.version = mozillaVersion
+                    } else if (raw.gecko && parseFloat(raw.mozilla.rv) < 2) {
+                        // Gecko 1.x without Firefox token (Mozilla Suite, early SeaMonkey, ...)
+                        result.browser = 'netscape'
+                        result.version = parseFloat(raw.mozilla.rv)
+                    }
+                }
             }
             result.raw = raw
 
-            result.noJsRendering = (result.browser === 'netscape') ||
-                (result.browser === 'safari' && result.version < 5) ||
-                (result.browser === 'firefox' && result.version <= 12) ||
-                (result.browser === 'opera' && result.version <= 10) ||
-                (result.browser === 'chrome' && result.version <= 16) ||
-                (result.browser === 'msie' && result.version <= 10)
+            // browsers that can't run the client bundle get the server side rendered page
+            result.noJsRendering = needsServerSideRendering(result) || isNoJsAgent(agentLower)
 
         }
     }
@@ -245,6 +258,24 @@ const computeUserAgentResult = (agent, botRegex, noJsRenderingBotRegex) => {
     return result
 }
 
+
+// only the systems util/browserSupport.mjs needs (certificate store), osVersion as number array
+const parseOs = (agentLower) => {
+    let m
+    // before macos: ios agents contain "like mac os x"
+    if ((m = /\b(?:iphone|ipad|ipod)\b.*?\bos (\d+)(?:_(\d+))?(?:_(\d+))?/.exec(agentLower))) {
+        return {os: 'ios', osVersion: toVersion(m)}
+    }
+    if ((m = /\bandroid (\d+)(?:\.(\d+))?(?:\.(\d+))?/.exec(agentLower))) {
+        return {os: 'android', osVersion: toVersion(m)}
+    }
+    if ((m = /\bmac os x (\d+)(?:[_.](\d+))?(?:[_.](\d+))?/.exec(agentLower))) {
+        return {os: 'macos', osVersion: toVersion(m)}
+    }
+    return {}
+}
+
+const toVersion = (m) => [m[1], m[2], m[3]].map(v => parseInt(v || '0', 10))
 
 export const parseUserAgentRaw = (input) => {
 

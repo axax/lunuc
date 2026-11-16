@@ -21,6 +21,7 @@ import {CAPABILITY_MANAGE_CMS_PAGES} from '../constants/index.mjs'
 import {getKeyValuesFromLS} from '../../../client/util/keyvalue'
 import {createManifest} from '../util/manifest.mjs'
 import {redirectTo404} from '../util/redirect404.mjs'
+import SmartVideo from './SmartVideo'
 import {AppContext} from '../../../client/components/AppContext'
 
 // Steuerzeichen (U+0000-U+001F) sind in JSON-Strings nicht erlaubt. Neben \t \n \r
@@ -238,25 +239,21 @@ const imageMetaCaption = (src) => {
     return isString(caption) ? caption.trim() : ''
 }
 
-/*function isString(variable) {
-    return typeof variable === 'string'
-}
-
-let start = Date.now()
-let z=0
-for(let i = 0; i<1000000;i++){
-    const x = Math.random()
-    const y = 'asdasd'+x
-    if(isString(y) && matchExpr('true')){
-        z++
-    }
-}
-console.log(`xxxxx time to check ${Date.now()-start}ms ${z}`)*/
-
 const isEventProp = (key) => key.length > 2 &&
     key.charCodeAt(0) === 111 &&    // 'o'
     key.charCodeAt(1) === 110 &&    // 'n'
     key.charCodeAt(2) >= 65 && key.charCodeAt(2) <= 90   // uppercase
+
+// props of SmartImage that are moved to the <figure> (prop of the image -> prop of the figure)
+// TODO remove figureStyle, figureClassName - use figureProps instead
+const SMART_IMAGE_FIGURE_PROPS = {
+    figureStyle: 'style',
+    figureClassName: 'className',
+    _key: '_key',
+    'data-allow-drop': 'data-allow-drop',
+    'data-element-key': 'data-element-key',
+    'data-tag-name': 'data-tag-name'
+}
 
 class JsonDom extends React.Component {
 
@@ -283,51 +280,49 @@ class JsonDom extends React.Component {
         // Remotion compositions from the page script (lazy)
         RemotionPlayer,
         SmartImage: ({src, options, caption, captionFromName, wrapper, inlineSvg, svgData, tagName, figureCaptionClassName, figureProps, ...props}) => {
-            const imgTag = () => {
-                let imageData = Util.getImageObject(src, options)
-                imageData['data-smartimage'] = true
-                if (svgData) {
-                    return <span data-inline-svg={true} {...props} dangerouslySetInnerHTML={{__html: svgData}}/>
-                } else if(imageData?.mimeType?.startsWith('video/')) {
-                    return <video key={'video-'+props._key}
-                                  width={imageData.width} height={imageData.height}
-                                  poster={location.origin+imageData.posterSrc}
-                                  fetchpriority="high"
-                                  autoplay loop muted playsinline>
-                        <source src={imageData.src} type={imageData.mimeType} />
-                    </video>
-                }else{
+            // caption entered in the picker (metaValues.caption), otherwise with captionFromName the
+            // file name without extension (both as text, no html). The value is parsed only once
+            let textCaption = ''
+            if (!caption) {
+                const image = parseImageValue(src)
+                textCaption = imageMetaCaption(image) ||
+                    (captionFromName && !isFalse(captionFromName) ? imageNameWithoutExtension(image) : '')
+            }
+
+            let figure
+            if (caption || textCaption || wrapper) {
+                // these props belong to the <figure> and not to the image
+                figure = {}
+                for (const key in SMART_IMAGE_FIGURE_PROPS) {
+                    figure[SMART_IMAGE_FIGURE_PROPS[key]] = props[key]
+                    delete props[key]
+                }
+                Object.assign(figure, figureProps)
+            }
+
+            let media
+            if (svgData) {
+                media = <span data-inline-svg={true} {...props} dangerouslySetInnerHTML={{__html: svgData}}/>
+            } else {
+                const imageData = Util.getImageObject(src, options)
+                if (imageData?.mimeType?.startsWith('video/')) {
+                    // new element for another video (no download of the old source continues)
+                    media = <SmartVideo key={'video-' + props._key + imageData.src}
+                                        src={imageData.src}
+                                        width={imageData.width} height={imageData.height}
+                                        poster={location.origin + imageData.posterSrc}/>
+                } else {
                     const Tag = tagName || 'img'
-                    return <Tag {...imageData} {...props} />
+                    media = <Tag {...imageData} data-smartimage={true} {...props}/>
                 }
             }
 
-            // caption of the image entered in the picker (metaValues.caption), otherwise with captionFromName
-            // the file name of the image without extension (both as text, no html)
-            const metaCaption = !caption ? imageMetaCaption(src) : ''
-            const nameCaption = !caption && !metaCaption && captionFromName && !isFalse(captionFromName) ? imageNameWithoutExtension(src) : metaCaption
-
-            /*TODO remove  figureStyle, figureClassName use figureProps instead */
-            if (caption || nameCaption || wrapper) {
-                const propsToCopyToFigure = ['figureStyle', 'figureClassName', '_key','data-allow-drop','data-element-key','data-tag-name']
-                const copiedFigureProps = {}
-                propsToCopyToFigure.forEach(key=>{
-                    let newKey = key
-                    if(newKey.startsWith('figure')){
-                        newKey = newKey.substring(6)
-                        newKey = newKey[0].toLowerCase() + newKey.slice(1)
-                    }
-                    copiedFigureProps[newKey] = props[key]
-
-                    delete props[key]
-                })
-                return <figure {...copiedFigureProps} {...figureProps}>
-                    {imgTag()}
-                    {caption && <figcaption className={figureCaptionClassName} dangerouslySetInnerHTML={{__html: _t(caption)}}/>}
-                    {nameCaption && <figcaption className={figureCaptionClassName}>{nameCaption}</figcaption>}
-                </figure>
-            }
-            return imgTag()
+            if (!figure) return media
+            return <figure {...figure}>
+                {media}
+                {caption && <figcaption className={figureCaptionClassName} dangerouslySetInnerHTML={{__html: _t(caption)}}/>}
+                {textCaption && <figcaption className={figureCaptionClassName}>{textCaption}</figcaption>}
+            </figure>
         },
         Print,
         input: props => {
@@ -529,20 +524,6 @@ class JsonDom extends React.Component {
         if (updateIsNeeded) {
 
             //console.log('xxxxxx', this.props.children, props.children)
-            /*   console.log(`xxxxx
-           for ${props.slug} ${props.urlSensitiv}
-               resolvedDataChanged=${resolvedDataChanged}
-               searchChanged=${searchChanged}
-               scriptChanged=${scriptChanged}
-               resourcesChanged=${resourcesChanged}
-               templateChanged=${templateChanged}
-               propsChanged=${propsChanged}
-               slugChanged=${slugChanged}
-               childrenChange=${childrenChanged}
-               userChanged=${this.props.user !== props.user }
-               loadingChanged=${ this.props.loading !== props.loading}
-               location.pathname=${props.location.pathname}
-           `)*/
             // reset parsing error
             this.error = null
 
@@ -1124,13 +1105,6 @@ class JsonDom extends React.Component {
                 if (matchExpr($is, scope)) {
                     return
                 }
-                /*if (isFalse($is)) {
-                    return
-                } else if ($is && $is !== true && $is !== 'true') {
-                    if (matchExpr($is, scope)) {
-                        return
-                    }
-                }*/
 
                 if ($if) {
                     // check condition --> slower than to check with $ifexist or $is
@@ -1997,16 +1971,7 @@ class JsonDom extends React.Component {
             })
         }
         if (preprocess) {
-
-           /* if (inworker) {
-                // process in web worker
-                Util.createWorker(preprocessCss).run(style).then(e => {
-                    addTag(e.data)
-                })
-            } else {*/
-                addTag(preprocessCss(style))
-           /* }*/
-
+            addTag(preprocessCss(style))
         } else {
             addTag(style)
         }
@@ -2064,14 +2029,6 @@ class JsonDom extends React.Component {
         setTimeout(()=> {
 
             this.props.refetch({_props:deepMerge({$: {}}, this.scope.props, props)}, refetchOptions)
-           /* _app_.dispatcher.dispatch({
-                type: 'CMS_RENDER',
-                payload:{
-                    props: deepMerge({$: {}}, this.scope.props, props),
-                    slug: this.props.slug,
-                    id: this.props.id
-                }
-            })*/
 
         },0)
     }

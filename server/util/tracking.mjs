@@ -63,7 +63,7 @@ const schedule = () => {
 }
 
 /* synchronous, never throws - the returned value is undefined (await is not needed) */
-export const doTrackingEvent = (req, {event, host, isBot, slug, data}) => {
+export const doTrackingEvent = (req, {event, host, isBot, slug, data, path}) => {
     try {
         if (QUEUE.length >= MAX_QUEUE) {
             dropped++
@@ -74,7 +74,7 @@ export const doTrackingEvent = (req, {event, host, isBot, slug, data}) => {
             ip: clientAddress(req),
             agent: req.headers['user-agent'] || '',
             host: req.headers[HOSTRULE_HEADER] || host,
-            path: req.url,
+            path: path || req.url,
             referer: req.headers.referer || '',
             isBot: isBot === true,
             ...(slug && {slug}),

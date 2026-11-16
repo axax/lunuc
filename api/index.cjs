@@ -14,7 +14,9 @@ process.on('unhandledRejection', (reason, p) => {
 
 // Use ES6 module syntax with node.js
 console.time('api-boot')
-require('@babel/register')({
+// Babel 8 packages are ES modules: require() returns the namespace object
+const babelRegister = require('@babel/register')
+;(babelRegister.default || babelRegister)({
     envName: 'api',
     ignore: [/node_modules/]
 })

@@ -1,13 +1,30 @@
 {
+  // Browsers the client bundle (BABEL_ENV=client_build) and the dev build are compiled for.
+  // "ie 11" forces ES5 output: every browser with an ES5 engine runs the bundle (runtime
+  // features come from /polyfill/base.js, /polyfill/more.js, /legacyjs*.js).
+  // Browsers that can't run it get the server side rendered page, see util/browserSupport.mjs
+  "targets": [
+    ">0.25%",
+    "ie 11"
+  ],
+  // node_modules are transpiled too and contain CommonJS: helpers must be injected as require() there
+  "sourceType": "unambiguous",
+  // Babel 8 parses import() as ImportExpression, babel-plugin-module-resolver only rewrites the
+  // old call expression form (e.g. import('client/containers/TypesContainer') in extensions/cms)
+  "parserOpts": {
+    "createImportExpressions": false
+  },
   "presets": [
     "@babel/preset-env",
-    "@babel/preset-react"
+    [
+      "@babel/preset-react",
+      {
+        // Babel 8 defaults to "automatic". Classic keeps React.createElement (aliased to preact/compat)
+        "runtime": "classic"
+      }
+    ]
   ],
   "plugins": [
-    ["@babel/plugin-transform-private-methods", { "loose": false }],
-    ["@babel/plugin-proposal-private-property-in-object", { "loose": false }],
-    "@babel/plugin-proposal-class-properties",
-    "@babel/plugin-syntax-dynamic-import",
     "@babel/plugin-proposal-export-default-from",
     [
       "module-resolver",
@@ -40,8 +57,17 @@
   ],
   "env": {
     "api": {
+      "targets": {
+        "node": "current"
+      },
       "presets": [
-        ["@babel/preset-env", { "targets": { "node": "current" } }]
+        [
+          "@babel/preset-env",
+          {
+            // @babel/register (api/index.cjs) needs CommonJS
+            "modules": "commonjs"
+          }
+        ]
       ],
       "plugins": [
         "@babel/plugin-transform-runtime",
@@ -60,35 +86,34 @@
       ]
     },
     "client_build": {
+      // Babel 8 removed the "loose" option of preset-env. These are the assumptions loose mode
+      // used to enable, except iterableIsArray: with it [...new Set(x)] compiled to [].concat(x)
       "assumptions": {
-        "setPublicClassFields": true,
-        "noDocumentAll": true,
+        "arrayLikeIsIterable": true,
+        "constantReexports": true,
+        "ignoreFunctionLength": true,
+        "ignoreToPrimitiveHint": true,
+        "mutableTemplateObject": true,
         "noClassCalls": true,
-        "setSpreadProperties": true,
+        "noDocumentAll": true,
+        "objectRestNoSymbols": true,
         "pureGetters": true,
-        /*"iterableIsArray": false*/
+        "setClassMethods": true,
+        "setComputedProperties": true,
+        "setPublicClassFields": true,
+        "setSpreadProperties": true,
+        "skipForOfIteratorClosing": true,
+        "superIsCallableConstructor": true
       },
       "plugins": [
-        ["@babel/plugin-transform-runtime", { "helpers": true, "regenerator": true, "corejs": false }]
+        // helpers and regenerator are always taken from @babel/runtime in Babel 8 (no options anymore)
+        "@babel/plugin-transform-runtime"
       ],
       "presets": [
         [
           "@babel/preset-env",
           {
-            "modules": false,
-            "targets": {
-              "browsers": [
-                ">0.25%",
-                "ie 11"
-              ]
-            },
-            "loose": true
-          }
-        ],
-        [
-          "@babel/preset-react",
-          {
-            "useBuiltIns": true
+            "modules": false
           }
         ]
       ]

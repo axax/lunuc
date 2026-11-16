@@ -34,7 +34,8 @@ const isValidAdminRequest = async (req) => {
     return !!validated.id
 }
 import {isLetsEncryptAgent, parseUserAgent} from '../util/userAgent.mjs'
-import {TRACK_IP_HEADER} from '../api/constants/index.mjs'
+import {hasSsrFallbackCookie, needsInsecureHttp} from '../util/browserSupport.mjs'
+import {TRACK_IP_HEADER, WEB_PARSER_HEADER} from '../api/constants/index.mjs'
 import {parseCookies} from '../api/util/parseCookies.mjs'
 import {isTemporarilyBlocked} from './util/requestBlocker.mjs'
 import {parseWebsite} from './util/web2html.mjs'
@@ -58,6 +59,19 @@ import {
 } from './util/file.mjs'
 import {actAsReverseProxy, isUrlValidForPorxing} from './util/reverseProxy.mjs'
 import {doTrackingEvent} from './util/tracking.mjs'
+
+// prerendered html (and its cache file) always contains https urls of the own host - for
+// browsers that are served over http (no tls 1.2) they are rewritten
+const httpsUrlsToHttp = (html, host) => html.split(`https://${host}`).join(`http://${host}`)
+
+// pathname as chrome requests the url in the prerendering (encoding normalized like the browser does)
+const renderedPath = (url) => {
+    try {
+        return new URL(url).pathname
+    } catch (e) {
+        return undefined
+    }
+}
 import {getGatewayIp} from '../util/gatewayIp.mjs'
 import {isRateLimited} from './util/rateLimiter.mjs'
 import {applyRequestRules} from './util/requestRules.mjs'
@@ -354,13 +368,25 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
     const statusCode = (hostrule.statusCode && hostrule.statusCode[urlPathname] ? hostrule.statusCode[urlPathname] : 200)
 
-    let {isBot, noJsRendering} = parseUserAgent(agent, {botRegex: hostrule.botRegex, noJsRenderingBotRegex: hostrule.noJsRenderingBotRegex})
+    const userAgentData = parseUserAgent(agent, {botRegex: hostrule.botRegex, noJsRenderingBotRegex: hostrule.noJsRenderingBotRegex})
+    let {isBot, noJsRendering} = userAgentData
 
     if(geoResult.isCrawler && !isBot){
         isBot = true
     }
 
+    // the browser couldn't run the client bundle and asked for the server side rendered page
+    // (inline script of index.html / index.min.html, see util/browserSupport.mjs).
+    // Never for the prerendering itself - it would render itself again
+    if (!noJsRendering && !req.headers[WEB_PARSER_HEADER] && hasSsrFallbackCookie(req)) {
+        noJsRendering = true
+    }
+
     if (noJsRendering || parsedUrl.query.__ssr === '1') {
+
+        // browsers without tls 1.2 stay on http (see hasHttpsWwwRedirect), the prerendered html
+        // contains https urls of the own host which they can't open
+        const downgradeToHttp = !req.isHttps && needsInsecureHttp(userAgentData)
 
         if (req.headers.accept && req.headers.accept.indexOf('text/html') < 0 && req.headers.accept.indexOf('*/*') < 0) {
             console.log('headers not valid', req.headers.accept)
@@ -403,7 +429,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             res.writeHead(errorFile.statusCode, headers)
             res.write('Error ' + errorFile.statusCode)
             res.end()
-            doTrackingEvent(req, errorFile.soft404 ? {event: '404', host, isBot, slug: '404', data: {soft404: true}} : {event: '404', host, isBot})
+            doTrackingEvent(req, errorFile.soft404 ? {event: '404', host, isBot, slug: '404', data: {soft404: true}, path: renderedPath(urlToFetch)} : {event: '404', host, isBot})
             return
         }
 
@@ -421,7 +447,14 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
                 //from cache
                 console.log(`send from cache ${cacheFileName}`)
 
-                await sendFile(req, res, {headers, filename: cacheFileName, fileStat: cacheStats, statusCode: 200})
+                if (downgradeToHttp) {
+                    // rare (only very old browsers) - read and rewrite instead of streaming the file
+                    const cachedHtml = await fs.promises.readFile(cacheFileName, 'utf8')
+                    res.writeHead(200, headers)
+                    res.end(httpsUrlsToHttp(cachedHtml, host))
+                } else {
+                    await sendFile(req, res, {headers, filename: cacheFileName, fileStat: cacheStats, statusCode: 200})
+                }
                 sentFromCache = true
 
                 // only update cache if file is old enough
@@ -473,7 +506,8 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
         if (pageData.soft404) {
             // soft 404 inside the prerendering: there was no request to /404 the api could track
-            doTrackingEvent(req, {event: '404', host, isBot, slug: '404', data: {soft404: true}})
+            // path as the prerender requested it (= path of the tracked visit, see track.mjs mergeSoft404Visits)
+            doTrackingEvent(req, {event: '404', host, isBot, slug: '404', data: {soft404: true}, path: renderedPath(urlToFetch)})
         }
 
         if (pageData.statusCode >= 500 || pageData.statusCode === 404) {
@@ -502,7 +536,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
 
             if (!sentFromCache) {
                 res.writeHead(pageData.statusCode, headers)
-                res.write(pageData.html)
+                res.write(downgradeToHttp ? httpsUrlsToHttp(pageData.html, host) : pageData.html)
                 res.end()
             }
             if (!cookies.auth) {
@@ -621,16 +655,11 @@ const hasHttpsWwwRedirect = ({parsedUrl, hostrule, host, req, res, remoteAddress
             // don't force redirect for letsencrypt
             if (agent && !isLetsEncryptAgent(agent)) {
 
-                const {browser, version} = parseUserAgent(agent)
+                const ua = parseUserAgent(agent), {browser, version} = ua
 
                 if ((hostrule.allowInsecure && hostrule.allowInsecure[parsedUrl.pathname]) ||
-                    (browser === 'netscape') ||
-                    (browser === 'safari' && version <= 6) ||
-                    (browser === 'firefox' && version <= 26) ||
-                    (browser === 'chrome' && version <= 49) ||
-                    (browser === 'opera' && version <= 15) ||
-                    (browser === 'msie' && version <= 10)) {
-                    // for browser that doesn't support tls 1.2
+                    needsInsecureHttp(ua)) {
+                    // for browser that doesn't support tls 1.2 (see util/browserSupport.mjs)
                 } else {
                     console.log(`${remoteAddress}: Redirect to https ${newhost} / user-agent: ${agent} / browser=${browser} / version=${version}`)
 

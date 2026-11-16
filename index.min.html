@@ -20,6 +20,39 @@
 
 <div id="app"></div>
 <script>
+    /* Fallback to the server side rendered page for browsers that can't run the ES5 bundle:
+       ES5 basics missing or an error in the bundle / polyfills before the app has started.
+       Sets the cookie util/browserSupport.mjs SSR_FALLBACK_COOKIE and reloads.
+       ES3 syntax only: this has to run in every browser that runs javascript at all */
+    (function (w, d) {
+        var c = 'lunucSsr=1', ok
+        function ssr() {
+            if (w.__lunucAppStarted || navigator.webdriver || d.cookie.indexOf(c) >= 0) return
+            d.cookie = c + ';path=/'
+            // cookies disabled: no reload, otherwise it would loop
+            if (d.cookie.indexOf(c) >= 0) w.location.reload(true)
+        }
+        ok = !!(w.JSON && Object.keys && Function.prototype.bind && [].forEach && d.addEventListener && d.querySelector)
+        if (ok) {
+            try {
+                Object.defineProperty({}, 'x', {get: function () { return 1 }})
+            } catch (e) {
+                ok = false
+            }
+        }
+        if (!ok) {
+            ssr()
+            return
+        }
+        var prev = w.onerror
+        w.onerror = function (msg, src) {
+            /* only errors of our own scripts (not analytics etc., cross origin errors have no src) */
+            if (src && (src.indexOf('.bundle.js') >= 0 || src.indexOf('/polyfill/') >= 0 || src.indexOf('/legacyjs') >= 0)) ssr()
+            return prev ? prev.apply(this, arguments) : false
+        }
+    })(window, document)
+</script>
+<script>
     if(${BASE_POLYFILL}){
         document.write('<scr'+'ipt type="text/javascript" src="/polyfill/base.js"></sc'+'ript>')
     }

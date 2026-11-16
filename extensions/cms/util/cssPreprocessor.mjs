@@ -46,7 +46,8 @@ function flatten(css, parentSelector = '') {
     }
 
     // 2. Process all the nested rule blocks found at this level.
-    for (const rule of rules) {
+    for (let i = 0; i < rules.length; i++) {
+        const rule = rules[i]
         if (rule.selector.startsWith('@')) {
             if (rule.selector.startsWith('@media') || rule.selector.startsWith('@supports')) {
                 // For these at-rules, recurse, passing the parent selector down.

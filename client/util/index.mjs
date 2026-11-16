@@ -475,7 +475,8 @@ const Util = {
             if (format) {
                 params.push(`format=${format}`)
             }
-            for (const key of IMAGE_PARAM_KEYS) {
+            for (let i = 0; i < IMAGE_PARAM_KEYS.length; i++) {
+                const key = IMAGE_PARAM_KEYS[i]
                 const value = options[key]
                 if (!value || (key === 'removebg' && value.tolerance <= 0)) {
                     continue
