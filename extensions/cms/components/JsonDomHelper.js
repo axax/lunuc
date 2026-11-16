@@ -2155,16 +2155,33 @@ class JsonDomHelper extends React.Component {
             } else if (children && children.constructor === Array && children.length === 0) {
                 isEmpty = true
             }
-            comp = <_WrappedComponent
-                onDoubleClick={overrideEvents.onDoubleClick}
-                onChange={overrideEvents.onChange || onChange}
-                onContextMenu={this.triggerContextMenu.bind(this)}
-                _inlineeditor={_inlineEditor ? _inlineEditor.toString() : ''}
-                data-isempty={isEmpty}
-                key={rest._key}
-                {...helperEvents}
-                {...rest}
-                children={children}/>
+            if (_WrappedComponent === 'iframe') {
+                // an iframe swallows all mouse events (no hover / highlight, no click): in the editor it gets a
+                // wrapper with a transparent cover, the wrapper takes the editor events (like HtmlEmbed does itself)
+                const {_key, ...iframeProps} = rest
+                comp = <div key={_key}
+                            _key={_key}
+                            data-element-key={rest['data-element-key']}
+                            data-iframe-editor-wrapper=""
+                            onDoubleClick={overrideEvents.onDoubleClick}
+                            onContextMenu={this.triggerContextMenu.bind(this)}
+                            style={{position: 'relative', lineHeight: 0}}
+                            {...helperEvents}>
+                    <iframe {...iframeProps}/>
+                    <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}/>
+                </div>
+            } else {
+                comp = <_WrappedComponent
+                    onDoubleClick={overrideEvents.onDoubleClick}
+                    onChange={overrideEvents.onChange || onChange}
+                    onContextMenu={this.triggerContextMenu.bind(this)}
+                    _inlineeditor={_inlineEditor ? _inlineEditor.toString() : ''}
+                    data-isempty={isEmpty}
+                    key={rest._key}
+                    {...helperEvents}
+                    {...rest}
+                    children={children}/>
+            }
         }
         // also while the caret is in the element: highlighter and rich text bar / "+" must not vanish when the
         // mouse leaves the element (e.g. on its way to the "+" next to the text)
