@@ -52,6 +52,30 @@ import {openWindow} from '../../../client/util/window'
 import {convertRawValuesFromPicker} from '../../../client/util/picker'
 import {showTooltip} from '../../../client/util/tooltip'
 import {CAPABILITY_ADMIN_OPTIONS} from '../../../util/capabilities.mjs'
+import {parseStyles} from '../../../client/util/style'
+
+// options like p_style_marginBottom write into the style object of the element. Some elements (e.g. older iframes)
+// have the style as css string ('border:0;'): a property can't be set on a string, so it's converted to an object first
+const STYLE_OPTION_KEY = /^(.*(?:^|_)style)_[^_]+$/
+const styleStringToObject = (key, comp) => {
+    const m = key.match(STYLE_OPTION_KEY)
+    if (m) {
+        const style = propertyByPath(m[1], comp, '_')
+        if (isString(style)) {
+            setPropertyByPath(parseStyles(style), m[1], comp, '_')
+        }
+    }
+}
+// value of a style option if the style is still a css string
+const styleOptionFromString = (key, comp) => {
+    const m = key.match(STYLE_OPTION_KEY)
+    if (m) {
+        const style = propertyByPath(m[1], comp, '_')
+        if (isString(style)) {
+            return parseStyles(style)[key.substring(m[1].length + 1)]
+        }
+    }
+}
 import {_t} from '../../../util/i18n.mjs'
 import {
     StyledInfoBox,
@@ -3000,6 +3024,9 @@ class JsonDomHelper extends React.Component {
             if (!val) {
                 val = propertyByPath(key, subJson, '_')
             }
+            if (val === undefined) {
+                val = styleOptionFromString(key, subJson)
+            }
             if(key==='$inlineEditor_dataResolver'){
                 val = this.props._findSegmentInDataResolverByKeyOrPath({key:val}).segment
             }
@@ -3237,6 +3264,7 @@ class JsonDomHelper extends React.Component {
                             setPropertyByPath(getTrPlaceholder(currentOpt), key, comp, '_')
 
                         } else if(val!==null && val!==undefined){
+                            styleStringToObject(key, comp)
                             setPropertyByPath(val, key, comp, '_')
                         }
                     }

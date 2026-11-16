@@ -1143,11 +1143,12 @@ export const buildBaseElements = () => [
             p: {
                 ['data-element-key']: 'iframe',
                 'frameBorder': '0',
-                'style': 'border:0;'
+                // object (not a css string), otherwise the margin options can't set style.marginBottom etc.
+                'style': {border: '0'}
             }
         },
         // main options first in their tab (see arrangeElementOptions in index.mjs)
-        optionOrder: ['p_media', 'p_src', 'p_width', 'p_height', 'p_frameBorder', 'p_title'],
+        optionOrder: ['p_media', 'p_src', 'p_width', 'p_height', 'p_frameBorder', 'p_data-align', 'p_title'],
         options: {
             // static html page (Media): rendered by the component HtmlEmbed (extensions/media/components/HtmlEmbed.js)
             // in a sandboxed iframe with automatic height (if p_height is empty)
@@ -1166,8 +1167,21 @@ export const buildBaseElements = () => [
             p_width: {value: '', label: _t('elements.width'), tab: DEFAULT_TAB, thirdWidth: true},
             p_height: {value: '', label: _t('elements.height'), tab: DEFAULT_TAB, thirdWidth: true},
             p_frameBorder: {value: '', label: 'Frameborder', tab: DEFAULT_TAB, thirdWidth: true},
+            // only for a html file (HtmlEmbed); a data attribute, so a plain iframe ignores it
+            'p_data-align': {
+                value: '',
+                label: 'Ausrichtung (HTML-Datei)',
+                tab: DEFAULT_TAB,
+                thirdWidth: true,
+                enum: [
+                    {name: 'Standard', value: ''},
+                    {name: 'Links', value: 'left'},
+                    {name: 'Zentriert', value: 'center'},
+                    {name: 'Rechts', value: 'right'},
+                    {name: 'Volle Inhaltsbreite', value: 'full'}
+                ]
+            },
             p_title: {fullWidth: true, value: '', label: _t('elements.iframe.title'), tab: DEFAULT_TAB},
-            p_style: {value: '', label: 'Style', tab: EXTENDED_TAB},
             ...marginOptions('p_'),
             ...classOptions('p_'),
             ...observeOptions(),

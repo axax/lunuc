@@ -13,7 +13,9 @@ import {mediaIdFromValue} from '../util/excel.mjs'
  * - height: the html is loaded and passed as srcdoc with a small script that reports its height via postMessage,
  *   so the iframe grows with the content (no scrollbar). Without srcdoc (IE11) the file is loaded via src with a fixed height.
  *
- * props: media (Media value or id), height (fixed height, e.g. "600px", empty = automatic), width, title
+ * props: media (Media value or id), height (fixed height, e.g. "600px", empty = automatic), width, title,
+ *        data-align ("left" | "center" | "right": position if the width is smaller than the content, "full": full width
+ *        of the content, ignores width)
  * (src and frameBorder of the iframe element are ignored)
  */
 
@@ -101,7 +103,11 @@ export default function HtmlEmbed({media, src, frameBorder, height, width, title
         return () => window.removeEventListener('message', onMessage)
     }, [url, fixedHeight])
 
-    const wrapperClass = 'html-embed' + (className ? ' ' + className : '')
+    const align = rest['data-align']
+    const iframeWidth = align === 'full' || !width ? '100%' : (isNaN(width) ? width : width + 'px')
+    const iframeMargin = align === 'center' ? '0 auto' : (align === 'right' ? '0 0 0 auto' : 0)
+
+    const wrapperClass = 'html-embed' + (align ? ' html-embed--' + align : '') + (className ? ' ' + className : '')
 
     if (!url) {
         return <div className={wrapperClass} style={style} {...rest}>
@@ -118,7 +124,7 @@ export default function HtmlEmbed({media, src, frameBorder, height, width, title
                 sandbox={SANDBOX}
                 title={title || (Array.isArray(media) && media[0] && media[0].name) || 'HTML'}
                 loading="lazy"
-                style={{display: 'block', width: width ? (isNaN(width) ? width : width + 'px') : '100%', maxWidth: '100%', border: 0, height: fixedHeight || (useSrc ? DEFAULT_HEIGHT * 2 : autoHeight) + 'px'}}/>
+                style={{display: 'block', width: iframeWidth, maxWidth: '100%', margin: iframeMargin, border: 0, height: fixedHeight || (useSrc ? DEFAULT_HEIGHT * 2 : autoHeight) + 'px'}}/>
         {error && <p className="html-embed__message html-embed__message--error">{error}</p>}
         {editMode && <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}/>}
         {children}
