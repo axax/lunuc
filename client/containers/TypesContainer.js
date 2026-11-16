@@ -315,7 +315,8 @@ class TypesContainer extends React.Component {
             client.query({
                 fetchPolicy: 'network-only',
                 query: queries.query,
-                variables: {filter: `_id==${this.pageParams.open}`}
+                // meta (e.g. name of the generic type) like in the list, otherwise references are not resolved
+                variables: {filter: `_id==${this.pageParams.open}`, meta: this.pageParams.meta, _version: this.pageParams._version}
             }).then(response => {
                 const storeKey = this.getStoreKey(this.pageParams.type)
                 this.setState({createEditDialog: true, dataToEdit: response.data[storeKey].results[0]})
@@ -935,6 +936,8 @@ class TypesContainer extends React.Component {
                 createData: this.createData.bind(this),
                 dataToEdit,
                 meta: {TypeContainer: this},
+                navigation: this.getEditNavigation(dataToEdit, createEditDialogOption),
+                onNavigate: this.handleEditNavigate,
                 ...(createEditDialogOption && createEditDialogOption.constructor === Object ? createEditDialogOption: {})
             }
         }
@@ -2527,6 +2530,33 @@ class TypesContainer extends React.Component {
         this.setState({confirmCloneColDialog: false, collectionName: ''})
     }
 
+
+    // position of the edited entry in the loaded list (previous / next buttons in the edit dialog)
+    getEditNavigation = (dataToEdit, option) => {
+        const results = this.state.data && this.state.data.results
+        if (!dataToEdit || !dataToEdit._id || !results || !results.length ||
+            (option && option.type && option.type !== this.pageParams.type)) {
+            return null
+        }
+        const idx = results.findIndex(r => r && r._id === dataToEdit._id)
+        if (idx < 0) {
+            return null
+        }
+        return {hasPrev: idx > 0, hasNext: idx < results.length - 1}
+    }
+
+    handleEditNavigate = (direction) => {
+        const {dataToEdit, createEditDialogOption} = this.state
+        const results = this.state.data && this.state.data.results
+        if (!dataToEdit || !results) {
+            return
+        }
+        const idx = results.findIndex(r => r && r._id === dataToEdit._id)
+        const target = idx >= 0 && results[idx + direction]
+        if (target) {
+            this.handleEditDataClick(target, {callback: createEditDialogOption && createEditDialogOption.callback})
+        }
+    }
 
     handleCreateEditData = (action) => {
         this.setState({createEditDialog: false, createEditDialogOption: null, dataToEdit: null})

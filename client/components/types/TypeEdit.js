@@ -204,6 +204,17 @@ class TypeEdit extends React.Component {
 
         // askForSaving is kept for hooks that still read it, the confirmation has its own state now
         Hook.call('TypeCreateEdit', {type, props, dataToEdit, formFields, meta, askForSaving: false, parentRef: this})
+
+        // previous / next entry of the list (only if the caller supports it, e.g. TypesContainer)
+        const {navigation} = this.props
+        if (navigation && dataToEdit && dataToEdit._id) {
+            const cancelIdx = props.actions.findIndex(a => a && a.key === 'cancel')
+            props.actions.splice(cancelIdx >= 0 ? cancelIdx : props.actions.length, 0,
+                {key: 'navigate_prev', label: '‹ ' + _t('TypeEdit.prev'), disabled: !navigation.hasPrev},
+                {key: 'navigate_next', label: _t('TypeEdit.next') + ' ›', disabled: !navigation.hasNext})
+            // another entry: new form (the GenericForm only takes its values on mount)
+            props.children = <React.Fragment key={'entry-' + dataToEdit._id}>{props.children}</React.Fragment>
+        }
         return <><SimpleDialog {...props}/>
             <SaveConfirmDialog ref={ref => {
                 this.saveConfirmDialog = ref
@@ -260,7 +271,42 @@ class TypeEdit extends React.Component {
         return false
     }
 
+    navigate(direction) {
+        if (!this.props.onNavigate) {
+            return
+        }
+        if (this.hasUnsavedChanges()) {
+            this._pendingNavigate = direction
+            this.askForSaving()
+            return
+        }
+        this.doNavigate(direction)
+    }
+
+    doNavigate(direction) {
+        this._pendingNavigate = null
+        // saved data belongs to the current entry, not to the next one
+        this._savedData = null
+        this.props.onNavigate(direction)
+    }
+
     handleConfirmAction(key) {
+        if (this._pendingNavigate) {
+            const direction = this._pendingNavigate
+            if (key === 'save') {
+                const formValidation = this.createEditForm.validate(this.createEditForm.state, true, {changeTab: true})
+                if (!formValidation.isValid) {
+                    this._pendingNavigate = null
+                    return
+                }
+                this.saveDataIfNeeded({key: 'save', navigate: direction}, Object.assign({}, this.createEditForm.state.fields))
+            } else if (key === 'discard') {
+                this.doNavigate(direction)
+            } else {
+                this._pendingNavigate = null
+            }
+            return
+        }
         if (key === 'save') {
             this.handleSaveData({key: 'save_close'})
         } else if (key === 'discard') {
@@ -300,6 +346,8 @@ class TypeEdit extends React.Component {
 
         } else if (action && (action.key === 'cancel' || action.key === 'Escape')) {
             this.closeModal(action)
+        } else if (action && (action.key === 'navigate_prev' || action.key === 'navigate_next')) {
+            this.navigate(action.key === 'navigate_prev' ? -1 : 1)
         } else {
             Hook.call('TypeCreateEditAction', {
                 type,
@@ -365,6 +413,8 @@ class TypeEdit extends React.Component {
 
                 if (action.key === 'save_close') {
                     this.closeModal(action, optimisticData)
+                } else if (action.navigate) {
+                    this.doNavigate(action.navigate)
                 } else {
                     this._savedData = Object.assign({}, this._savedData, optimisticData)
                     this.setState({dataToEdit: {...dataToEdit, ...optimisticData}})
@@ -429,6 +479,8 @@ class TypeEdit extends React.Component {
             } else {
                 if (action.key === 'save_close') {
                     this.closeModal(action)
+                } else if (action.navigate) {
+                    this.doNavigate(action.navigate)
                 }
             }
 
@@ -448,7 +500,11 @@ TypeEdit.propTypes = {
     title: PropTypes.string,
     open: PropTypes.bool,
     dataToEdit: PropTypes.object,
-    meta: PropTypes.object
+    meta: PropTypes.object,
+    // {hasPrev, hasNext}: shows the buttons for the previous / next entry
+    navigation: PropTypes.object,
+    // called with -1 / 1
+    onNavigate: PropTypes.func
 }
 
 

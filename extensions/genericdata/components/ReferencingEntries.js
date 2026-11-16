@@ -86,24 +86,19 @@ const ReferencingEntries = ({field, ownerId}) => {
         }
         setState(s => ({...s, loading: true, error: null}))
         try {
-            const [defRes, res] = await Promise.all([
-                client.query({
-                    fetchPolicy: 'cache-first',
-                    query: 'query genericDataDefinitions($filter:String){genericDataDefinitions(filter:$filter){results{_id name structure}}}',
-                    variables: {filter: `name==${genericType}`}
-                }),
-                client.query({
-                    fetchPolicy: 'network-only',
-                    query: 'query genericDatas($filter:String,$limit:Int,$meta:String){genericDatas(filter:$filter,limit:$limit,meta:$meta){total results{_id data}}}',
-                    variables: {
-                        meta: genericType,
-                        limit,
-                        filter: `definition.name==${genericType} && data.${referenceField}==${ownerId}`
-                    }
-                })
-            ])
+            // with meta the server returns the definition (incl. structure) once as result.meta,
+            // no separate query for the definition needed
+            const res = await client.query({
+                fetchPolicy: 'network-only',
+                query: 'query genericDatas($filter:String,$limit:Int,$meta:String){genericDatas(filter:$filter,limit:$limit,meta:$meta){total meta results{_id data}}}',
+                variables: {
+                    meta: genericType,
+                    limit,
+                    filter: `data.${referenceField}==${ownerId}`
+                }
+            })
 
-            const def = defRes.data && defRes.data.genericDataDefinitions && defRes.data.genericDataDefinitions.results[0]
+            const def = parse(res.data && res.data.genericDatas && res.data.genericDatas.meta)
             const structure = (def && parse(def.structure)) || {}
             const structFields = structure.fields || []
             const fieldByName = name => structFields.find(f => f.name === name)

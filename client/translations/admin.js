@@ -359,6 +359,8 @@ export const translations = {
         'TypeEdit.closeConfirmTitle':'Ungespeicherte Änderungen',
         'TypeEdit.discard':'Verwerfen',
         'TypeEdit.continueEditing':'Weiter bearbeiten',
+        'TypeEdit.prev':'Vorheriges',
+        'TypeEdit.next':'Nächstes',
         'core.searchPlaceholder':'Suchen…',
         'core.noResults':'Keine Treffer'
     },
@@ -722,6 +724,8 @@ export const translations = {
         'TypeEdit.closeConfirmTitle':'Unsaved changes',
         'TypeEdit.discard':'Discard',
         'TypeEdit.continueEditing':'Keep editing',
+        'TypeEdit.prev':'Previous',
+        'TypeEdit.next':'Next',
         'core.searchPlaceholder':'Search…',
         'core.noResults':'No results'
     }

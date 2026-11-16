@@ -371,6 +371,13 @@ const TAB_ALIASES = {
 }
 const tabName = tab => TAB_ALIASES[tab] || tab
 
+// a tab with the same label as "more options" (e.g. "Weitere Einstellungen" in a definition) gets the fields
+// without tab as well, otherwise there are two tabs with the same name. tabs: names or {name}
+const moreOptionsTabIndex = tabs => {
+    const label = _t('GenericForm.moreOptions')
+    return tabs.findIndex(tab => _t(tab && tab.name !== undefined ? tab.name : tab) === label)
+}
+
 function convertArrayToObjectByAttr(subFields, attrName) {
     if (Array.isArray(subFields)) {
         return subFields.reduce((acc, cur, i) => {
@@ -553,7 +560,9 @@ class GenericForm extends React.Component {
                 if (relevantTabs.length > 0) {
                     validationState.tabValue = relevantTabs[0]
                 } else {
-                    validationState.tabValue = tabs.length
+                    // fields without tab: "more options", or the tab with the same label they are merged into
+                    const moreIdx = moreOptionsTabIndex(tabs)
+                    validationState.tabValue = moreIdx >= 0 ? moreIdx : tabs.length
                 }
             }
         }
@@ -1164,6 +1173,14 @@ class GenericForm extends React.Component {
         for (let i = tabs.length - 1; i >= 0; i--) {
             if (tabs[i].fields.length == 0) {
                 tabs.splice(i, 1)
+            }
+        }
+        if (tabs.length > 0 && formFields.length > 0) {
+            const moreIdx = moreOptionsTabIndex(tabs)
+            if (moreIdx >= 0) {
+                tabs[moreIdx] = Object.assign({}, tabs[moreIdx], {fields: tabs[moreIdx].fields.concat(formFields)})
+                // formFields is const
+                formFields.splice(0, formFields.length)
             }
         }
 
