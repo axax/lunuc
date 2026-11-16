@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import {ObjectId} from 'mongodb'
 import {
     checkClientParams, checkOidcAuthorizeParams, clientCredentials, createOidcTokenResponse,
-    isOidcClient, oidcCodeData, oidcDiscovery, oidcJwks, oidcUserInfo, resetSigningKeyCache, verifyPkce
+    canonicalHost, isOidcClient, oidcCodeData, oidcDiscovery, oidcJwks, oidcUserInfo, resetSigningKeyCache, verifyPkce
 } from '../../extensions/oauth/oidc.mjs'
 
 const b64url = b => b.toString('base64').replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
@@ -138,6 +138,14 @@ describe('oauth oidc', () => {
         const res = fakeRes()
         await oidcUserInfo(fakeDb, fakeReq({authorization: 'Bearer ' + body.access_token}), res)
         expect(res.body).toEqual({sub: userId.toString()})
+    })
+
+    it('uses www in the issuer only if the hostrule forces it', () => {
+        expect(canonicalHost('pokerraum.ch', {forceWWW: true})).toBe('www.pokerraum.ch')
+        expect(canonicalHost('www.pokerraum.ch', {forceWWW: true})).toBe('www.pokerraum.ch')
+        expect(canonicalHost('www.pokerraum.ch', {})).toBe('pokerraum.ch')
+        expect(canonicalHost('pokerraum.ch', undefined)).toBe('pokerraum.ch')
+        expect(canonicalHost('online.pokerraum.ch', {forceWWW: true})).toBe('online.pokerraum.ch')
     })
 
     it('serves discovery', () => {

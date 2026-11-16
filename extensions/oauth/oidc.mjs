@@ -10,6 +10,7 @@ import crypto from 'crypto'
 import {promisify} from 'node:util'
 import jwt from 'jsonwebtoken'
 import {ObjectId} from 'mongodb'
+import {getBestMatchingHostRule} from '../../util/hostrules.mjs'
 
 export const OIDC_SCOPE = 'openid'
 const KEY_NAME = 'OAuthOidcSigningKey'
@@ -107,8 +108,22 @@ export const originFromRequest = req => {
     return `${local ? 'http' : 'https'}://${host}`
 }
 
+// the host the domain is published under: with www if the hostrule forces it (same rule as the
+// redirect in server.mjs: only for domains without subdomain), otherwise without www
+export const canonicalHost = (host, hostrule) => {
+    const bare = host.startsWith('www.') ? host.substring(4) : host
+    return hostrule && hostrule.forceWWW && bare.indexOf('.') === bare.lastIndexOf('.') ? 'www.' + bare : bare
+}
+
 // the issuer is the same with and without www (for all domains) - tokens are valid on both hosts
-export const issuerFromRequest = req => originFromRequest(req).replace('://www.', '://') + '/oauth'
+export const issuerFromRequest = req => {
+    const origin = originFromRequest(req)
+    const i = origin.indexOf('://') + 3
+    const hostWithPort = origin.substring(i)
+    const host = hostWithPort.split(':')[0]
+    const {hostrule} = getBestMatchingHostRule(host, false)
+    return origin.substring(0, i) + canonicalHost(host, hostrule) + hostWithPort.substring(host.length) + '/oauth'
+}
 
 // ---- signing key (env LUNUC_OIDC_PRIVATE_KEY or generated once and stored in KeyValueGlobal) ----
 let keyPromise
