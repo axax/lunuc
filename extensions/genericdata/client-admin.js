@@ -32,6 +32,10 @@ const GenericForm = (props) => <Async {...props}
 const Typography = (props) => <Async {...props} expose="Typography"
                                      load={() =>import(/* webpackChunkName: "admin" */ '../../gensrc/ui/admin')}/>
 
+// list of the entries of another definition that reference the edited entry (uitype referencingEntries)
+const ReferencingEntries = (props) => <Async {...props}
+                                             load={() => import(/* webpackChunkName: "admin" */ './components/ReferencingEntries')}/>
+
 
 const findField = (definition, key) => {
     if (definition && definition.structure && definition.structure.fields) {
@@ -672,6 +676,12 @@ export default () => {
 
             // Combine data attributes to the data object
             definition.structure.fields.forEach(field => {
+                if (field.uitype === 'referencingEntries') {
+                    // display only, nothing to save
+                    delete editedData['data_' + field.name]
+                    delete optimisticData['data_' + field.name]
+                    return
+                }
                 if(field.uitype==='wrapper' && field.subFields){
                     const fieldData = editedData['data_' + field.name]
                     let newFieldData
@@ -1053,6 +1063,16 @@ export default () => {
                     context.item = label
                 }
             }
+        }
+    })
+
+
+    // field that lists referencing entries (e.g. Beiträge of a Bereich). It sits in its own tab,
+    // tab panels are only rendered when active, so the entries are loaded when the tab is opened
+    Hook.on('GenericFormField', function ({field, fieldKey, result}) {
+        if (field.uitype === 'referencingEntries') {
+            const values = this.state.valuesOri || this.props.values || {}
+            result.component = <ReferencingEntries key={fieldKey} field={field} ownerId={values._id}/>
         }
     })
 
