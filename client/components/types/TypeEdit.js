@@ -208,8 +208,11 @@ class TypeEdit extends React.Component {
         // previous / next entry of the list (only if the caller supports it, e.g. TypesContainer)
         const {navigation} = this.props
         if (navigation && dataToEdit && dataToEdit._id) {
-            const cancelIdx = props.actions.findIndex(a => a && a.key === 'cancel')
-            props.actions.splice(cancelIdx >= 0 ? cancelIdx : props.actions.length, 0,
+            // bottom left: first in the list, the spacer (divider) of the next action pushes the others to the right
+            if (props.actions.length > 0 && props.actions[0]) {
+                props.actions[0] = Object.assign({}, props.actions[0], {divider: true})
+            }
+            props.actions.unshift(
                 {key: 'navigate_prev', label: '‹ ' + _t('TypeEdit.prev'), disabled: !navigation.hasPrev},
                 {key: 'navigate_next', label: _t('TypeEdit.next') + ' ›', disabled: !navigation.hasNext})
             // another entry: new form (the GenericForm only takes its values on mount)
