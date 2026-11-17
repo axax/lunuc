@@ -13,7 +13,7 @@ import {clientIps} from '../util/connection.mjs'
 import {withFilter} from 'graphql-subscriptions'
 import {ObjectId} from 'mongodb'
 import {sendMail} from '../util/mail.mjs'
-import {getType} from '../../util/types.mjs'
+import {getType, getBulkEditSubPathConfig, parseBulkEditSubPath, setValueAtSubPath} from '../../util/types.mjs'
 import {findAndReplaceObjectIds} from '../util/graphql.js'
 import {listBackups, createBackup, removeBackup} from './backups.mjs'
 import {getCollections} from '../util/collection.mjs'
@@ -270,10 +270,52 @@ export const systemResolver = (db) => ({
             }else{
                 const json = JSON.parse(data)
 
+                // edits of a single sub field inside an Object field, e.g. {info: {path: 'format.tags.genre', mode: 'string', value: 'Spoken & Audio'}}
+                const subPathEdits = json._bulkSubPaths
+                delete json._bulkSubPaths
+                const subPathOps = []
+                if (subPathEdits && subPathEdits.constructor === Object) {
+                    const typeDefinition = getType(collection)
+                    for (const [fieldName, edit] of Object.entries(subPathEdits)) {
+                        const fieldDefinition = typeDefinition?.fields?.find(f => f.name === fieldName)
+                        if (!getBulkEditSubPathConfig(fieldDefinition)) {
+                            return {result: `Field ${fieldName} is not bulk editable by sub path`}
+                        }
+                        let parts, value
+                        const mode = edit?.mode || 'string'
+                        try {
+                            parts = parseBulkEditSubPath(edit?.path)
+                            if (mode === 'json') {
+                                value = JSON.parse(edit.value)
+                            } else if (mode === 'string') {
+                                value = edit.value === undefined || edit.value === null ? '' : String(edit.value)
+                            } else if (mode !== 'remove') {
+                                throw new Error(`Unknown mode ${mode}`)
+                            }
+                        } catch (e) {
+                            return {result: `${fieldName}: ${e.message}`}
+                        }
+                        subPathOps.push({fieldName, parts, value, remove: mode === 'remove'})
+                    }
+                }
+
                 const updater = resolver(db).Mutation[`update${collection}`]
                 if(updater){
                     for(const entry of entries){
-                        await updater(Object.assign({_id:entry._id}, json), {context})
+                        const entryData = Object.assign({_id:entry._id}, json)
+                        for (const op of subPathOps) {
+                            let current = entry[op.fieldName]
+                            if (current && current.constructor === String) {
+                                try {
+                                    current = JSON.parse(current)
+                                } catch (e) {
+                                    current = null
+                                }
+                            }
+                            // all other values in the object stay as they are
+                            entryData[op.fieldName] = setValueAtSubPath(current, op.parts, op.value, op.remove)
+                        }
+                        await updater(entryData, {context})
                     }
                     return {result: `Successful executed`}
                 }else{

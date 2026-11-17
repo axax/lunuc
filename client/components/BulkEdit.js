@@ -116,6 +116,57 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(props, ref) {
     );
 });
 
+const SUB_PATH_SEPARATOR = '__bulkSubPath_'
+
+/* an Object field with bulkEditable.subPath is edited with 3 fields: path, mode and value */
+const createSubPathFields = (fieldName, field) => {
+    const cfg = field.bulkEditSubPath
+    const label = field.label || fieldName
+    return {
+        [`${fieldName}${SUB_PATH_SEPARATOR}path`]: {
+            label: `${label} – ${_t('TypesContainer.bulkEditSubPath')}`,
+            placeholder: cfg.placeholder || 'z.B. format.tags.genre',
+            defaultValue: cfg.defaultPath || '',
+            required: true,
+            fullWidth: true,
+            subPathOf: fieldName,
+            subPathRole: 'path'
+        },
+        [`${fieldName}${SUB_PATH_SEPARATOR}mode`]: {
+            label: `${label} – ${_t('TypesContainer.bulkEditSubPathMode')}`,
+            uitype: 'select',
+            defaultValue: 'string',
+            enum: [
+                {value: 'string', name: _t('TypesContainer.bulkEditSubPathModeString')},
+                {value: 'json', name: _t('TypesContainer.bulkEditSubPathModeJson')},
+                {value: 'remove', name: _t('TypesContainer.bulkEditSubPathModeRemove')}
+            ],
+            subPathOf: fieldName,
+            subPathRole: 'mode'
+        },
+        [`${fieldName}${SUB_PATH_SEPARATOR}value`]: {
+            label: `${label} – ${_t('TypesContainer.bulkEditSubPathValue')}`,
+            fullWidth: true,
+            subPathOf: fieldName,
+            subPathRole: 'value'
+        }
+    }
+}
+
+/* GenericForm ignores defaultValue when values are passed */
+const subPathDefaultValues = (values, fields) => {
+    if (!values) {
+        return values
+    }
+    const newValues = Object.assign({}, values)
+    Object.keys(fields).forEach(key => {
+        if (fields[key].subPathOf && newValues[key] === undefined && fields[key].defaultValue !== undefined) {
+            newValues[key] = fields[key].defaultValue
+        }
+    })
+    return newValues
+}
+
 const BulkEdit = ({ dataToBulkEdit, type, parentContainer, setKeyValue}) => {
 
     const [bulkEditScriptIndex, setBulkEditScriptIndex] = useState(0)
@@ -170,7 +221,27 @@ const BulkEdit = ({ dataToBulkEdit, type, parentContainer, setKeyValue}) => {
                                  if(dataToBulkEdit.action==='editScript') {
                                      data = scriptData.script
                                  }else {
-                                     const editedDataWithRefs = referencesToIds(bulkEditForm.state.fields, type)
+                                     const formFields = Object.assign({}, bulkEditForm.state.fields)
+                                     const subPaths = {}
+                                     Object.keys(bulkEditFields).forEach(key => {
+                                         const field = bulkEditFields[key]
+                                         if (field.subPathOf) {
+                                             if (!subPaths[field.subPathOf]) {
+                                                 subPaths[field.subPathOf] = {}
+                                             }
+                                             let value = formFields[key]
+                                             if (value && value.constructor === Object && value.value !== undefined) {
+                                                 // select returns the item
+                                                 value = value.value
+                                             }
+                                             subPaths[field.subPathOf][field.subPathRole] = value
+                                             delete formFields[key]
+                                         }
+                                     })
+                                     const editedDataWithRefs = referencesToIds(formFields, type)
+                                     if (Object.keys(subPaths).length > 0) {
+                                         editedDataWithRefs._bulkSubPaths = subPaths
+                                     }
                                      data = JSON.stringify(editedDataWithRefs)
                                  }
 
@@ -270,7 +341,12 @@ const BulkEdit = ({ dataToBulkEdit, type, parentContainer, setKeyValue}) => {
                         const fieldsKeys = Object.keys(fields)
                         const filteredFields = {}
                         for(let idx of checked) {
-                            filteredFields[fieldsKeys[idx]] = fields[fieldsKeys[idx]]
+                            const key = fieldsKeys[idx]
+                            if (fields[key].bulkEditSubPath) {
+                                Object.assign(filteredFields, createSubPathFields(key, fields[key]))
+                            } else {
+                                filteredFields[key] = fields[key]
+                            }
                         }
                         setBulkEditFields(filteredFields)
                     }}
@@ -281,7 +357,7 @@ const BulkEdit = ({ dataToBulkEdit, type, parentContainer, setKeyValue}) => {
                         if(ref) {
                             setBulkEditForm(ref)
                         }
-                    }} primaryButton={false} values={dataToBulkEdit.values} fields={bulkEditFields}/>}
+                    }} primaryButton={false} values={subPathDefaultValues(dataToBulkEdit.values, bulkEditFields)} fields={bulkEditFields}/>}
                 </Grid>
             </Grid>}
     </SimpleDialog>

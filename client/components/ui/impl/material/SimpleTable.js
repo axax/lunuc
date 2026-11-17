@@ -64,7 +64,7 @@ class SimpleTable extends React.Component {
     }
 
     render() {
-        const {tableRenderer, tableRenderOption, style, title, actions, header, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onRowClick, columns, dataSource, footer} = this.props
+        const {tableRenderer, tableRenderOption, style, title, actions, header, count, rowsPerPage, page, orderDirection, orderBy, onChangePage, onChangeRowsPerPage, onRowClick, columns, dataSource, footer, stickyFooter} = this.props
         const theme = useTheme()
 
         const numSelected = 0
@@ -175,6 +175,14 @@ class SimpleTable extends React.Component {
 
                 </Table>}
             </StyledScrollArea>
+            <div style={stickyFooter ? {
+                position: 'sticky',
+                bottom: 0,
+                zIndex: 3,
+                backgroundColor: theme.palette.background.paper,
+                backgroundImage: 'var(--Paper-overlay)',
+                boxShadow: theme.palette.mode === 'dark' ? '0 -4px 12px rgba(0,0,0,.45)' : '0 -4px 12px rgba(0,0,0,.12)'
+            } : null}>
             <Table>
                 <TableFooter>
                     <TableRow>
@@ -191,12 +199,15 @@ class SimpleTable extends React.Component {
                     </TableRow>
                 </TableFooter>
             </Table>
+            </div>
         </Paper>
     }
 }
 
 SimpleTable.propTypes = {
     footer: PropTypes.any,
+    /* keeps the footer (selection actions, pagination) visible at the bottom of the viewport */
+    stickyFooter: PropTypes.bool,
     count: PropTypes.number,
     rowsPerPage: PropTypes.number,
     page: PropTypes.number,

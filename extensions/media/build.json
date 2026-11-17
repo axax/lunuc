@@ -57,6 +57,7 @@
         {
           "name": "meta",
           "type": "Object",
+          "bulkEditable": {"subPath": true},
           "uitype": "json",
           "alwaysLoad": false,
           "hideColumnInTypes": true,
@@ -71,6 +72,7 @@
         {
           "name": "info",
           "type": "Object",
+          "bulkEditable": {"subPath": true},
           "uitype": "json",
           "alwaysLoad": false,
           "hideColumnInTypes": true,

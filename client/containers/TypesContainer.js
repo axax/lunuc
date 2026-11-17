@@ -749,6 +749,7 @@ class TypesContainer extends React.Component {
                                                       _version={_version} />
                                 }
                                 actions={actionColumn?null:actions}
+                                stickyFooter={selectedLength > 0}
                                 footer={<div style={{display: 'flex', alignItems: 'center', minHeight: '48px'}}>
                                     <p style={{marginRight: '2rem'}}>{_t('TypesContainer.selectedRows', {count: selectedLength})}</p>{selectedLength ?
                                     <SimpleSelect

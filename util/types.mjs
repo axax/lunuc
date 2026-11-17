@@ -218,3 +218,80 @@ export const queryStatemantForType = (field, opts = {}, level = 0) => {
     }
     return subQuery
 }
+
+
+/*
+ * Bulk edit of a single sub field inside an Object field (e.g. info.format.tags.genre).
+ * Enabled in build.json with
+ *   "bulkEditable": {"subPath": true}
+ * optional: "defaultPath": "format.tags.genre"
+ */
+export const getBulkEditSubPathConfig = (field) => {
+    if (!field || !field.bulkEditable || field.type !== 'Object') {
+        return null
+    }
+    const cfg = field.bulkEditable
+    if (cfg === 'subPath') {
+        return {subPath: true}
+    }
+    if (cfg.constructor === Object && cfg.subPath) {
+        return cfg
+    }
+    return null
+}
+
+const FORBIDDEN_PATH_PARTS = ['__proto__', 'constructor', 'prototype']
+
+/* returns the path as array of keys or throws an error if the path is not valid */
+export const parseBulkEditSubPath = (path) => {
+    if (!path || path.constructor !== String || !path.trim()) {
+        throw new Error('Sub path is missing')
+    }
+    const parts = path.trim().split('.').map(p => p.trim())
+    for (const part of parts) {
+        if (!part) {
+            throw new Error(`Invalid sub path "${path}"`)
+        }
+        if (part.startsWith('$') || FORBIDDEN_PATH_PARTS.includes(part)) {
+            throw new Error(`Invalid key "${part}" in sub path "${path}"`)
+        }
+    }
+    return parts
+}
+
+const isContainer = (value) => value && typeof value === 'object' && (value.constructor === Object || Array.isArray(value))
+const copyContainer = (value) => Array.isArray(value) ? value.slice(0) : Object.assign({}, value)
+
+/*
+ * Sets (or removes) the value at parts inside obj without mutating obj.
+ * Only the objects along the path are copied, all other values (incl. ObjectIds, Dates) stay untouched.
+ * Missing objects along the path are created.
+ */
+export const setValueAtSubPath = (obj, parts, value, remove = false) => {
+    const root = isContainer(obj) ? copyContainer(obj) : {}
+    let current = root
+    for (let i = 0; i < parts.length - 1; i++) {
+        const key = parts[i]
+        const next = current[key]
+        if (isContainer(next)) {
+            current[key] = copyContainer(next)
+        } else if (remove) {
+            // nothing to remove
+            return root
+        } else {
+            current[key] = {}
+        }
+        current = current[key]
+    }
+    const lastKey = parts[parts.length - 1]
+    if (remove) {
+        if (Array.isArray(current)) {
+            current.splice(Number(lastKey), 1)
+        } else {
+            delete current[lastKey]
+        }
+    } else {
+        current[lastKey] = value
+    }
+    return root
+}

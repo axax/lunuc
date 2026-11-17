@@ -8,7 +8,7 @@ import {
     CAPABILITY_MANAGE_USER_ROLE,
     getAllCapabilites
 } from './capabilities.mjs'
-import {getTypes, resetTypes} from './types.mjs'
+import {getTypes, resetTypes, getBulkEditSubPathConfig} from './types.mjs'
 import {_t} from './i18n.mjs'
 import extensionsPrivate from '../gensrc/extensions-private.mjs'
 import extensions from '../gensrc/extensions.mjs'
@@ -180,6 +180,10 @@ export const getFieldsForBulkEdit = (type) => {
             if (field.bulkEditable) {
                 fields[field.name] = enhanceField(field, type)
                 delete fields[field.name].tab
+                const subPathConfig = getBulkEditSubPathConfig(field)
+                if (subPathConfig) {
+                    fields[field.name].bulkEditSubPath = subPathConfig
+                }
             }
         }
     }
