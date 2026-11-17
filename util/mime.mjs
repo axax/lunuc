@@ -42,7 +42,8 @@ const MIME_TYPES = {
     'woff': 'font/woff',
     'woff2': 'font/woff2',
     'otf': 'font/otf',
-    'dmg': 'application/octet-stream'
+    'dmg': 'application/octet-stream',
+    'wasm': 'application/wasm'
 }
 
 const MIME_TYPE_COMPRESSIBLE = [
@@ -60,6 +61,7 @@ const MIME_TYPE_COMPRESSIBLE = [
     'application/x-font-opentype',
     'application/x-font-truetype',
     'image/svg+xml',
+    'application/wasm',
     'image/x-icon',
     'image/vnd.microsoft.icon',
     'font/ttf',
