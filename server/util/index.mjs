@@ -4,6 +4,7 @@ import {getRegexCached} from './regexCache.mjs'
 // This module checks on its own (not only the caller), also after redirects of the page.
 import {isPrivateHostname, isPublicHttpUrl} from '../../util/networkGuard.mjs'
 import {createSharedBrowser, BASE_BROWSER_ARGS} from '../../util/sharedBrowser.mjs'
+import {guardPuppeteerPage} from '../../api/util/request.mjs'
 import fs from 'fs'
 import path from 'path'
 
@@ -175,6 +176,60 @@ export const doScreenCapture = async (url, filename, options, cookies) => {
         screenshotBrowser.release()
     }
     return {statusCode:200}
+}
+
+// png captures (api generate/png) running at the same time in the shared Chrome. Further requests get
+// {busy:true} at once instead of waiting: a waiting request holds one of the few connections a browser
+// opens per host (http/1.1: 6, e.g. localhost) - a list with many previews blocked the whole app
+const MAX_CONCURRENT_PNG_CAPTURES = 2
+let activePngCaptures = 0
+
+/*
+ Screenshot of a url as png buffer in the shared Chrome (own context per capture, no Chrome start per request).
+ Every request of the page that is not a public host is blocked, except allowOrigins (e.g. the own server).
+ options: width, height (viewport and clip), x, y, allowOrigins, timeout (page load in ms; after it the page
+ is captured as it is), onNewDocument (function run in the page before its scripts).
+ Returns {buffer}, {busy: true} or {} on failure. Never throws.
+ */
+export const capturePngBuffer = async (url, {width, height, x, y, allowOrigins = [], timeout = 15000, onNewDocument} = {}) => {
+    if (activePngCaptures >= MAX_CONCURRENT_PNG_CAPTURES) {
+        return {busy: true}
+    }
+    activePngCaptures++
+    let acquired = false, context
+    try {
+        const browser = await screenshotBrowser.acquire(SCREENSHOT_LAUNCH_OPTIONS)
+        acquired = true
+        context = await browser.createBrowserContext()
+        const page = await context.newPage()
+        await guardPuppeteerPage(page, {allowOrigins})
+        const viewport = {width: clampDimension(width, 1280), height: clampDimension(height, 800)}
+        await page.setViewport(viewport)
+        if (onNewDocument) {
+            await page.evaluateOnNewDocument(onNewDocument)
+        }
+        try {
+            // networkidle2: open connections (websocket, long polling, dev server) don't keep it waiting
+            await page.goto(url, {waitUntil: 'networkidle2', timeout})
+        } catch (e) {
+            if (isBrowserFailure(e) && e?.name !== 'TimeoutError') throw e
+            console.log(`capturePngBuffer: ${url} not fully loaded (${e.message}), captured as it is`)
+        }
+        const buffer = await page.screenshot({
+            type: 'png',
+            omitBackground: true,
+            clip: {x: Math.max(0, parseInt(x) || 0), y: Math.max(0, parseInt(y) || 0), ...viewport}
+        })
+        return {buffer}
+    } catch (e) {
+        console.warn(`capturePngBuffer: failed for ${url}`, e.message)
+        if (isBrowserFailure(e)) screenshotBrowser.close()
+        return {}
+    } finally {
+        if (context) await context.close().catch(() => {})
+        if (acquired) screenshotBrowser.release()
+        activePngCaptures--
+    }
 }
 
 /*
