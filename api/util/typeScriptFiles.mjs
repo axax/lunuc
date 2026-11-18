@@ -21,6 +21,7 @@ import {toPlainJson, fromPlainJson, stableJson} from './plainJson.mjs'
 import {readExportState, writeExportState, hashFields, hashValue, threeWayDiff} from './exportState.mjs'
 import GenericResolver from '../resolver/generic/genericResolver.mjs'
 import {isExtensionEnabled} from '../../gensrc/extensions-private.mjs'
+import {getType} from '../../util/types.mjs'
 
 export const META_FILE = 'meta.json'
 
@@ -91,6 +92,15 @@ One folder per ${type} entry.
 
 // never compared or imported
 const INFO_FIELDS = ['_id', 'createdBy', 'modifiedAt']
+
+/**
+ * fields with "typeFiles": false in the build.json of the type (e.g. CronJob.lastRunAt):
+ * runtime state, not written to the files, not compared and not imported
+ */
+const ignoredFields = (type) => {
+    const typeDefinition = getType(type)
+    return typeDefinition && typeDefinition.fields ? typeDefinition.fields.filter(f => f.typeFiles === false).map(f => f.name) : []
+}
 const SECRET_PLACEHOLDER = '*** not exported ***'
 
 /**
@@ -101,10 +111,11 @@ const comparableValues = (type, item) => {
     const definition = TYPE_SCRIPT_DEFINITIONS[type]
     const scriptFields = definition.scripts.map(s => s.field)
     const secretFields = definition.secretFields || []
+    const ignored = ignoredFields(type)
     const values = {}
     scriptFields.forEach(field => values[field] = scriptText(item, field))
     Object.keys(item).forEach(key => {
-        if (INFO_FIELDS.indexOf(key) < 0 && scriptFields.indexOf(key) < 0 && secretFields.indexOf(key) < 0 && !key.startsWith('_')) {
+        if (INFO_FIELDS.indexOf(key) < 0 && scriptFields.indexOf(key) < 0 && secretFields.indexOf(key) < 0 && ignored.indexOf(key) < 0 && !key.startsWith('_')) {
             values[key] = toPlainJson(item[key])
         }
     })
@@ -142,6 +153,7 @@ export const typeItemsToFiles = (type, items) => {
     }
     const scriptFields = definition.scripts.map(s => s.field)
     const secretFields = definition.secretFields || []
+    const ignored = ignoredFields(type)
     const usedFolders = {}
     const files = []
 
@@ -155,7 +167,7 @@ export const typeItemsToFiles = (type, items) => {
 
         const meta = {_id: item._id.toString()}
         Object.keys(item).forEach(key => {
-            if (key === '_id' || scriptFields.indexOf(key) >= 0) {
+            if (key === '_id' || scriptFields.indexOf(key) >= 0 || ignored.indexOf(key) >= 0) {
                 return
             }
             meta[key] = secretFields.indexOf(key) >= 0 ? (item[key] ? SECRET_PLACEHOLDER : item[key]) : toPlainJson(item[key])
@@ -203,13 +215,13 @@ const findManagedFolders = (root, dir, result) => {
  * values of an exported folder as they are in the files
  * @returns {_id, fileValues, errors}
  */
-const readLocalEntry = (folder, definition) => {
+const readLocalEntry = (folder, definition, ignored = []) => {
     const scriptFields = definition.scripts.map(s => s.field)
     const secretFields = definition.secretFields || []
     const meta = JSON.parse(fs.readFileSync(path.join(folder, META_FILE), 'utf8'))
     const fileValues = {}, errors = []
     Object.keys(meta).forEach(key => {
-        if (INFO_FIELDS.indexOf(key) >= 0 || secretFields.indexOf(key) >= 0 || scriptFields.indexOf(key) >= 0) {
+        if (INFO_FIELDS.indexOf(key) >= 0 || secretFields.indexOf(key) >= 0 || scriptFields.indexOf(key) >= 0 || ignored.indexOf(key) >= 0) {
             return
         }
         if (key.startsWith('_') || key.startsWith('$') || key.indexOf('.') >= 0) {
@@ -265,7 +277,7 @@ export const exportTypeScriptsToDirectory = async ({db, context, type, dir, filt
     if (!force && fs.existsSync(root)) {
         for (const folder of readEntryFolders(root, [])) {
             try {
-                const {_id, fileValues} = readLocalEntry(folder, definition)
+                const {_id, fileValues} = readLocalEntry(folder, definition, ignoredFields(type))
                 const itemState = _id && state.items[_id]
                 if (itemState && isLocallyModified(fileValues, itemState.fields, scriptFields)) {
                     keptLocal.push(_id)
@@ -368,7 +380,7 @@ export const importChangedTypeScriptsFromDirectory = async ({db, context, type, 
     for (const folder of readEntryFolders(root, [])) {
         const label = path.relative(root, folder)
         try {
-            const local = readLocalEntry(folder, definition)
+            const local = readLocalEntry(folder, definition, ignoredFields(type))
             const meta = {_id: local._id}
             local.errors.forEach(e => result.errors.push(`${label}: ${e}`))
             const hasValidId = meta._id && ObjectId.isValid(meta._id)
@@ -490,7 +502,7 @@ export const getTypeScriptItems = async ({db, context, type, ids, all = false}) 
  * imports files of an export (e.g. from a zip): [{path, content}]. Every folder with a meta.json is
  * one entry, matched by the _id in meta.json. Changed fields are written (scripts and attributes),
  * an entry that does not exist is created with that _id if createMissing is set.
- * Secret fields and info fields (createdBy, modifiedAt) are never imported.
+ * Secret fields, info fields (createdBy, modifiedAt) and fields with "typeFiles": false are never imported.
  * @returns {created, updated, unchanged, skipped, names, errors}
  */
 export const importTypeScriptFiles = async ({db, context, type, files, dryRun = false, createMissing = true}) => {
@@ -500,6 +512,7 @@ export const importTypeScriptFiles = async ({db, context, type, files, dryRun = 
     }
     const scriptFields = definition.scripts.map(s => s.field)
     const secretFields = definition.secretFields || []
+    const ignored = ignoredFields(type)
     const result = {created: 0, updated: 0, unchanged: 0, skipped: 0, names: [], errors: []}
 
     const byPath = {}
@@ -531,7 +544,7 @@ export const importTypeScriptFiles = async ({db, context, type, files, dryRun = 
             const meta = JSON.parse(byPath[(folder ? folder + '/' : '') + META_FILE])
             const values = {}
             Object.keys(meta).forEach(key => {
-                if (INFO_FIELDS.indexOf(key) >= 0 || secretFields.indexOf(key) >= 0 || scriptFields.indexOf(key) >= 0) {
+                if (INFO_FIELDS.indexOf(key) >= 0 || secretFields.indexOf(key) >= 0 || scriptFields.indexOf(key) >= 0 || ignored.indexOf(key) >= 0) {
                     return
                 }
                 if (key.startsWith('_') || key.startsWith('$') || key.indexOf('.') >= 0) {

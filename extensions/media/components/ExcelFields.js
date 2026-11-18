@@ -138,6 +138,8 @@ export function ExcelPreview({form, field, fieldKey, values}) {
     const sumOnlyValue = get('sumOnlyField', 'excelSumOnly')
     const sumOnly = sumOnlyValue === true || sumOnlyValue === 'true'
     const variant = get('variantField', 'tableVariant') || 'statement'
+    // «Breite»: full = whole width, fit = only as wide as the content
+    const width = get('widthField', 'tableWidth') || 'full'
     const mobileView = get('mobileViewField', 'mobileView') || 'auto'
     // column of the column switch shown first on the phone (1 = first value column, empty / 0 = automatic)
     const startCol = get('startColField', 'mobileCol')
@@ -214,12 +216,12 @@ export function ExcelPreview({form, field, fieldKey, values}) {
             pickerRef.current = rangePicker(box, data, {range, headerRows, onPick})
         } else {
             box.replaceChildren(previewTable(data, {
-                variant, view: mode === 'phone' ? 'phone' : 'desktop', mobileView, col, onCol: setCol, emptyText: _t('ExcelField.noData'),
+                variant, width, view: mode === 'phone' ? 'phone' : 'desktop', mobileView, col, onCol: setCol, emptyText: _t('ExcelField.noData'),
                 startCol, onStartCol: hasStartCol ? onStartCol : null
             }))
         }
         // range / header rows are not dependencies: the result gets new data anyway, the picker is synced below
-    }, [data, dataMatchesMode, error, mode, variant, mobileView, col, startCol, hasStartCol, onStartCol, onPick])
+    }, [data, dataMatchesMode, error, mode, variant, width, mobileView, col, startCol, hasStartCol, onStartCol, onPick])
     useEffect(() => {
         if (pickerRef.current) pickerRef.current.sync(range, headerRows)
     }, [range, headerRows])

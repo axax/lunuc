@@ -203,6 +203,15 @@ function mainInit() {
                 navigator.serviceWorker.register('/serviceworker.js?v=' + config.BUILD_NUMBER)
                     .then((swReg) => {
                         console.log('Service Worker is registered')
+                        // tabs that stay open for days (admin, chat) only checked for a new worker
+                        // on load: check again when the tab becomes visible, at most every 30 min
+                        let lastUpdateCheck = Date.now()
+                        document.addEventListener('visibilitychange', () => {
+                            if (document.visibilityState === 'visible' && Date.now() - lastUpdateCheck > 30 * 60 * 1000) {
+                                lastUpdateCheck = Date.now()
+                                swReg.update().catch(() => {})
+                            }
+                        })
                         return swReg.update()
                     })
                     .catch(function (error) {

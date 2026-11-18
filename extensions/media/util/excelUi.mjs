@@ -84,6 +84,7 @@ const CSS = `
 .xlui-table th{color:${GREEN};text-transform:uppercase;font-size:.78rem;font-weight:600;text-align:left;padding:.45em .5em;border-bottom:2px solid ${INK}}
 .xlui-table td{padding:.4em .5em;border-bottom:1px solid ${INK};vertical-align:top}
 .xlui-table .num{text-align:right;white-space:nowrap}
+.xlui-table.xlui-fit{width:auto;min-width:min(100%,22em)}.xlui-table.xlui-fit .num{padding-left:2.5em}
 .xlui-table .bold{font-weight:700}
 .xlui-table .al-left{text-align:left}.xlui-table .al-center{text-align:center}.xlui-table .al-right{text-align:right}
 .xlui-table tr.sum td{font-weight:700;background:${LIGHT};border-top:2px solid ${GREEN};border-bottom:2px solid ${GREEN}}
@@ -167,7 +168,8 @@ const mcClass = mc => (mc || '').split('.').filter(Boolean).join(' ')
  * @param options variant ('statement' | 'list'), view ('desktop' | 'phone'), mobileView, col (selected column of the
  *                switch), onCol(i), viewSwitch (show the buttons Desktop / Handy), onView(view), maxRows,
  *                startCol (column of the switch shown first, 1 = first value column, 0 / empty = automatic),
- *                onStartCol(n) (shows the select «Startspalte» in the phone view with the column switch)
+ *                onStartCol(n) (shows the select «Startspalte» in the phone view with the column switch),
+ *                width ('full' | 'fit': only as wide as the content, desktop)
  * @returns element
  */
 export const previewTable = (data, options = {}) => {
@@ -197,7 +199,9 @@ export const previewTable = (data, options = {}) => {
     let content
     if (rows.length || header.length) {
         content = el('table', {
-            class: 'xlui-table' + (options.variant === 'list' ? ' xlui-list' : '') + (data.lines ? ' xl-lines' : '') + (mode ? ' jb-m-' + mode : ''),
+            class: 'xlui-table' + (options.variant === 'list' ? ' xlui-list' : '') + (data.lines ? ' xl-lines' : '') + (mode ? ' jb-m-' + mode : '') +
+                // «so breit wie der Inhalt» (field tableWidth), only on the desktop
+                (!phone && options.width === 'fit' ? ' xlui-fit' : ''),
             'data-sel': mode === 'switch' ? sel : null
         }, [
             el('thead', {}, header.map((r, i) => el('tr', {class: phone ? mcClass(headerMc[i]) || null : null}, r.filter(Boolean).map(c => cell('th', c))))),

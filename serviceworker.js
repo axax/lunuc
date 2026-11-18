@@ -7,18 +7,23 @@ const RUNTIME = 'runtime-v${BUILD_NUMBER}'
 // A list of local resources we always want to be cached.
 const PRECACHE_URLS = [
     'main.bundle.js?v=${BUILD_NUMBER}',
-    'manifest.json?v=${BUILD_NUMBER}',
-    'favicon.ico'
+    'manifest.json?v=${BUILD_NUMBER}'
 ]
 
-// a list of cross origin domains that we want to cache
-const HOSTS = [
-    'https://fonts.googleapis.com',
-    'https://maxcdn.bootstrapcdn.com',
-    'https://cdnjs.cloudflare.com',
-    'https://firebasestorage.googleapis.com'
-]
+// Cross-origin requests (fonts, CDNs) are not handled: loaded via <link>/<script>/<img> they are
+// opaque (no-cors, status 0) and were never cached anyway - the browser's HTTP cache handles them.
 
+// Only these urls are served cache-first: their content never changes under the same url.
+// Everything else (CMS resources, files in static/ or hostrule paths, other GET endpoints)
+// is left to the browser's HTTP cache (ETag/304) - otherwise a change made without a new
+// build would not reach the clients until the next deploy.
+const isImmutable = (url) =>
+    /[.][0-9a-f]{8}[.]bundle[.]js$/.test(url.pathname) || // content-hashed chunks
+    url.searchParams.get('v') === '${BUILD_NUMBER}' // files versioned with the current build
+
+// errors (quota, ...) must not break the response
+const putInCache = (req, response) =>
+    caches.open(RUNTIME).then((cache) => cache.put(req, response)).catch((e) => console.warn(e))
 
 // The install handler takes care of precaching the resources we always need.
 self.addEventListener('install', event => {
@@ -27,7 +32,8 @@ self.addEventListener('install', event => {
             // allSettled instead of addAll: a single failing URL (e.g. a new
             // bundle not yet uploaded during the deploy window) must not abort
             // the whole installation.
-            await Promise.allSettled(PRECACHE_URLS.map(url => cache.add(url)))
+            // cache: 'reload': fetch from the network, never take a copy from the HTTP cache
+            await Promise.allSettled(PRECACHE_URLS.map(url => cache.add(new Request(url, {cache: 'reload'}))))
         }).then(() => self.skipWaiting())
     )
 })
@@ -45,8 +51,15 @@ self.addEventListener('activate', (event) => {
             }
         }))
 
-        // No clients.claim(): a running page keeps its original controller,
-        // so the new worker never takes over mid-load.
+        // Navigation preload: the browser starts the request of a page load in parallel to
+        // booting the worker, instead of waiting for fetch() in the fetch handler
+        if (self.registration.navigationPreload) {
+            await self.registration.navigationPreload.enable()
+        }
+
+        // No clients.claim(): pages without a worker stay uncontrolled until reload.
+        // Note: skipWaiting() above already moves pages controlled by the old worker
+        // to this one.
     })())
 })
 
@@ -66,47 +79,50 @@ self.addEventListener('fetch', event => {
         return
     }
 
-    // Only handle same-origin or explicitly allowed cross-origin GET requests.
+    // Only handle same-origin GET requests.
     if (req.method !== 'GET') {
         return
     }
-    if (!(req.url.startsWith(self.location.origin) || HOSTS.some((host) => req.url.startsWith(host)))) {
+    if (!req.url.startsWith(self.location.origin + '/')) {
         return
     }
 
     // Navigation / HTML documents: network-first so new deploys are picked up
     // immediately. Fall back to the cache only when offline.
     if (req.mode === 'navigate') {
-        event.respondWith(
-            fetch(req).then((response) => {
-                const responseClone = response.clone()
+        event.respondWith((async () => {
+            try {
+                // response of the navigation preload (see activate), if enabled
+                const response = (await event.preloadResponse) || await fetch(req)
                 if (response.status === 200 && !response.headers.has('x-no-serviceworker-cache')) {
-                    caches.open(RUNTIME).then((cache) => cache.put(req, responseClone))
+                    // waitUntil: keep the worker alive until the cache write is done
+                    event.waitUntil(putInCache(req, response.clone()))
                 }
                 return response
-            }).catch(async () => {
-                // Always resolve to a Response, never undefined.
+            } catch (e) {
+                // offline: always resolve to a Response, never undefined.
                 const cached = await caches.match(req)
                 return cached || Response.error()
-            })
-        )
+            }
+        })())
         return
     }
 
-    // Everything else (content-hashed chunks, fonts, ...): cache-first,
-    // since those URLs are immutable.
+    // Not immutable: don't intercept, the browser's HTTP cache handles it.
+    if (!isImmutable(new URL(req.url))) {
+        return
+    }
+
+    // Immutable urls (content-hashed chunks, versioned build files): cache-first.
     event.respondWith(
         caches.match(req).then((resp) => {
             if (resp && !resp.redirected) {
                 return resp
             }
             return fetch(req).then((response) => {
-                const responseClone = response.clone()
-                if (responseClone && responseClone.status === 200 &&
-                    !response.headers.has('x-no-serviceworker-cache')) {
-                    caches.open(RUNTIME).then((cache) => {
-                        cache.put(req, responseClone)
-                    })
+                if (response.status === 200 && !response.headers.has('x-no-serviceworker-cache')) {
+                    // waitUntil: keep the worker alive until the cache write is done
+                    event.waitUntil(putInCache(req, response.clone()))
                 }
                 return response
             }).catch((error) => {

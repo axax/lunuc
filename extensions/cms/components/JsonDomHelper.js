@@ -2159,13 +2159,26 @@ class JsonDomHelper extends React.Component {
                 // an iframe swallows all mouse events (no hover / highlight, no click): in the editor it gets a
                 // wrapper with a transparent cover, the wrapper takes the editor events (like HtmlEmbed does itself)
                 const {_key, ...iframeProps} = rest
+                // the margins belong to the wrapper: the highlighter takes the bottom margin (divider to resize it)
+                // from the element of the editor, and a margin of the iframe inside would only enlarge the frame
+                const wrapperStyle = {position: 'relative', lineHeight: 0}
+                if (iframeProps.style) {
+                    const iframeStyle = isString(iframeProps.style) ? parseStyles(iframeProps.style) : {...iframeProps.style}
+                    for (const prop of Object.keys(iframeStyle)) {
+                        if (/^margin/.test(prop)) {
+                            wrapperStyle[prop] = iframeStyle[prop]
+                            delete iframeStyle[prop]
+                        }
+                    }
+                    iframeProps.style = iframeStyle
+                }
                 comp = <div key={_key}
                             _key={_key}
                             data-element-key={rest['data-element-key']}
                             data-iframe-editor-wrapper=""
                             onDoubleClick={overrideEvents.onDoubleClick}
                             onContextMenu={this.triggerContextMenu.bind(this)}
-                            style={{position: 'relative', lineHeight: 0}}
+                            style={wrapperStyle}
                             {...helperEvents}>
                     <iframe {...iframeProps}/>
                     <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}}/>

@@ -103,6 +103,7 @@
           "uitype": "datetime",
           "readOnly": true,
           "clone": false,
+          "typeFiles": false,
           "index": 1
         }
       ]

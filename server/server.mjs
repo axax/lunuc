@@ -237,6 +237,26 @@ const STATIC_FILE_DIRS = [STATIC_DIR, ASSETS_DIR, WEBROOT_ABSPATH, BUILD_DIR]
 // system/hostrules) -> same policy as a replaced upload: short max-age + stale-while-revalidate.
 // Before: 1 year cache -> a replaced favicon never reached the clients (iOS home screen icon)
 const HOSTRULE_FILE_CACHE_CONTROL = UPLOAD_CACHE_CONTROL
+// static/, assets/, webroot and build files without a version can be replaced under the same url
+// too -> same short policy. Before: 1 year -> a changed file only reached the clients after renaming
+const STATIC_FILE_CACHE_CONTROL = UPLOAD_CACHE_CONTROL
+
+// Cache-Control of a static file. dirCacheControl: policy of the dir it was found in (hostrule
+// paths), undefined for the other dirs. Not part of the path cache key, since it depends on the query
+const staticFileCacheControl = (dirCacheControl, urlPathname, parsedUrl) => {
+    if (urlPathname === '/serviceworker.js') {
+        // always revalidate, so a new worker is found right away
+        return 'no-cache'
+    }
+    if (dirCacheControl) {
+        return dirCacheControl
+    }
+    if ((parsedUrl && parsedUrl.query && parsedUrl.query.v) || /\.[0-9a-f]{8}\.bundle\.js$/.test(urlPathname)) {
+        // versioned / content-hashed: never changes under this url -> long default of sendFileFromDir
+        return undefined
+    }
+    return STATIC_FILE_CACHE_CONTROL
+}
 
 const pathCacheGet = (key) => {
     const entry = pathResolveCache.get(key)
@@ -351,7 +371,10 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
     }
 
     const headers = {
-        'Cache-Control': 'public, max-age=60',
+        // no-cache: a new deploy is visible with the next load (before: max-age=60 -> up to a minute
+        // the old html with the old bundle). The html has no ETag (it contains a new clientId per
+        // request), so it is rendered again on every full load. Can be overridden by hostrule.headers
+        'Cache-Control': 'no-cache',
         'Content-Type': MimeType.detectByExtension('html') + '; charset=utf-8',
         'X-Frame-Options': 'SAMEORIGIN',
         'X-Content-Type-Options': 'nosniff',
@@ -1061,7 +1084,8 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                     if (webRootFile && await sendFileFromDir(req, res, {
                         filename: webRootFile,
-                        headers
+                        headers,
+                        cacheControl: staticFileCacheControl(undefined, urlPathname, parsedUrl)
                     })) {
                         return
                     }
@@ -1077,7 +1101,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                     const cached = pathCacheGet(cacheKey)
 
                     if (cached && cached.value) {
-                        if (await sendFileFromDir(req, res, {filename: cached.value, headers, parsedUrl, cacheControl: cached.cacheControl})) {
+                        if (await sendFileFromDir(req, res, {filename: cached.value, headers, parsedUrl, cacheControl: staticFileCacheControl(cached.cacheControl, urlPathname, parsedUrl)})) {
                             return
                         }
                         // file disappeared since caching - invalidate and fall
@@ -1087,7 +1111,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
 
                     if (!cached || cached.value !== false) {
                         // files of hostrule.paths can be replaced (e.g. via system/hostrules) under the same
-                        // url -> upload cache policy. The other dirs keep the long default cache
+                        // url -> upload cache policy. The other dirs: see staticFileCacheControl
                         const hostPaths = hostrule.paths, hostPathsCount = hostPaths.length
 
                         let found = false
@@ -1105,7 +1129,7 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
                                 filename: candidate,
                                 headers,
                                 parsedUrl,
-                                cacheControl
+                                cacheControl: staticFileCacheControl(cacheControl, urlPathname, parsedUrl)
                             })) {
                                 pathCacheSet(cacheKey, candidate, cacheControl)
                                 found = true
