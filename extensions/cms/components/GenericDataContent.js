@@ -53,6 +53,13 @@ const parseSlots = slots => {
     return {attribute: parsed.attribute, values}
 }
 
+// no content: nothing or an empty list (e.g. after the root container was removed and then its last element):
+// the editor starts with the empty root container again, so elements can be dropped in
+const templateOrDefault = value => {
+    const v = value && value.trim()
+    return !v || /^\[\s*\]$/.test(v) ? DEFAULT_TEMPLATE_MINIMAL : value
+}
+
 const definitionIds = {}
 const getDefinitionId = genericType => {
     if (!definitionIds[genericType]) {
@@ -95,7 +102,7 @@ function GenericDataContentEditor({dataId, genericType, field = 'content', value
     const _id = dataId
     // the json of the editor; the parent can re-render with stale data until the page is reloaded,
     // so the value is only taken over initially
-    const latest = React.useRef(value && value.trim() ? value : DEFAULT_TEMPLATE_MINIMAL)
+    const latest = React.useRef(templateOrDefault(value))
     const saved = React.useRef(latest.current)
     const timer = React.useRef(null)
     // '' | 'pending' | 'saving' | 'saved' | 'error', shown as small badge
@@ -167,7 +174,7 @@ function GenericDataContentEditor({dataId, genericType, field = 'content', value
             return
         }
         lastValue.current = value
-        const next = value && value.trim() ? value : DEFAULT_TEMPLATE_MINIMAL
+        const next = templateOrDefault(value)
         if (timer.current || next === latest.current) {
             return
         }

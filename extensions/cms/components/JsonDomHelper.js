@@ -2679,6 +2679,34 @@ class JsonDomHelper extends React.Component {
                     this.addConversionToMenu(subJson, _json, _options, menuItems)
                 }
 
+                // container without itself: its children take its place (e.g. the root container of a beitrag, so an
+                // element is directly in the root). Not for loops / cms components (their children are generated)
+                const unwrapChildren = !isInLoop && !isCms && subJson && Array.isArray(subJson.c) && subJson.c.length > 0 &&
+                    subJson.c.every(child => child && child.constructor === Object && !child.$loop && !child.$for) ? subJson.c : null
+                if (unwrapChildren && _options.menu.remove !== false && _options.menu.unwrap !== false) {
+                    menuItems.push({
+                        id: 'unwrap',
+                        name: _t('JsonDomHelper.element.unwrap'),
+                        icon: <FlipToBackIcon/>,
+                        onClick: () => {
+                            JsonDomHelper.disableEvents = true
+                            this.setState({toolbarHovered: false, hovered: false})
+                            if (subJson === _json || parentJson === subJson) {
+                                // the root: the template becomes the list of its children
+                                this.props._onTemplateChange(unwrapChildren.slice(), true)
+                            } else {
+                                const siblings = Array.isArray(parentJson) ? parentJson : parentJson && parentJson.c
+                                const index = Array.isArray(siblings) ? siblings.indexOf(subJson) : -1
+                                if (index >= 0) {
+                                    siblings.splice(index, 1, ...unwrapChildren)
+                                    this.props._onTemplateChange(_json, true)
+                                }
+                            }
+                            this.enableEvents()
+                        }
+                    })
+                }
+
                 if (_options.menu.remove !== false) {
                     menuItems.push({
                         id: 'remove',
