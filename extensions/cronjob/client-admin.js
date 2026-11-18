@@ -4,7 +4,6 @@ import Async from 'client/components/Async'
 import Util from 'client/util/index.mjs'
 import {client} from 'client/middleware/graphql'
 import {CAPABILITY_RUN_SCRIPT} from 'util/capabilities.mjs'
-import {cronToReadableString} from './util/cronexpression.mjs'
 import {_t, registerTrs} from '../../util/i18n.mjs'
 import {translations} from './translations/admin'
 
@@ -16,6 +15,9 @@ const SimpleDialog = (props) => <Async {...props} expose="SimpleDialog"
 
 const CronJobResult = (props) => <Async {...props}
                                          load={() => import(/* webpackChunkName: "admin" */ './components/CronJobResult')}/>
+
+const CronExpressionField = (props) => <Async {...props}
+                                               load={() => import(/* webpackChunkName: "admin" */ './components/CronExpressionField')}/>
 
 const RunningCronJobs = (props) => <Async {...props}
                                            load={() => import(/* webpackChunkName: "admin" */ './components/RunningCronJobs')}/>
@@ -98,9 +100,24 @@ export default () => {
     Hook.on('TypeCreateEditFormFields', ({type, formFields, dataToEdit}) => {
         if (type === 'CronJob') {
             formFields.execfilter.extraAfter = <iframe style={{marginTop:'2rem',height:'35rem',border:'none', width:'100%'}} src="/system/info"></iframe>//<a target='_blank' href="/system/info">System Properties</a>
-            if(dataToEdit) {
-                formFields.expression.helperText = cronToReadableString(dataToEdit.expression)
+            if (formFields.expression) {
+                formFields.expression.uitype = 'cronExpression'
+                formFields.expression.fullWidth = true
             }
+        }
+    })
+
+
+    Hook.on('GenericFormField', function ({field, fieldKey, value, result}) {
+        if (field.uitype === 'cronExpression') {
+            result.component = <CronExpressionField key={fieldKey}
+                                                    name={fieldKey}
+                                                    label={field.label || field.name}
+                                                    value={value}
+                                                    error={this.state.fieldErrors && this.state.fieldErrors[fieldKey]}
+                                                    readOnly={field.readOnly || field.uiReadOnly}
+                                                    onBlur={this.handleBlur}
+                                                    onChange={newValue => this.handleInputChange({target: {name: fieldKey, value: newValue}})}/>
         }
     })
 

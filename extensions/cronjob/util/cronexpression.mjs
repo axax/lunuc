@@ -221,3 +221,84 @@ export const cronToReadableString = (cronExpression) => {
 }
 
 export default cronToReadableString
+
+const expandField = (field) => {
+    const values = new Set()
+    field.items.forEach(item => {
+        for (let v = item.from; v <= item.to; v += item.step) {
+            values.add(field.spec === FIELD_SPECS.dayOfWeek ? v % 7 : v)
+        }
+    })
+    return values
+}
+
+/**
+ * Returns the next execution dates of a cron expression (local time).
+ * Returns an empty array for invalid expressions, STARTUP or when nothing matches within maxDays.
+ */
+export const getNextCronRuns = (cronExpression, count = 3, fromDate = new Date(), maxDays = 400) => {
+    if (!cronExpression) return []
+    const raw = String(cronExpression).trim()
+    const normalized = MACROS[raw.toLowerCase()] || raw
+    const tokens = normalized.split(/\s+/)
+    if (tokens.length !== 5 && tokens.length !== 6) return []
+    const names = tokens.length === 6 ? FIELD_NAMES_6 : FIELD_NAMES_5
+
+    let fields
+    try {
+        fields = names.reduce((acc, name, index) => {
+            acc[name] = parseField(tokens[index], FIELD_SPECS[name])
+            return acc
+        }, {})
+    } catch (error) {
+        return []
+    }
+
+    const seconds = fields.second ? Array.from(expandField(fields.second)).sort((a, b) => a - b) : [0]
+    const minutes = expandField(fields.minute)
+    const hours = expandField(fields.hour)
+    const daysOfMonth = expandField(fields.dayOfMonth)
+    const months = expandField(fields.month)
+    const daysOfWeek = expandField(fields.dayOfWeek)
+    const domRestricted = !isEvery(fields.dayOfMonth)
+    const dowRestricted = !isEvery(fields.dayOfWeek)
+
+    const dayMatches = (date) => {
+        if (!months.has(date.getMonth() + 1)) return false
+        const domOk = daysOfMonth.has(date.getDate())
+        const dowOk = daysOfWeek.has(date.getDay())
+        // standard cron: when both are restricted, either one may match
+        if (domRestricted && dowRestricted) return domOk || dowOk
+        return domOk && dowOk
+    }
+
+    const result = []
+    const start = new Date(fromDate.getTime())
+    start.setMilliseconds(0)
+    const end = start.getTime() + maxDays * 86400000
+    const cursor = new Date(start.getTime())
+    cursor.setSeconds(0)
+
+    while (result.length < count && cursor.getTime() <= end) {
+        if (!dayMatches(cursor)) {
+            cursor.setDate(cursor.getDate() + 1)
+            cursor.setHours(0, 0, 0, 0)
+            continue
+        }
+        if (!hours.has(cursor.getHours())) {
+            cursor.setHours(cursor.getHours() + 1, 0, 0, 0)
+            continue
+        }
+        if (minutes.has(cursor.getMinutes())) {
+            for (let i = 0; i < seconds.length && result.length < count; i++) {
+                const candidate = new Date(cursor.getTime())
+                candidate.setSeconds(seconds[i])
+                if (candidate.getTime() > start.getTime()) {
+                    result.push(candidate)
+                }
+            }
+        }
+        cursor.setMinutes(cursor.getMinutes() + 1, 0, 0)
+    }
+    return result
+}

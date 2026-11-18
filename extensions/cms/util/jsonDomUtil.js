@@ -5,7 +5,64 @@ import DomUtilAdmin from '../../../client/util/domAdmin.mjs'
 import {getComponentByKey} from './jsonDomUtilClient'
 export {getComponentByKey}
 
-export const addComponent = ({key, json, index, component, newKeys}) => {
+const newGenId = () => 'genid_' + Math.random().toString(36).slice(2, 11)
+
+const escapeRegExp = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+// ids of an element that must be unique on the page (they link parts of the element, e.g. the images of a gallery
+// with its lightbox: data-gallery-id, props.galleryId and the id galleryLightbox<id> of the lightbox component)
+const UNIQUE_ID_PROPS = ['data-gallery-id']
+
+const collectUniqueIds = (json, ids = new Set()) => {
+    if (json && typeof json === 'object') {
+        if (Array.isArray(json)) {
+            json.forEach(item => collectUniqueIds(item, ids))
+        } else {
+            if (json.p && typeof json.p === 'object') {
+                UNIQUE_ID_PROPS.forEach(prop => {
+                    const id = json.p[prop]
+                    if (id && typeof id === 'string' && id !== '__uid__') {
+                        ids.add(id)
+                    }
+                })
+            }
+            for (const k in json) {
+                collectUniqueIds(json[k], ids)
+            }
+        }
+    }
+    return ids
+}
+
+/*
+ * Copy of a component that is inserted a second time (copy, paste): returns a deep clone with new
+ * translation keys (unless keepTrKey) and new unique ids (always: two elements with the same id would
+ * share e.g. the lightbox)
+ */
+export const cloneComponentWithNewKeys = (component, {keepTrKey} = {}) => {
+    let sourceStr = JSON.stringify(component)
+    const keys = []
+    if (!keepTrKey) {
+        // Search for translation key and replace with newly generated one
+        DomUtilAdmin.findProperties(component, 'trKey').forEach(({element}) => {
+            keys.push(element.trKey)
+        })
+    }
+    collectUniqueIds(component).forEach(id => keys.push(id))
+    new Set(keys).forEach(oldKey => {
+        if (oldKey && typeof oldKey === 'string') {
+            sourceStr = sourceStr.replace(new RegExp(escapeRegExp(oldKey), 'g'), newGenId())
+        }
+    })
+    return JSON.parse(sourceStr)
+}
+
+/*
+ * newKeys: the component is a copy (copy, paste) -> it is cloned with new translation keys and new unique ids
+ * keepTrKey: with newKeys, the translation keys are kept (the unique ids are still renewed)
+ * without newKeys the component is inserted as it is (e.g. moving an element: the same object is removed afterwards)
+ */
+export const addComponent = ({key, json, index, component, newKeys, keepTrKey}) => {
     const subJson = getComponentByKey(key, json)
     if (subJson) {
         let c
@@ -23,22 +80,8 @@ export const addComponent = ({key, json, index, component, newKeys}) => {
         }
         if (!component) {
             component = {'c': 'new component'}
-        }else if(newKeys){
-
-            // Search for translation key and replace with newly generated one
-            const trKeys = []
-            DomUtilAdmin.findProperties(component, 'trKey').forEach(({element}) => {
-                trKeys.push(element.trKey)
-            })
-
-            if (trKeys.length > 0) {
-                let sourceStr = JSON.stringify(component)
-                trKeys.forEach(trKey => {
-                    const newTrKey = 'genid_' + Math.random().toString(36).substr(2, 9)
-                    sourceStr = sourceStr.replace(new RegExp(trKey, "g"), newTrKey)
-                })
-                component = JSON.parse(sourceStr)
-            }
+        } else if (newKeys) {
+            component = cloneComponentWithNewKeys(component, {keepTrKey})
         }
         if (isNaN(index) || index < 0) {
             index = c.length
@@ -94,7 +137,8 @@ export const copyComponent = (key, json, options = {}) => {
         } else {
             index++
         }
-        addComponent({key: parentKey, json, index, component: source, newKeys:!options.keepTrKey})
+        // always a copy with new unique ids, the translation keys are only kept with the option keepTrKey
+        addComponent({key: parentKey, json, index, component: source, newKeys: true, keepTrKey: !!options.keepTrKey})
         return true
     }
     return false
