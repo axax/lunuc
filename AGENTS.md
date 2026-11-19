@@ -81,6 +81,12 @@ Sync is done by CronJobs (all run with the rights of their creator → create th
 
 **Export / import as ZIP (Admin > System > Export / Import)** — same layout as `dbscripts/` (`cmspages/`, `cronjobs/`, `hooks/`, `apis/`, `genericdatadefinitions/`, `botcommands/` with the bot extension), but only entries the current user may read; import writes with the user's own rights (dry-run preview first). Needs capability `export_import_data` (administrator, editor, author) plus the capability of each type handler (`run_script` for code types, `cms_page_files` for pages), so authors only get pages. Page fields that run on the server (`serverScript`, `dataResolver`) are only imported with `manage_cms_template`; otherwise they are left unchanged and reported. Impl. `exportAllTypeFiles` / `importAllTypeFiles` in `api/util/typeFiles.mjs`; new types join via `registerTypeFiles`.
 
+**Deploying dbscript changes as an agent (no SSH)** — the agent's shell has no network access and no SSH keys, so `rsync` + the import CronJob is not possible. Instead, in the browser of the Claude desktop app with an admin session on the target host:
+1. Zip only the folders that were changed (e.g. `cronjobs/<name>/`, `cmspages/<slug>/`; a common root `dbscripts/` is stripped), base64-encode it.
+2. From the admin page, `fetch('/graphql', …)` with `mutation{importAllTypeFiles(data:"<base64>", dryRun:true){created updated unchanged skipped names errors}}` (pass data as a GraphQL variable) — the session's own login and rights apply (body limit 200 MB when logged in).
+3. Show the dry-run result to the user, then run again with `dryRun:false`.
+Caveat: unlike the import CronJob there is **no three-way merge** — the file always wins, `.export-state.json` is neither checked nor updated. Admin edits made since the files were last exported are overwritten silently, so send only the folders you changed and check the dry run. After the deploy, a `System: export all dbscripts` on the host refreshes the baseline (otherwise a later rsync import may report conflicts).
+
 Rules when editing these files:
 - Edit only the content files; never edit `.export-state.json`. Don't rename folders — entries are matched by `_id` (`meta.json`) or by the slug in `page.json`, not by folder name.
 - A missing file leaves the field unchanged, an empty file clears it. `null` attributes are not set (use `""` to clear text).

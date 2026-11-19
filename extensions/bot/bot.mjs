@@ -36,4 +36,24 @@ const unregisterBots = (db) => {
     registeredBots = {}
 }
 
-export {unregisterBots, registerBots, registeredBots, botConnectors}
+/*
+ * Reload after changes to Bot / BotCommand: debounced and one reload after the other.
+ * Before, every changed entry (e.g. an import of several bot commands) started its own
+ * unregister + register at the same time - bots were started twice, the extra instance was no
+ * longer in registeredBots (could not be stopped) and Telegram answered with
+ * "409 Conflict: terminated by other getUpdates request".
+ */
+let reloadQueue = Promise.resolve(), reloadTimer
+const reloadBots = (db) => {
+    clearTimeout(reloadTimer)
+    reloadTimer = setTimeout(() => {
+        reloadQueue = reloadQueue.then(async () => {
+            unregisterBots()
+            // Telegram ends the long poll (getUpdates) of the stopped instance only after a moment
+            await new Promise(resolve => setTimeout(resolve, 3000))
+            await registerBots(db)
+        }).catch(e => console.error('reload bots failed', e))
+    }, 1000)
+}
+
+export {unregisterBots, registerBots, reloadBots, registeredBots, botConnectors}

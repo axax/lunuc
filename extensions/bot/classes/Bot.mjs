@@ -89,11 +89,30 @@ class Bot {
     }
 
     destroy() {
+        this.destroyed = true
         this.ons = {}
         clearInterval(this.interval)
+        clearTimeout(this.launchTimer)
         if (this.telegramBot) {
-            this.telegramBot.stop()
+            try {
+                this.telegramBot.stop()
+            } catch (e) {
+                // not running (launch failed or still connecting)
+            }
         }
+    }
+
+    /** start polling; on 409 (the previous instance is still polling) try again a few times */
+    launchTelegram(attempt = 1) {
+        if (this.destroyed) return
+        this.telegramBot.launch().catch(e => {
+            if (this.destroyed) return
+            const conflict = e && e.response && e.response.error_code === 409
+            console.warn(`bot ${this.data && this.data.name}: telegram ${e.message}${conflict && attempt < 6 ? ` - retry ${attempt}` : ''}`)
+            if (conflict && attempt < 6) {
+                this.launchTimer = setTimeout(() => this.launchTelegram(attempt + 1), 10000 * attempt)
+            }
+        })
     }
 
     start() {
@@ -125,7 +144,7 @@ class Bot {
              this.addTelegramChat(ctx)
              ctx.reply('Welcome')
              })*/
-            this.telegramBot.launch()
+            this.launchTelegram()
         }
 
         this.interval = setInterval(this.checkStatus.bind(this), 10000)

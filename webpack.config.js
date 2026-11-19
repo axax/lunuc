@@ -279,6 +279,12 @@ if (DEV_MODE) {
                 watch: false
             },
             {
+                // vendored third-party files (pdfjs, ffmpeg), served like in production (ASSETS_DIR in server/server.mjs)
+                directory: path.resolve(__dirname, 'assets'),
+                publicPath: '/',
+                watch: false
+            },
+            {
                 directory: path.resolve(__dirname, APP_VALUES.UPLOAD_DIR),
                 publicPath: '/',
                 watch: false

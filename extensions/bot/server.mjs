@@ -4,7 +4,7 @@ import resolverGen from './gensrc/resolver.mjs'
 import schema from './schema/index.mjs'
 import resolver from './resolver/index.mjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
-import {unregisterBots, registerBots, botConnectors, registeredBots} from './bot.mjs'
+import {registerBots, reloadBots, botConnectors, registeredBots} from './bot.mjs'
 import {isExtensionEnabled} from '../../gensrc/extensions-private.mjs'
 
 
@@ -56,7 +56,6 @@ if(isExtensionEnabled('dns')){
 
 // Hook when the type CronJob has changed
 Hook.on(['typeUpdated_Bot', 'typeUpdated_BotCommand'], ({db}) => {
-    unregisterBots()
-    registerBots(db)
+    reloadBots(db)
 })
 
