@@ -214,6 +214,8 @@ class ElementWatch extends React.Component {
                             className: allClassNames,
                             options: null,
                             src: tmpSrc,
+                            // caption (metaValues.caption / captionFromName) from the real image, not from the placeholder
+                            captionSrc: eleProps.src,
                             alt: (tagImg.alt || eleProps.alt),
                             'data-has-error': hasError,
                             'data-element-watch-key': key,

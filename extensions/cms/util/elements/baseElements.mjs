@@ -412,6 +412,8 @@ export const buildBaseElements = () => [
                             p: {
                                 wrapper: 'true',
                                 src: '$.item{data}',
+                                // preset of the tab image optimization (the lightbox shows the original)
+                                options: {resize: {width: 800}, quality: 90, webp: true, noenlarge: true},
                                 // media for the lightbox
                                 'data-lightbox-src': '$.item{data}'
                             }

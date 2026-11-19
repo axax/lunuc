@@ -279,12 +279,12 @@ class JsonDom extends React.Component {
         AddToBody,
         // Remotion compositions from the page script (lazy)
         RemotionPlayer,
-        SmartImage: ({src, options, caption, captionFromName, wrapper, inlineSvg, svgData, tagName, figureCaptionClassName, figureProps, ...props}) => {
+        SmartImage: ({src, options, caption, captionFromName, captionSrc, wrapper, inlineSvg, svgData, tagName, figureCaptionClassName, figureProps, ...props}) => {
             // caption entered in the picker (metaValues.caption), otherwise with captionFromName the
             // file name without extension (both as text, no html). The value is parsed only once
             let textCaption = ''
             if (!caption) {
-                const image = parseImageValue(src)
+                const image = parseImageValue(captionSrc || src)
                 textCaption = imageMetaCaption(image) ||
                     (captionFromName && !isFalse(captionFromName) ? imageNameWithoutExtension(image) : '')
             }

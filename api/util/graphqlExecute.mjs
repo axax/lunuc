@@ -1,5 +1,14 @@
-import {execute, specifiedRules, validateSchema, Source, GraphQLError} from 'graphql'
+import {execute, specifiedRules, validateSchema, Source, GraphQLError,
+        NoSchemaIntrospectionCustomRule} from 'graphql'
 import {cachedParse, cachedValidate} from './graphqlDocumentCache.mjs'
+import config from '../../gensrc/config.mjs'
+
+// Introspection only in dev; off in production so the schema isn't
+// exposed to anonymous clients. Constant array -> stays cache-friendly
+// for cachedValidate's sameRules check.
+const validationRules = config.DEV_MODE
+    ? specifiedRules
+    : [...specifiedRules, NoSchemaIntrospectionCustomRule]
 
 /*
  GraphQL over HTTP for /graphql (replaces express-graphql, which is no longer maintained and
@@ -82,7 +91,7 @@ export const executeGraphqlRequest = async (req, res, {schema, rootValue, format
             throw httpError(400, 'GraphQL syntax error.', [syntaxError])
         }
 
-        const validationErrors = cachedValidate(schema, document, specifiedRules)
+        const validationErrors = cachedValidate(schema, document, validationRules)
         if (validationErrors.length > 0) {
             throw httpError(400, 'GraphQL validation error.', validationErrors)
         }
