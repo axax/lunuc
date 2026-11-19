@@ -31,6 +31,7 @@ const PAGE_SIZE = 50
 const TYPING_TTL = 4000
 const STALE_AFTER = 30000   // a cached conversation is loaded again when it is opened after this time
 const AWAY_AFTER = 10000    // hidden / suspended for longer: the websocket may be dead, events were missed
+const REFRESH_AFTER = 5 * 60 * 1000 // safety net on focus: a websocket can stay "open" without delivering (iOS)
 const SETTINGS_KEY = 'lunuc.chat.settings'
 const SOUND_LOCK_KEY = 'lunuc.chat.lastSound'
 const HOME_KEY = 'lunuc.chat.home'
@@ -369,7 +370,7 @@ export const actions = {
             }
             const away = awaySince ? Date.now() - awaySince : 0
             awaySince = 0
-            if (away > AWAY_AFTER || Date.now() - lastRoomsLoad > 20000) {
+            if (away > AWAY_AFTER || Date.now() - lastRoomsLoad > REFRESH_AFTER) {
                 actions.resync(away > AWAY_AFTER)
             }
             if (state.activeChat && isLooking(state.activeChat)) actions.markRead(state.activeChat)

@@ -299,6 +299,7 @@ class TypeEdit extends React.Component {
             if (key === 'save') {
                 const formValidation = this.createEditForm.validate(this.createEditForm.state, true, {changeTab: true})
                 if (!formValidation.isValid) {
+                    this.notifyValidationError(formValidation)
                     this._pendingNavigate = null
                     return
                 }
@@ -320,6 +321,22 @@ class TypeEdit extends React.Component {
         }
     }
 
+    notifyValidationError(formValidation) {
+        const fields = (this.createEditForm && this.createEditForm.props.fields) || {}
+        const labels = Object.keys(formValidation.fieldErrors || {}).map(key => {
+            const label = fields[key] && fields[key].label
+            return label ? (label.constructor === Object ? _t(label) : label) : key
+        })
+        const message = labels.length
+            ? _t('TypeEdit.validationErrorFields', {fields: labels.join(', ')})
+            : _t('TypeEdit.validationError')
+        // notifications are queued: repeated clicks on save should not stack the same hint
+        const last = this._lastValidationNotify
+        if (last && last.message === message && Date.now() - last.time < 7000) return
+        this._lastValidationNotify = {message, time: Date.now()}
+        _app_.dispatcher.addNotification({key: 'validationError', message})
+    }
+
     handleSaveData = (action, extraDataToSave) => {
         const {type,meta} = this.props
         const {dataToEdit} = this.state
@@ -332,6 +349,7 @@ class TypeEdit extends React.Component {
             const formValidation = this.createEditForm.validate(this.createEditForm.state, true, {changeTab: true})
             if (!formValidation.isValid) {
                 console.warn('validation error',formValidation)
+                this.notifyValidationError(formValidation)
                 // stay in the form, a held back navigation is dropped
                 this._pendingPath = null
                 return

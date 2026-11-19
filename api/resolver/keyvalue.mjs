@@ -139,9 +139,14 @@ export const keyvalueResolver = (db) => ({
             if (keys && keys.length > 0) {
                 match.key = {$in: keys}
             }
-            // if user don't have capability to manage keys he can only see the public ones or the one that are assign to them
+            // if user don't have capability to manage keys he can only see the public ones,
+            // the ones assigned to them (createdBy / junior) or the ones shared with one of their groups (ownerGroup)
             if (!await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)) {
-                match.$or = [{createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}, {ispublic: true}]
+                const or = [{createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}, {ispublic: true}]
+                if (context.group && context.group.length > 0) {
+                    or.push({ownerGroup: {$in: context.group.map(g => new ObjectId(g))}})
+                }
+                match.$or = or
             }
             const data = await GenericResolver.entities(db, context, 'KeyValueGlobal', fields, {
                 limit,

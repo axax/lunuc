@@ -644,9 +644,32 @@ class GenericForm extends React.Component {
         }
 
         if (updateState) {
-            this.setState(validationState)
+            this.setState(validationState, options && options.changeTab && !validationState.isValid ?
+                () => this.scrollToFirstError(validationState.fieldErrors) : undefined)
         }
         return validationState
+    }
+
+    /* bring the first field with an error into view (after a tab change has been rendered) */
+    scrollToFirstError(fieldErrors) {
+        setTimeout(() => {
+            const root = this._rootRef
+            if (!root || !root.querySelector) return
+            let el = root.querySelector('.Mui-error')
+            if (!el && fieldErrors) {
+                for (const key of Object.keys(fieldErrors)) {
+                    const sel = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(key) : key
+                    el = root.querySelector(`[name="${sel}"],#${sel}`)
+                    if (el) break
+                }
+            }
+            if (!el) return
+            const wrapper = el.closest('.MuiFormControl-root') || el
+            wrapper.scrollIntoView({behavior: 'smooth', block: 'center'})
+            const input = wrapper.matches('input,textarea,select') ? wrapper :
+                wrapper.querySelector('input:not([type=hidden]):not([disabled]),textarea:not([disabled])')
+            if (input && input.focus) input.focus({preventScroll: true})
+        }, 50)
     }
 
     loadFlatpickr() {
