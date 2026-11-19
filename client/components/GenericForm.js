@@ -1694,7 +1694,10 @@ class GenericForm extends React.Component {
             currentFormFields.push(<FormControl key={'control' + fieldKey}
                                                 className={field.className}
                                                 error={!!this.state.fieldErrors[fieldKey]}
-                                                sx={getSxProps({fullWidth: true}, theme)}>
+                                                sx={uitype === 'jsonEditor' ?
+                                                    // space to the field above, the label sits on top of the editor
+                                                    {...getSxProps({fullWidth: true}, theme), mt: 2} :
+                                                    getSxProps({fullWidth: true}, theme)}>
                 <InputLabel key={'label' + fieldKey}
                             onMouseEnter={(e) => {
                                 if (field.label && field.name && field.label !== field.name) {
@@ -1714,7 +1717,8 @@ class GenericForm extends React.Component {
                             value: newValue
                         }
                     })} componentTemplate={field.componentTemplate}
-                                                      propertyTemplate={field.propertyTemplate}>{value}</JsonEditor> :
+                                                      propertyTemplate={field.propertyTemplate}
+                                                      propertyLabels={field.propertyLabels}>{value}</JsonEditor> :
 
                     <CodeEditor
                         style={{border: '1px solid #eeeeee', margin: '16px 0'}}

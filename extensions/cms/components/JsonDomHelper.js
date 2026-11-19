@@ -42,7 +42,8 @@ import {
 } from '../util/jsonDomUtil'
 import {ALLOW_DROP, JsonDomDraggable, onJsonDomDrag, onJsonDomDragEnd} from '../util/jsonDomDragUtil'
 import config from 'gen/config-client'
-import {getJsonDomElements, MEDIA_PROJECTION, replaceUidPlaceholder} from '../util/elements'
+import {getJsonDomElements, MEDIA_PROJECTION, replaceUidPlaceholder, tabRank} from '../util/elements'
+import {EXTENDED_TAB} from '../util/elements/optionHelpers.mjs'
 import {deepMergeOptional, deepMerge} from '../../../util/deepMerge.mjs'
 import {CAPABILITY_MANAGE_CMS_TEMPLATE} from '../constants/index.mjs'
 import {getCustomElementCmsSlug, fetchManualFields, syncOptionsFromManual} from '../util/customElements.mjs'
@@ -335,6 +336,71 @@ const setCaretTextOffset = (el, offset) => {
     range.collapse(false)
     sel.removeAllRanges()
     sel.addRange(range)
+}
+
+// "noFooter" -> "No footer", "main-class" -> "Main class"
+const humanizeKey = key => {
+    if (!key || key.constructor !== String) return key
+    const words = key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[-_]+/g, ' ').trim().toLowerCase()
+    return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+// technical properties of a Cms element, set by the editor: not shown at the top
+const CMS_TECHNICAL_PROPS = ['p_id', 'p_className', 'p_data-element-key', 'p_forceEditMode', 'p_slug']
+
+/**
+ * Settings dialog of a Cms element: what is edited most comes first.
+ * Tab "CMS-Komponente": the picker, then the settings of the component (props, incl. the options defined in the
+ * template), technical properties (id, data-element-key ...) go to "Erweitert".
+ * An old element with only p.slug shows its component in the picker (saved as p.component, which wins over slug).
+ */
+const arrangeCmsOptions = (options, subJson, primaryTab = 'elements.cmsComponent') => {
+    const p = subJson.p || {}
+    const picker = options.p_component
+    if (picker && (!picker.value || picker.value.length === 0) && p.slug && p.slug.constructor === String &&
+        p.slug.indexOf('${') < 0) {
+        picker.value = [{slug: p.slug}]
+    }
+    const first = {}, rest = {}
+    Object.keys(options).forEach(key => {
+        const field = options[key]
+        if (!field || field.constructor !== Object) {
+            rest[key] = field
+            return
+        }
+        if (!field.tab && !field.invisible) {
+            if (key.startsWith('p_props_')) {
+                options[key] = {...field, tab: primaryTab}
+            } else if (CMS_TECHNICAL_PROPS.indexOf(key) >= 0 || key.startsWith('p_')) {
+                options[key] = {...field, tab: EXTENDED_TAB}
+            }
+        }
+        if (key === 'p_slug') {
+            // deprecated, replaced by the picker
+            options[key] = {...options[key], tab: EXTENDED_TAB}
+        }
+        if (options[key].tab === primaryTab) {
+            first[key] = options[key]
+        } else {
+            rest[key] = options[key]
+        }
+    })
+    // picker first, then the component settings in the order of the template
+    const ordered = {}
+    if (first.p_component) {
+        ordered.p_component = first.p_component
+    }
+    Object.keys(first).forEach(key => {
+        if (key !== 'p_component') ordered[key] = first[key]
+    })
+    // the other tabs in the usual order (the dialog creates the tabs in the order of their first field)
+    const restKeys = Object.keys(rest)
+    restKeys.map((key, i) => ({key, i, rank: rest[key] && rest[key].constructor === Object ? tabRank(rest[key]) : 99}))
+        .sort((a, b) => (a.rank - b.rank) || (a.i - b.i))
+        .forEach(({key}) => {
+            ordered[key] = rest[key]
+        })
+    return ordered
 }
 
 class JsonDomHelper extends React.Component {
@@ -1500,9 +1566,18 @@ class JsonDomHelper extends React.Component {
             if (!options[newKey]) {
                 if (value && value.constructor === Object) {
                     this.setFormOptionsByProperties(value, options, newKey + '_')
+                } else if (value && value.constructor === Array) {
+                    // lists (e.g. menu entries) in the json editor instead of a text field with [object Object]
+                    options[newKey] = {
+                        label: humanizeKey(key),
+                        value,
+                        type: 'Object',
+                        uitype: 'jsonEditor',
+                        fullWidth: true
+                    }
                 } else {
                     options[newKey] = {
-                        label: key,
+                        label: humanizeKey(key),
                         value,
                         type: value === true || value === false ? 'Boolean' : 'String'
                     }
@@ -3179,6 +3254,7 @@ class JsonDomHelper extends React.Component {
 
         if (isCms) {
             this.setFormOptionsByProperties(subJson.p, newJsonElement.options, 'p_')
+            newJsonElement.options = arrangeCmsOptions(newJsonElement.options, subJson, newJsonElement.primaryTab)
         }
         this.setState({
             toolbarHovered: false,

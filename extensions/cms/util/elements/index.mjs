@@ -159,4 +159,4 @@ const createElementByKeyFromList = (key, elementList) => {
     return expandGroupOptions(replaceUidPlaceholder(comp))
 }
 
-export {getJsonDomElements, createElementByKeyFromList, MEDIA_PROJECTION}
+export {getJsonDomElements, createElementByKeyFromList, MEDIA_PROJECTION, tabRank}
