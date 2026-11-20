@@ -799,6 +799,7 @@ class JsonDom extends React.Component {
                     if (this.runScript) {
                         this.runScript = false
                         this.runJsEvent('beforerunscript', false, scope)
+                        // names declared here can't be declared again in a page script - keep in sync with test/checkCmsScripts.mjs
                         const code = '\'use strict\';const __this=this._this;' +
                             'const {serverMethod,on,setLocal,getLocal,refresh,getComponent,addMetaTag,setStyle,fetchMore}=__this;' +
                             'const {history,clientQuery,setKeyValue,getKeyValue,updateResolvedData}=__this.props;' +

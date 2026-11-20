@@ -95,3 +95,9 @@ Claude outputs
 # compression cache files written by the server next to the originals
 /assets/**/*.br
 /assets/**/*.gz
+
+# local TLS keys/certs - never commit (RootCA.key was public until 2026-11-20)
+server/RootCA.*
+server/fallback-selfsigned.*
+server/*.key
+server/localhost*.pem

@@ -123,6 +123,14 @@ export const isRateLimited = (req, hostrule, host = '') => {
     return limited
 }
 
+/**
+ * Generic limit for an own key (e.g. 'csp\n' + ip), same sliding window and
+ * housekeeping as the hostrule limits.
+ * @returns {boolean} - true if limited, false if allowed.
+ */
+export const isKeyRateLimited = (key, maxRequestsPerTime, time) =>
+    hitBucket(key, maxRequestsPerTime, time, Date.now())
+
 /* ------------------------------------------------------------------ */
 /* Housekeeping                                                         */
 /* ------------------------------------------------------------------ */

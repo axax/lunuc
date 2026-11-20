@@ -52,7 +52,9 @@ const updateKeyValueGlobal = async ({_id, key, value, ispublic, createdBy, owner
                 Cache.clearAll()
             }
 
-        if(res && res.ispublic){
+        if(res){
+           // publish every change; the subscription filter below decides who may
+           // actually receive non-public entries (public / own / ownerGroup / manage)
            await pubsubHooked.publish('subscribeKeyValueGlobal', {session:context.session,userId:context.id,subscribeKeyValueGlobal: {action: 'update', data: [res]}}, db, context)
         }
 
@@ -309,7 +311,27 @@ export const keyvalueResolver = (db) => ({
                     payload.session !== context.session) {
 
                     const keys = JSON.parse(context.variables.keys)
-                    if(keys.length>0 && payload.subscribeKeyValueGlobal.data.some(data=>keys.indexOf(data.key)>=0)) {
+                    const datas = payload.subscribeKeyValueGlobal.data || []
+                    const matching = keys.length > 0 ? datas.filter(data => keys.indexOf(data.key) >= 0) : []
+                    // only deliver entries the subscriber may see: public (as before),
+                    // their own (createdBy / junior), their group (ownerGroup) or manage capability
+                    let allowed = false
+                    if (matching.length > 0) {
+                        const ownIdStr = (context.id ? await Util.userAndJuniorIds(db, context.id) : []).map(id => id.toString())
+                        const groupStr = (context.group || []).map(g => g.toString())
+                        let hasManage
+                        for (const d of matching) {
+                            if (d.ispublic) { allowed = true; break }
+                            if (!context.id) continue
+                            const cb = d.createdBy && (d.createdBy._id || d.createdBy).toString()
+                            if (cb && ownIdStr.indexOf(cb) >= 0) { allowed = true; break }
+                            if (d.ownerGroup && d.ownerGroup.length && groupStr.length &&
+                                d.ownerGroup.some(g => groupStr.indexOf((g._id || g).toString()) >= 0)) { allowed = true; break }
+                            if (hasManage === undefined) hasManage = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)
+                            if (hasManage) { allowed = true; break }
+                        }
+                    }
+                    if(allowed) {
 
                         const hookResponse = {}
                         if (Hook.hooks['ResolverBeforePublishSubscription'] && Hook.hooks['ResolverBeforePublishSubscription'].length) {

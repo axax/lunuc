@@ -909,7 +909,7 @@ const PRELOAD_DATA_PLACEHOLDER = '<%=preloadData%>'
 const APP_DATA_PLACEHOLDER = '<%=appData%>'
 const HEAD_DATA_PLACEHOLDER = '<%=appHead%>'
 const PAGE_TITLE_PLACEHOLDER = '<%=pageTitle%>'
-export const parseAndSendFile = async (req, res, {filename, headers, statusCode, parsedUrl, remoteAddress, host, hostrule, isBot}) => {
+export const parseAndSendFile = async (req, res, {filename, headers, statusCode, parsedUrl, remoteAddress, host, hostrule, isBot, cspNonce}) => {
 
 
     let data = Cache.get('IndexFile' + filename)
@@ -957,6 +957,12 @@ export const parseAndSendFile = async (req, res, {filename, headers, statusCode,
     */
     let finalContent = applyLinkVersions(data, await getLinkVersions(hostrule))
         .replace('<%=encodedUrl%>', encodeURIComponent(parsedUrl.href)).replace(HEAD_DATA_PLACEHOLDER, hostrule?.htmlHead || '')
+
+    if (cspNonce) {
+        // nonce for the scripts of the template (and hostrule.htmlHead) - BEFORE the dynamic
+        // data (preloadData, appData) is inserted, so injected markup never gets a nonce
+        finalContent = finalContent.replace(/<script(?![^>]*\snonce=)/gi, `<script nonce="${cspNonce}"`)
+    }
 
     if (data.hasAppData) {
         const appData = `_app_ = {redirect404:'/404',start:new Date(),detectLang:${(hostrule?.detectLang !== false)},defaultLang:'${hostrule?.defaultLanguage || config.DEFAULT_LANGUAGE}',languages:['${(hostrule?.languages || config.LANGUAGES).join("','")}'],slugContext:'${hostrule?.slugContext || ''}',login:{hideDomain:${(hostrule?.hideDomain === true)}, defaultDomain:'${(hostrule?.defaultDomain || '')}'}}`

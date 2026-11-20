@@ -283,16 +283,25 @@ export const resolveReduceSegment = (segment, resolvedData, debugLog) => {
 // segment.keyValueGlobals
 export const resolveKeyValueGlobalsSegment = async ({segment, db, context, resolvedData, subscriptions}) => {
 
-    // if user don't have capability to manage keys he can only see the public ones
-    const onlyPublic = segment.public!==undefined?segment.public:!await ApiUtil.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)
+    const hasManage = await ApiUtil.userHasCapability(db, context, CAPABILITY_MANAGE_KEYVALUES)
     const dataKey = segment.key || 'keyValueGlobals'
 
-    const map = await ApiUtil.keyValueGlobalMap(db, context, segment.keyValueGlobals, {
-        public: onlyPublic,
-        cache: true,
-        parse: true,
-        includeMetaData: segment.includeMetaData
-    })
+    // owner-aware mode ("owned": true): a logged in user also sees entries that
+    // belong to them (createdBy / junior) or one of their groups (ownerGroup),
+    // even when ispublic is false. Per-user result -> not from the shared cache.
+    const owned = segment.owned && !hasManage && ApiUtil.isUserLoggedIn(context)
+
+    const readOptions = {parse: true, includeMetaData: segment.includeMetaData}
+    if (owned) {
+        readOptions.owner = true
+        readOptions.cache = false
+    } else {
+        // if user don't have capability to manage keys he can only see the public ones
+        readOptions.public = segment.public!==undefined ? segment.public : !hasManage
+        readOptions.cache = true
+    }
+
+    const map = await ApiUtil.keyValueGlobalMap(db, context, segment.keyValueGlobals, readOptions)
 
     resolvedData[dataKey] = map
 

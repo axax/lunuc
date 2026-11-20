@@ -2,6 +2,7 @@
 import fs from 'fs'
 import path from 'path'
 import tls from 'tls'
+import {execFileSync} from 'child_process'
 import config from '../gensrc/config.mjs'
 import {getRegexCached} from '../server/util/regexCache.mjs'
 
@@ -401,15 +402,35 @@ export const getBestMatchingHostRule = (host, withCertContext=true, fallbackToGe
 let secureContext
 
 const readFileByNames = (baseDir, fileNames) => {
-    let fileContent
     for (const name of fileNames) {
         const filePath = path.join(baseDir, `./${name}`)
         if (fs.existsSync(filePath)) {
-            fileContent = fs.readFileSync(filePath)
-            continue
+            // first match wins (before: `continue` let the last existing file win)
+            return fs.readFileSync(filePath)
         }
     }
-    return fileContent
+}
+
+// Self-signed fallback cert, generated once per installation and never committed
+// (see .gitignore). Replaces the former RootCA.key that was checked into the repo.
+const FALLBACK_KEY = 'fallback-selfsigned.key', FALLBACK_CERT = 'fallback-selfsigned.pem'
+
+const ensureFallbackCert = (dir) => {
+    const keyFile = path.join(dir, FALLBACK_KEY), certFile = path.join(dir, FALLBACK_CERT)
+    if (!fs.existsSync(keyFile) || !fs.existsSync(certFile)) {
+        try {
+            execFileSync('openssl', ['req', '-x509', '-newkey', 'ec', '-pkeyopt', 'ec_paramgen_curve:prime256v1',
+                '-nodes', '-days', '3650', '-subj', '/CN=localhost',
+                '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1',
+                '-keyout', keyFile, '-out', certFile], {stdio: 'ignore'})
+            fs.chmodSync(keyFile, 0o600)
+            console.log(`hostrules: generated self-signed fallback cert in ${dir}`)
+        } catch (e) {
+            console.error(`hostrules: no default cert found and openssl failed - TLS for hosts without own cert will fail`, e.message)
+            return {}
+        }
+    }
+    return {key: fs.readFileSync(keyFile), cert: fs.readFileSync(certFile)}
 }
 
 export const getRootCertContext = () => {
@@ -419,13 +440,15 @@ export const getRootCertContext = () => {
     const SERVER_DIR = path.join(path.resolve(), './server'),
     DEFAULT_CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR
 
-    let pkey = readFileByNames(DEFAULT_CERT_DIR, ['privkey.pem','RootCA.key'] )
-    let cert = readFileByNames(DEFAULT_CERT_DIR, ['cert.pem','RootCA.pem'] )
+    let key = readFileByNames(DEFAULT_CERT_DIR, ['privkey.pem'])
+    let cert = readFileByNames(DEFAULT_CERT_DIR, ['cert.pem'])
 
-    secureContext = tls.createSecureContext({
-        key: pkey,
-        cert
-    })
+    if (!key || !cert) {
+        // key and cert are always taken as a pair
+        ({key, cert} = ensureFallbackCert(SERVER_DIR))
+    }
+
+    secureContext = tls.createSecureContext({key, cert})
 
     return secureContext
 }

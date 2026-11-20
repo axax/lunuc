@@ -73,7 +73,7 @@ const renderedPath = (url) => {
     }
 }
 import {getGatewayIp} from '../util/gatewayIp.mjs'
-import {isRateLimited} from './util/rateLimiter.mjs'
+import {isKeyRateLimited, isRateLimited} from './util/rateLimiter.mjs'
 import {applyRequestRules} from './util/requestRules.mjs'
 import {getRegexCached} from './util/regexCache.mjs'
 import {
@@ -112,6 +112,127 @@ const ASSETS_DIR = path.join(ROOT_DIR, './assets')
 const STATIC_TEMPLATE_DIR = path.join(ROOT_DIR, './' + config.STATIC_TEMPLATE_DIR)
 
 const DEFAULT_CERT_DIR = process.env.LUNUC_CERT_DIR || SERVER_DIR
+
+// Content-Security-Policy - phase 1: report only (the browser blocks nothing, it only
+// reports violations to CSP_REPORT_URL). {nonce} is replaced per request, parseAndSendFile
+// adds the nonce to the inline scripts of the index template. 'strict-dynamic' lets scripts
+// loaded by a nonced script load further scripts; 'unsafe-inline' https: are only a fallback
+// for browsers without CSP3 (ignored as soon as a nonce is present).
+// Override/disable per host with hostrule.headers.common['Content-Security-Policy-Report-Only']
+// (null = off) or switch to enforcing with 'Content-Security-Policy' (same {nonce} placeholder)
+const CSP_REPORT_URL = '/__csp-report'
+const CSP_HEADER_NAMES = ['Content-Security-Policy', 'Content-Security-Policy-Report-Only']
+// 'self' is ignored by CSP3 browsers ('strict-dynamic'), but lets browsers that only know CSP1/2
+// (no nonce) load the own bundle - also over http (legacy browsers without tls 1.2)
+const DEFAULT_CSP_REPORT_ONLY = "script-src 'nonce-{nonce}' 'strict-dynamic' 'unsafe-eval' 'self' 'unsafe-inline' https:; " +
+    "object-src 'none'; base-uri 'self'; form-action 'self'; report-uri " + CSP_REPORT_URL
+
+// replaces {nonce} in the csp headers and removes csp headers set to null/'' by a hostrule
+const applyCspNonce = (headers) => {
+    let nonce
+    for (const name of CSP_HEADER_NAMES) {
+        const value = headers[name]
+        if (!value) {
+            delete headers[name]
+        } else if (value.indexOf('{nonce}') >= 0) {
+            if (!nonce) {
+                nonce = crypto.randomBytes(16).toString('base64')
+            }
+            headers[name] = value.replace(/\{nonce\}/g, nonce)
+        }
+    }
+    return nonce
+}
+
+// csp violation reports: logged once per host/directive/blocked-uri and hour, so a page with
+// many violations doesn't flood the log. Body is capped, nothing is stored
+const CSP_REPORT_MAX_BYTES = 16 * 1024
+// per ip - a page load sends a few reports at most, more is abuse (log flooding)
+const CSP_REPORT_LIMIT = 30, CSP_REPORT_WINDOW_MS = 60 * 1000
+// key host|directive|blocked -> {host, directive, blocked, page, source, sample, count, first, last, logged}
+// in memory of the web server process (lost on restart), see GET /__csp-report
+const cspReportSeen = new Map()
+const CSP_STATS_MAX_ENTRIES = 5000
+
+// GET /__csp-report (admins only): collected violations as json, most frequent first
+const sendCspReportStats = async (req, res) => {
+    if (!await isValidAdminRequest(req)) {
+        sendError(res, 403)
+        return
+    }
+    const entries = [...cspReportSeen.values()]
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 500)
+        .map(({logged, ...e}) => ({...e, first: new Date(e.first).toISOString(), last: new Date(e.last).toISOString()}))
+    res.writeHead(200, {'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store'})
+    res.end(JSON.stringify({total: cspReportSeen.size, since: cspStatsSince, entries}, null, 2))
+}
+let cspStatsSince = new Date().toISOString()
+
+const handleCspReport = async (req, res, host, remoteAddress) => {
+    if (req.method === 'GET') {
+        await sendCspReportStats(req, res)
+        return
+    }
+    if (req.method !== 'POST') {
+        sendError(res, 405)
+        return
+    }
+    if (isKeyRateLimited('csp\n' + remoteAddress, CSP_REPORT_LIMIT, CSP_REPORT_WINDOW_MS)) {
+        // body is not read - the connection is answered right away
+        res.writeHead(429, {'Retry-After': '60'})
+        res.end()
+        return
+    }
+    let body = '', tooLarge = false
+    req.setEncoding('utf8')
+    req.on('data', chunk => {
+        if (tooLarge) return
+        body += chunk
+        if (body.length > CSP_REPORT_MAX_BYTES) {
+            tooLarge = true
+        }
+    })
+    req.on('end', () => {
+        res.writeHead(204)
+        res.end()
+        if (tooLarge) return
+        try {
+            const json = JSON.parse(body)
+            const reports = Array.isArray(json) ? json.map(r => r.body || r) : [json['csp-report'] || json]
+            const now = Date.now()
+            if (cspReportSeen.size > CSP_STATS_MAX_ENTRIES) {
+                cspReportSeen.clear()
+                cspStatsSince = new Date().toISOString()
+            }
+            for (const r of reports) {
+                const directive = String(r['effective-directive'] || r.effectiveDirective || r['violated-directive'] || '').substring(0, 100),
+                    blocked = String(r['blocked-uri'] || r.blockedURL || '').substring(0, 300),
+                    page = String(r['document-uri'] || r.documentURL || '').substring(0, 300),
+                    sourceFile = r['source-file'] || r.sourceFile,
+                    source = sourceFile ? String(sourceFile).substring(0, 300) + ':' + (r['line-number'] || r.lineNumber || '') : '',
+                    sample = String(r['script-sample'] || r.sample || '').substring(0, 80),
+                    key = host + '|' + directive + '|' + blocked
+                let entry = cspReportSeen.get(key)
+                if (!entry) {
+                    entry = {host, directive, blocked, page, source, sample, count: 0, first: now, last: now, logged: 0}
+                    cspReportSeen.set(key, entry)
+                }
+                entry.count++
+                entry.last = now
+                entry.page = page
+                // log each key at most once per hour
+                if (entry.logged + 3600000 > now) continue
+                entry.logged = now
+                console.warn(`[csp] ${host} ${directive} blocked=${blocked} page=${page}` +
+                    (source ? ` source=${source}` : '') +
+                    (sample ? ` sample=${JSON.stringify(sample)}` : ''))
+            }
+        } catch (e) {
+            // invalid report - ignore
+        }
+    })
+}
 
 const CACHED_FILES_VALIDATION_TIME = 86400000 * 5 // a day in miliseconds = 86400000
 
@@ -379,6 +500,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         'X-Frame-Options': 'SAMEORIGIN',
         'X-Content-Type-Options': 'nosniff',
         'Strict-Transport-Security': 'max-age=31536000',
+        'Content-Security-Policy-Report-Only': DEFAULT_CSP_REPORT_ONLY,
         /*'Content-Security-Policy': "default-src 'self';" +
             "font-src 'self' fonts.gstatic.com;" +
             "img-src 'self' data: en.gravatar.com;" +
@@ -387,6 +509,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
         ...hostrule.headers.common,
         ...hostrule.headers[urlPathname]
     }
+    const cspNonce = applyCspNonce(headers)
 
 
     const statusCode = (hostrule.statusCode && hostrule.statusCode[urlPathname] ? hostrule.statusCode[urlPathname] : 200)
@@ -430,7 +553,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             } else {
                 indexfile = path.join(BUILD_DIR, '/index.min.html')
             }
-            await parseAndSendFile(req, res, {filename: indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule, isBot})
+            await parseAndSendFile(req, res, {filename: indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule, isBot, cspNonce})
             return
         }
 
@@ -577,7 +700,7 @@ const sendIndexFile = async ({req, res, urlPathname, remoteAddress, hostrule, ho
             // default index
             indexfile = path.join(BUILD_DIR, '/index.min.html')
         }
-        await parseAndSendFile(req, res, {filename: indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule, isBot})
+        await parseAndSendFile(req, res, {filename: indexfile, headers, statusCode, parsedUrl, host, remoteAddress, hostrule, isBot, cspNonce})
     }
 }
 
@@ -931,7 +1054,9 @@ const app = (USE_HTTPX ? httpx : http).createServer(options, async function (req
         }
 
         // hostrule.reverseProxy = {ip:'localhost',port:9002,http2:false}
-        if (isUrlValidForPorxing(urlPathname, hostrule)) {
+        if (urlPathname === CSP_REPORT_URL) {
+            await handleCspReport(req, res, host, remoteAddress)
+        } else if (isUrlValidForPorxing(urlPathname, hostrule)) {
             await actAsReverseProxy(req, res, {parsedUrl, hostrule, host})
         } else if (urlPathname.startsWith(`/${config.SERVER_COMMAND_PREFIX}/`)) {
             if (await isValidAdminRequest(req)) {

@@ -85,7 +85,9 @@ const loadKeyValueGlobals = async (db, keys, allOptions, cachedMap) => {
     const startTime = Date.now()
     const match = {key: {$in: keys}}
 
-    if (allOptions.public) {
+    if (allOptions.ownerOr) {
+        match.$or = allOptions.ownerOr
+    } else if (allOptions.public) {
         match.ispublic = true
     }
 
@@ -417,6 +419,17 @@ const Util = {
     keyValueGlobalMap: async (db, context, keys, options) => {
 
         const allOptions = Object.assign({public: false, cache: true, parse: true}, options)
+
+        // owner-aware read: the result depends on the user (public OR own/junior OR
+        // ownerGroup), so it must not be served from the shared, user-independent cache.
+        if (allOptions.owner) {
+            allOptions.cache = false
+            const or = [{ispublic: true}, {createdBy: {$in: await Util.userAndJuniorIds(db, context.id)}}]
+            if (context && context.group && context.group.length > 0) {
+                or.push({ownerGroup: {$in: context.group.map(g => new ObjectId(g))}})
+            }
+            allOptions.ownerOr = or
+        }
 
         const cacheKeyPrefix = 'KeyValueGlobal_'
         const cacheKeyFor = (k) => cacheKeyPrefix + k + allOptions.parse + allOptions.public + allOptions.includeMetaData
