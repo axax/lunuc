@@ -418,6 +418,12 @@ const Util = {
     },
     keyValueGlobalMap: async (db, context, keys, options) => {
 
+        // A single key as string returns its value directly (like getKeyValueGlobal),
+        // an array returns a map {key: value}.
+        if (typeof keys === 'string') {
+            return (await Util.keyValueGlobalMap(db, context, [keys], options))[keys]
+        }
+
         const allOptions = Object.assign({public: false, cache: true, parse: true}, options)
 
         // owner-aware read: the result depends on the user (public OR own/junior OR

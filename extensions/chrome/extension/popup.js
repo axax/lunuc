@@ -25,6 +25,8 @@ const nameInput = document.getElementById('fileName')
 
 function safeName(name) {
     return (name || 'video')
+        .replace(/^\s*(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}\s+[-–—|:]\s+/i, '') // "domain.ch - Titel" → "Titel"
+        .replace(/(?:\.(?:mp4|m4v|mkv|webm|mov|avi|ts|m3u8|mpd))+\s*$/i, '')            // Endung kommt beim Speichern dazu
         .replace(/\s*[:|]\s*/g, ' - ')         // "Eps 4 : Titel" → "Eps 4 - Titel"
         .replace(/[\\/*?"<>]+/g, '_')           // in Dateinamen nicht erlaubt
         .replace(/\s+/g, ' ').trim().slice(0, 120) || 'video'
