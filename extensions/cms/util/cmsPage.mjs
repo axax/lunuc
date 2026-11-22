@@ -249,9 +249,11 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                 _version
             })
 
-        for (const candidateSlug of slugCandidates) {
-            cmsPages = await queryCmsPage(candidateSlug)
+        let winnerIndex = -1
+        for (let i = 0; i < slugCandidates.length; i++) {
+            cmsPages = await queryCmsPage(slugCandidates[i])
             if (cmsPages.results && cmsPages.results.length) {
+                winnerIndex = i
                 break
             }
         }
@@ -338,7 +340,12 @@ export const getCmsPage = async ({db, context, headers, ...params}) => {
                     const cacheKeyAlias = getCmsPageCacheKey({_version, slug: cmsPages.results[0].slug, host, hostrule, includeNonPublic})
                     Cache.setAlias(cacheKeyAlias, cacheKey)
                 }
-                Cache.set(cacheKey, cmsPages, 86400000) // cache expires in 24h
+                // A lower priority candidate won (e.g. the bare slug via slugFallback because the
+                // slugContext page did not exist or was not public yet). Creating or publishing a
+                // skipped candidate only clears its own 'cmsPage-<version>-<slug>' prefix, not this
+                // entry - so keep it short instead of 24h. (Not via Cache.setAlias: get() resolves
+                // aliases, a direct request for the skipped slug would then get this page.)
+                Cache.set(cacheKey, cmsPages, winnerIndex > 0 ? 300000 : 86400000) // 5 min for fallbacks, else 24h
             }
         } else {
             console.warn(`CmsPage not found ${slug}. host=${host} slugCandidates=${JSON.stringify(slugCandidates)} includeNonPublic=${includeNonPublic}`)

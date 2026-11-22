@@ -490,7 +490,20 @@ Hook.on('appready', ({app, db}) => {
                     console.debug(`[API] runApiScript done: ${slug} (${new Date().getTime()-startTime}ms) | error=${!!result.error} | ignore=${!!(result.responseStatus?.ignore)} headersSent=${res.headersSent}`)
 
                     if (!result.error && result.responseStatus && result.responseStatus.ignore) {
-
+                        // The script answers itself - but an exception it throws must not leave
+                        // the request hanging without a response or a log line.
+                        Promise.resolve(result.data).then(data => {
+                            if (data && data._error) {
+                                console.error(`[API] SCRIPT ERROR (responseStatus.ignore): ${slug}`, data._error)
+                                Hook.call('ExtensionApiError', {db, req, error: data._error, slug})
+                                if (!res.headersSent) {
+                                    res.writeHead(500, {'content-type': 'application/json'})
+                                    res.end(JSON.stringify({status: 'error', message: data._error.message}))
+                                } else if (!res.writableEnded) {
+                                    res.end()
+                                }
+                            }
+                        }).catch(e => console.error(`[API] SCRIPT ERROR (responseStatus.ignore): ${slug}`, e))
                     } else if (result.error) {
                         console.error(`[API] SCRIPT ERROR: ${slug}`, result.error)
                         Hook.call('ExtensionApiError', {db, req, error: result.error, slug})

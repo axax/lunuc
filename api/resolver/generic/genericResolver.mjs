@@ -700,6 +700,8 @@ const GenericResolver = {
 
         const insertResult = await collection.insertOne({
             ...dataSet,
+            // a new entry counts as modified now (incremental syncs like "LUNUC: DB SYNC" select by modifiedAt)
+            modifiedAt: dataSet.modifiedAt || new Date().getTime(),
             createdBy: new ObjectId(createdBy)
         })
 
@@ -1091,7 +1093,7 @@ const GenericResolver = {
             throw new Error('entry with id ' + _id + ' does not exist')
         }
 
-        const clone = Object.assign({}, entry, {modifiedAt: null, _id:null, createdBy: new ObjectId(context.id)}, rest)
+        const clone = Object.assign({}, entry, {modifiedAt: new Date().getTime(), _id:null, createdBy: new ObjectId(context.id)}, rest)
 
         if(clone.ownerGroup){
             // replace with current user ownerGroup

@@ -134,8 +134,8 @@ Hook.on('appready', ({db}) => {
     registerCronJobs(db, true)
 })
 
-// Hook when the type CronJob has changed
-Hook.on('typeUpdated_CronJob', ({db, result}) => {
+// Hook when the type CronJob has changed (a new, cloned or deleted job too: otherwise only after a restart)
+Hook.on(['typeUpdated_CronJob', 'typeCreated_CronJob', 'typeCloned_CronJob', 'typeDeleted_CronJob'], ({db}) => {
     unregisterCronJobs()
     registerCronJobs(db)
 })
