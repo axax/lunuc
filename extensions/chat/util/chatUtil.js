@@ -145,3 +145,51 @@ export const renderText = (text, highlight) => {
 export const pictureSrc = (picture, size = 96) => (picture ? `/uploads/${picture._id || picture}?format=webp&width=${size}&height=${size}` : null)
 
 export const isImage = m => !!(m && m.mimeType && m.mimeType.indexOf('image') === 0)
+
+const VIDEO_EXT = /\.(mp4|m4v|mov|webm|ogv)$/i
+// mimeType can be empty (e.g. files without a known type) -> fall back to the file extension
+export const isVideo = m => !!m && (m.mimeType ? m.mimeType.indexOf('video') === 0 : VIDEO_EXT.test(m.name || ''))
+
+export const mediaSrc = m => `/uploads/${m._id}`
+
+/* ---------- native share (Web Share API, also works in the iOS home-screen app) ---------- */
+
+export const canShare = () => typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+
+// small cache: Safari only allows navigator.share() right after a tap, so the files are fetched ahead of time
+const shareCache = new Map(), SHARE_CACHE_MAX = 4
+export const prefetchShareFile = (m) => {
+    let p = shareCache.get(m._id)
+    if (!p) {
+        p = fetch(mediaSrc(m), {credentials: 'same-origin'})
+            .then(r => {
+                if (!r.ok) throw new Error('HTTP ' + r.status)
+                return r.blob()
+            })
+            .then(b => new File([b], m.name || 'file', {type: m.mimeType || b.type}))
+        p.catch(() => shareCache.delete(m._id))
+        shareCache.set(m._id, p)
+        if (shareCache.size > SHARE_CACHE_MAX) shareCache.delete(shareCache.keys().next().value)
+    }
+    return p
+}
+
+// builds the share payload; files are shared natively when the browser supports it, otherwise the link
+export const buildShareData = async (text, media) => {
+    const data = {}
+    if (text) data.text = text
+    if (media && media.length) {
+        try {
+            const files = await Promise.all(media.map(prefetchShareFile))
+            if (!navigator.canShare || navigator.canShare({files})) data.files = files
+        } catch (e) {
+            // ignore -> share link instead
+        }
+        if (!data.files) data.url = location.origin + mediaSrc(media[0])
+    }
+    return data
+}
+
+export const shareData = data => navigator.share(data).catch(e => {
+    if (e.name !== 'AbortError') console.warn('share failed', e)
+})

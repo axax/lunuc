@@ -3,8 +3,8 @@ import UploadUtil from '../../../client/util/upload'
 import {_t} from '../../../util/i18n.mjs'
 import {actions, getRoomPicture, getRoomTitle} from '../util/chatStore'
 import {
-    EMOJIS, QUICK_REACTIONS, colorFor, formatDay, formatTime, groupReactions, isEmojiOnly, isImage,
-    messageDate, parseJson, renderText, sameDay
+    EMOJIS, QUICK_REACTIONS, buildShareData, canShare, colorFor, formatDay, formatTime, groupReactions, isEmojiOnly, isImage,
+    isVideo, mediaSrc, messageDate, parseJson, renderText, sameDay, shareData
 } from '../util/chatUtil'
 import {Avatar, Icon, IconButton, useDismiss} from './common'
 import {Ticks} from './ChatSidebar'
@@ -186,8 +186,34 @@ const Composer = ({room, settings, reply, editing, onCancel, apiRef}) => {
     </div>
 }
 
+// prepares the share payload as soon as a menu / the lightbox opens,
+// so the tap can call navigator.share() directly (Safari requires a fresh user gesture)
+const useShare = (text, media, active = true) => {
+    const [data, setData] = useState(null)
+    const mediaKey = (media || []).map(m => m._id).join(',')
+    const mediaRef = useRef(media)
+    mediaRef.current = media
+    useEffect(() => {
+        setData(null)
+        if (!active || !canShare() || (!text && !mediaKey)) return
+        let alive = true
+        buildShareData(text, mediaRef.current).then(d => alive && setData(d))
+        return () => {
+            alive = false
+        }
+    }, [active, text, mediaKey])
+    return data
+}
+
+const ShareButton = ({data, onDone, children}) =>
+    <button type="button" disabled={!data} onClick={() => {
+        shareData(data)
+        onDone && onDone()
+    }}>{children(!!data)}</button>
+
 const BubbleMenu = ({msg, own, up, onClose, onReply, onEdit}) => {
     const ref = useDismiss(onClose)
+    const share = useShare(msg.message, msg.media)
     const item = (icon, label, fn, danger) =>
         <button type="button" className={danger ? 'is-danger' : ''} onClick={() => {
             onClose()
@@ -202,6 +228,9 @@ const BubbleMenu = ({msg, own, up, onClose, onReply, onEdit}) => {
         </div>
         {item('reply', _t('Chat.reply'), onReply)}
         {msg.message && item('copy', _t('Chat.copy'), () => navigator.clipboard && navigator.clipboard.writeText(msg.message))}
+        {canShare() && (msg.message || msg.media?.length > 0) && <ShareButton data={share} onDone={onClose}>
+            {ready => <><Icon name="share" size={18}/>{ready ? _t('Chat.share') : _t('Chat.sharePreparing')}</>}
+        </ShareButton>}
         {own && msg.message && item('edit', _t('Chat.edit'), onEdit)}
         {own && item('trash', _t('Chat.delete'), () => {
             // eslint-disable-next-line no-alert
@@ -214,7 +243,8 @@ const Bubble = ({msg, room, first, own, highlight, flash, menu, setMenu, onReply
     const myId = _app_.user._id
     const quote = parseJson(msg.replyTo, null)
     const reactions = groupReactions(msg.reactions, myId)
-    const images = (msg.media || []).filter(isImage), others = (msg.media || []).filter(m => !isImage(m))
+    const images = [], videos = [], others = []
+    ;(msg.media || []).forEach(m => (isImage(m) ? images : isVideo(m) ? videos : others).push(m))
     const showName = !own && !room.direct && first
     const emojiOnly = !quote && !msg.media?.length && isEmojiOnly(msg.message)
     const canAct = !msg.deleted && !msg.pending && !msg.failed
@@ -234,7 +264,9 @@ const Bubble = ({msg, room, first, own, highlight, flash, menu, setMenu, onReply
                     <img src={`/uploads/${m._id}?format=webp&width=640`} alt={m.name || ''} loading="lazy" onLoad={onMediaLoad}/>
                 </button>)}
             </div>}
-            {others.map(m => <a key={m._id} className="lchat-file" href={`/uploads/${m._id}`} target="_blank" rel="noopener noreferrer" download={m.name}>
+            {videos.map(m => <video key={m._id} className="lchat-video" src={mediaSrc(m) + '#t=0.001'} controls playsInline
+                                    preload="metadata" onLoadedMetadata={onMediaLoad}/>)}
+            {others.map(m => <a key={m._id} className="lchat-file" href={mediaSrc(m)} target="_blank" rel="noopener noreferrer" download={m.name}>
                 <Icon name="file" size={28}/><span>{m.name || _t('Chat.attachment')}</span>
             </a>)}
             <span className="lchat-bubble-text">
@@ -430,10 +462,20 @@ const ChatConversation = ({room, entry, typing, settings, infoOpen, onBack, onTo
                       setReply(null)
                       setEditing(null)
                   }}/>
-        {lightbox && <div className="lchat-lightbox" onClick={() => setLightbox(null)}>
-            <IconButton icon="close" title={_t('Chat.close')} onClick={() => setLightbox(null)}/>
-            <img src={`/uploads/${lightbox._id}`} alt={lightbox.name || ''}/>
-        </div>}
+        {lightbox && <Lightbox media={lightbox} onClose={() => setLightbox(null)}/>}
+    </div>
+}
+
+const Lightbox = ({media, onClose}) => {
+    const share = useShare(null, [media])
+    return <div className="lchat-lightbox" onClick={onClose}>
+        <div className="lchat-lightbox-actions" onClick={e => e.stopPropagation()}>
+            {canShare() && <ShareButton data={share}>
+                {() => <Icon name="share" size={24}/>}
+            </ShareButton>}
+            <IconButton icon="close" title={_t('Chat.close')} onClick={onClose}/>
+        </div>
+        <img src={mediaSrc(media)} alt={media.name || ''}/>
     </div>
 }
 

@@ -747,6 +747,16 @@ html[data-theme="dark"] .lchat-bubble-text a {
     aspect-ratio: 1;
 }
 
+.lchat-video {
+    display: block;
+    width: 100%;
+    max-width: 360px;
+    max-height: 420px;
+    margin: -2px 0 5px;
+    border-radius: 6px;
+    background: #000;
+}
+
 .lchat-file {
     display: flex;
     align-items: center;
@@ -834,6 +844,14 @@ html[data-theme="dark"] .lchat-bubble-text a {
         opacity: .7;
         background: transparent !important;
     }
+
+    /* the arrow is always visible on touch devices: reserve its corner so text, time and ticks flow around it */
+    .lchat-bubble::before {
+        content: '';
+        float: right;
+        width: 20px;
+        height: 16px;
+    }
 }
 
 .lchat-menu {
@@ -872,6 +890,11 @@ html[data-theme="dark"] .lchat-bubble-text a {
 
 .lchat-menu > button:hover {
     background: var(--lc-subtle);
+}
+
+.lchat-menu > button:disabled {
+    opacity: .5;
+    cursor: default;
 }
 
 .lchat-menu > button.is-danger, .lchat-user.is-danger {
@@ -1468,11 +1491,30 @@ html[data-theme="dark"] .lchat-option--whatsapp .lchat-option-preview i + i {
     object-fit: contain;
 }
 
-.lchat-lightbox .lchat-iconbtn {
+.lchat-lightbox-actions {
     position: absolute;
-    top: 12px;
+    top: calc(12px + env(safe-area-inset-top, 0px));
     right: 12px;
+    display: flex;
+    gap: 4px;
+}
+
+.lchat-lightbox-actions > button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
     color: #fff !important;
+    cursor: pointer;
+}
+
+.lchat-lightbox-actions > button:disabled {
+    opacity: .4;
 }
 
 /* ---------- small screens: list or conversation ---------- */
