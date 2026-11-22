@@ -152,6 +152,15 @@ export const isVideo = m => !!m && (m.mimeType ? m.mimeType.indexOf('video') ===
 
 export const mediaSrc = m => `/uploads/${m._id}`
 
+// iOS Safari only plays videos when the url ends with a file name incl. extension
+export const videoSrc = (m) => {
+    let name = (m.name || 'video').replace(/[\/\\]/g, '_')
+    if (!VIDEO_EXT.test(name)) {
+        name += m.mimeType === 'video/quicktime' ? '.mov' : m.mimeType === 'video/webm' ? '.webm' : '.mp4'
+    }
+    return `${mediaSrc(m)}/-/${encodeURIComponent(name)}`
+}
+
 /* ---------- native share (Web Share API, also works in the iOS home-screen app) ---------- */
 
 export const canShare = () => typeof navigator !== 'undefined' && typeof navigator.share === 'function'

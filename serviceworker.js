@@ -25,6 +25,28 @@ const isImmutable = (url) =>
 const putInCache = (req, response) =>
     caches.open(RUNTIME).then((cache) => cache.put(req, response)).catch((e) => console.warn(e))
 
+const SHARE_TARGET_PATH = '/share-target', SHARE_TARGET_CACHE = 'share-target'
+
+const receiveShare = async (req) => {
+    try {
+        const form = await req.formData()
+        // only the last share is kept
+        await caches.delete(SHARE_TARGET_CACHE)
+        const cache = await caches.open(SHARE_TARGET_CACHE)
+        const files = form.getAll('files').filter(f => f && typeof f !== 'string' && f.size > 0)
+        const meta = {title: form.get('title') || '', text: form.get('text') || '', url: form.get('url') || '', files: []}
+        await Promise.all(files.map((f, i) => {
+            const key = SHARE_TARGET_PATH + '/file/' + i
+            meta.files.push({key, name: f.name, type: f.type})
+            return cache.put(key, new Response(f, {headers: {'Content-Type': f.type || 'application/octet-stream'}}))
+        }))
+        await cache.put(SHARE_TARGET_PATH + '/meta', new Response(JSON.stringify(meta), {headers: {'Content-Type': 'application/json'}}))
+    } catch (e) {
+        console.warn('share target', e)
+    }
+    return Response.redirect('/#share', 303)
+}
+
 // The install handler takes care of precaching the resources we always need.
 self.addEventListener('install', event => {
     event.waitUntil(
@@ -40,7 +62,7 @@ self.addEventListener('install', event => {
 
 // remove old cache if any
 self.addEventListener('activate', (event) => {
-    const expectedCaches = [PRECACHE, RUNTIME]
+    const expectedCaches = [PRECACHE, RUNTIME, SHARE_TARGET_CACHE]
     event.waitUntil((async () => {
         const cacheNames = await caches.keys()
 
@@ -76,6 +98,13 @@ self.addEventListener('fetch', event => {
     // req.url is always absolute, so compare against the pathname.
     const { pathname } = new URL(req.url)
     if (pathname === '/graphql' || pathname.startsWith('/uploads/') || pathname.startsWith('/lunucapi/')) {
+        return
+    }
+
+    // Web Share Target (manifest share_target, see system/hostrules): keep the shared data
+    // in a cache and open the start page with #share - the page (e.g. the messenger) takes it from there
+    if (req.method === 'POST' && pathname === SHARE_TARGET_PATH) {
+        event.respondWith(receiveShare(req))
         return
     }
 

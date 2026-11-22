@@ -4,7 +4,7 @@ import {_t} from '../../../util/i18n.mjs'
 import {actions, getRoomPicture, getRoomTitle} from '../util/chatStore'
 import {
     EMOJIS, QUICK_REACTIONS, buildShareData, canShare, colorFor, formatDay, formatTime, groupReactions, isEmojiOnly, isImage,
-    isVideo, mediaSrc, messageDate, parseJson, renderText, sameDay, shareData
+    isVideo, mediaSrc, messageDate, parseJson, renderText, sameDay, shareData, videoSrc
 } from '../util/chatUtil'
 import {Avatar, Icon, IconButton, useDismiss} from './common'
 import {Ticks} from './ChatSidebar'
@@ -87,7 +87,9 @@ const Composer = ({room, settings, reply, editing, onCancel, apiRef}) => {
                 .catch(e => patchFile(id, {error: e.message}))
         })
     }
-    apiRef.current = {addFiles}
+    // text shared from another app (share target) is added to the draft
+    const insertText = t => setText(cur => (cur ? cur + '\n' + t : t))
+    apiRef.current = {addFiles, insertText}
 
     const uploading = files.some(f => !f.media && !f.error)
     const media = files.filter(f => f.media).map(f => f.media)
@@ -264,7 +266,7 @@ const Bubble = ({msg, room, first, own, highlight, flash, menu, setMenu, onReply
                     <img src={`/uploads/${m._id}?format=webp&width=640`} alt={m.name || ''} loading="lazy" onLoad={onMediaLoad}/>
                 </button>)}
             </div>}
-            {videos.map(m => <video key={m._id} className="lchat-video" src={mediaSrc(m) + '#t=0.001'} controls playsInline
+            {videos.map(m => <video key={m._id} className="lchat-video" src={videoSrc(m) + '#t=0.001'} controls playsInline
                                     preload="metadata" onLoadedMetadata={onMediaLoad}/>)}
             {others.map(m => <a key={m._id} className="lchat-file" href={mediaSrc(m)} target="_blank" rel="noopener noreferrer" download={m.name}>
                 <Icon name="file" size={28}/><span>{m.name || _t('Chat.attachment')}</span>
@@ -299,7 +301,7 @@ const Bubble = ({msg, room, first, own, highlight, flash, menu, setMenu, onReply
     </div>
 }
 
-const ChatConversation = ({room, entry, typing, settings, infoOpen, onBack, onToggleInfo}) => {
+const ChatConversation = ({room, entry, typing, settings, infoOpen, onBack, onToggleInfo, shared, onSharedUsed}) => {
     const myId = _app_.user._id
     const [reply, setReply] = useState(null)
     const [editing, setEditing] = useState(null)
@@ -314,6 +316,14 @@ const ChatConversation = ({room, entry, typing, settings, infoOpen, onBack, onTo
     const atBottomRef = useRef(true)
     const prevRef = useRef({count: 0})
     const composerApi = useRef({})
+
+    // content shared from another app: put it into the composer, the user sends it
+    useEffect(() => {
+        if (!shared) return
+        if (shared.files.length) composerApi.current.addFiles(shared.files)
+        if (shared.text) composerApi.current.insertText(shared.text)
+        onSharedUsed()
+    }, [shared])
     const dragDepth = useRef(0)
 
     const items = entry ? entry.items : []

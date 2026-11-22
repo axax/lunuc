@@ -8,6 +8,7 @@ import ChatSidebar from '../components/ChatSidebar'
 import ChatConversation from '../components/ChatConversation'
 import {NewChatDialog, RoomInfo, SettingsDialog} from '../components/ChatPanels'
 import {Icon} from '../components/common'
+import {clearSharedData, hasSharedData, readSharedData} from '../util/shareTarget'
 import '../chat.css'
 
 registerTrs(translations, 'ChatContainer')
@@ -67,6 +68,7 @@ const Messenger = ({match, height: fixedHeight}) => {
     const [dialog, setDialog] = useState(null) // 'new' | 'settings'
     const [infoOpen, setInfoOpen] = useState(false)
     const [height, setHeight] = useState(null)
+    const [shared, setShared] = useState(null) // {text, files} shared from another app, waits for a chat
     const rootRef = useRef(null)
 
     const selectedId = (hasRoute ? match.params.id : localId) || null
@@ -101,6 +103,21 @@ const Messenger = ({match, height: fixedHeight}) => {
             window.removeEventListener('popstate', sync)
         }
     }, [hasRoute])
+
+    // opened from the share menu of the system (serviceworker.js -> #share)
+    useEffect(() => {
+        if (!hasSharedData()) return
+        history.replaceState(history.state, '', location.pathname + location.search)
+        readSharedData().then(data => {
+            if (data) setShared(data)
+            else clearSharedData()
+        }).catch(e => console.warn('share target', e))
+    }, [])
+
+    const discardShared = () => {
+        setShared(null)
+        clearSharedData()
+    }
 
     // fill the rest of the window below the admin header
     useLayoutEffect(() => {
@@ -144,7 +161,16 @@ const Messenger = ({match, height: fixedHeight}) => {
                 className={'lchat' + (settings.accent === 'theme' ? ' lchat--theme' : '') + (room ? ' has-chat' : '') + (room && infoOpen ? ' has-info' : '')}>
         <ChatSidebar state={state} selectedId={selectedId} onSelect={select}
                      onNewChat={() => setDialog('new')} onSettings={() => setDialog('settings')} onLogout={logout}
-                     banner={showBanner && <div className="lchat-banner">
+                     banner={shared ? <div className="lchat-banner">
+                         <Icon name="share" size={28}/>
+                         <div>
+                             <strong>{_t('Chat.shareTarget.title')}</strong>
+                             <span>{_t('Chat.shareTarget.text')}</span>
+                             <div>
+                                 <button type="button" onClick={discardShared}>{_t('Chat.cancel')}</button>
+                             </div>
+                         </div>
+                     </div> : showBanner && <div className="lchat-banner">
                          <Icon name="bell" size={28}/>
                          <div>
                              <strong>{_t('Chat.banner.title')}</strong>
@@ -157,7 +183,7 @@ const Messenger = ({match, height: fixedHeight}) => {
                      </div>}/>
         {room ? <ChatConversation key={room._id} room={room} entry={state.messages[room._id]} typing={state.typing[room._id]}
                                   settings={settings} infoOpen={infoOpen} onBack={() => select(null)}
-                                  onToggleInfo={() => setInfoOpen(!infoOpen)}/> :
+                                  onToggleInfo={() => setInfoOpen(!infoOpen)} shared={shared} onSharedUsed={discardShared}/> :
             <div className="lchat-main lchat-welcome">
                 <Icon name="chat" size={96}/>
                 <strong>{_t('Chat.title')}</strong>
