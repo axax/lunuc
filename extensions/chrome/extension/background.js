@@ -66,6 +66,22 @@ chrome.runtime.onMessage.addListener((message, sender, callback) => {
 // ===================== Medien-Erkennung =====================
 const MEDIA_EXT = /\.(mp4|m4v|webm|mov|mkv|m3u8|mpd)(\?|#|$)/i
 const SEGMENT_EXT = /\.(ts|m4s|aac|m4a|dash|cmfv|cmfa)(\?|#|$)/i
+const SUBTITLE_EXT = /\.(vtt|webvtt|srt)(\?|#|$)/i
+// Teilstücke von Untertiteln aus HLS-Playlists (die werden über die Playlist geladen)
+const SUBTITLE_SEGMENT = /(seg|segment|chunk|frag|fragment|part)[-_]?\d+[^/]*\.(vtt|webvtt)(\?|#|$)|[-_]\d{3,}\.(vtt|webvtt)(\?|#|$)/i
+
+// Sprache aus dem Dateinamen bzw. Parameter: "film_en.srt", "subs.de-CH.vtt", "?lang=fr"
+function guessLang(url) {
+    try {
+        const u = new URL(url)
+        const param = u.searchParams.get('lang') || u.searchParams.get('language')
+        if (param) return param.toLowerCase().slice(0, 5)
+        const m = u.pathname.match(/[._-]([a-z]{2,3})(?:[-_][a-z]{2})?\.(?:vtt|webvtt|srt)$/i)
+        return m ? m[1].toLowerCase() : ''
+    } catch (e) {
+        return ''
+    }
+}
 
 // Schreibzugriffe nacheinander ausführen, sonst gehen bei vielen gleichzeitigen Requests Einträge verloren
 let queue = Promise.resolve()
@@ -104,6 +120,14 @@ chrome.webRequest.onHeadersReceived.addListener(details => {
     const h = name => (headers.find(x => x.name.toLowerCase() === name) || {}).value || ''
     const type = h('content-type').toLowerCase()
     const size = parseInt((h('content-range').split('/')[1]) || h('content-length') || '0', 10)
+
+    // Untertitel als eigene Datei
+    if (SUBTITLE_EXT.test(url) || /text\/vtt|subrip|x-srt/.test(type)) {
+        if (!SUBTITLE_SEGMENT.test(url)) {
+            addMedia(details.tabId, {url, kind: 'subtitle', lang: guessLang(url), type, size, time: Date.now()})
+        }
+        return
+    }
 
     let kind = null
     if (type.includes('mpegurl') || /\.m3u8(\?|#|$)/i.test(url)) {
@@ -212,10 +236,12 @@ function updateBadge(jobs) {
     chrome.action.setBadgeText({text: current.state === 'queued' ? '…' : pct + '%'})
 }
 
-async function startJob({url, kind, name}) {
+async function startJob({url, kind, name, subtitles, streamSubtitles}) {
     const job = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         url, kind, name: name || 'video',
+        // separate Untertitel-Dateien [{url, lang}] und ob Untertitel aus dem Stream mitkommen
+        subtitles: subtitles || [], streamSubtitles: streamSubtitles !== false,
         state: 'queued', progress: 0, label: 'Wartet…', message: '', time: Date.now()
     }
     await mutateJobs(jobs => { jobs.push(job) })
@@ -353,7 +379,9 @@ function convertNative(id, files, name, ftp) {
             if (!finished) reject(new Error(chrome.runtime.lastError?.message || 'ffmpeg-Helfer beendet'))
         })
         port.postMessage({
-            cmd: 'convert', inputs: files.map(f => f.path), outputName: name + '.mp4', deleteInputs: true,
+            cmd: 'convert', outputName: name + '.mp4', deleteInputs: true,
+            inputs: files.filter(f => !f.subtitle).map(f => f.path),
+            subtitles: files.filter(f => f.subtitle).map(f => ({path: f.path, lang: f.lang})),
             ftp: ftp && ftp.enabled ? ftp : null,
             upload: ftp ? !!ftp.enabled : undefined
         })
@@ -380,7 +408,11 @@ async function finishJob(id, files, name) {
         // Teildateien hat der Helfer gelöscht → nur noch aus der Download-Liste entfernen
         for (const downloadId of (await getJob(id)).downloadIds || []) chrome.downloads.erase({id: downloadId}).catch(() => {})
         const file = res.output.split(/[\\/]/).pop()
-        const message = res.uploaded ? `${file} → ${res.uploaded}` : res.output
+        const skipped = res.subtitlesSkipped === true ? 1 : +res.subtitlesSkipped || 0 // ältere Helfer liefern true/false
+        const subs = [res.subtitles ? `${res.subtitles} Untertitel eingebettet` : '',
+            skipped ? `${skipped} fehlerhafte Untertitel übersprungen, liegen als Datei daneben` : ''].filter(Boolean).join(', ')
+        const subsText = subs ? ` (${subs})` : ''
+        const message = (res.uploaded ? `${file} → ${res.uploaded}` : res.output) + subsText
         updateJob(id, {state: 'done', progress: 1, label: res.uploaded ? 'Hochgeladen' : 'Fertig', message})
         notify(res.uploaded ? 'Hochgeladen' : 'Download fertig', message)
     } catch (e) {

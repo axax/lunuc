@@ -43,7 +43,13 @@ function collectFromFrame() {
         if (src && /^https?:/.test(src)) urls.push(src)
     })
 
-    const info = {urls, top: window === window.top, title: clean(document.title)}
+    // <track> am Video-Element (Untertitel/Captions)
+    const tracks = []
+    document.querySelectorAll('video track[src]').forEach(t => {
+        if (/^(subtitles|captions|)$/.test(t.kind || '') && /^https?:/.test(t.src)) tracks.push({url: t.src, lang: clean(t.srclang).toLowerCase()})
+    })
+
+    const info = {urls, tracks, top: window === window.top, title: clean(document.title)}
 
     // 1. Media Session: viele Player setzen hier den Titel der laufenden Folge
     const ms = navigator.mediaSession && navigator.mediaSession.metadata
@@ -130,8 +136,35 @@ async function scanDom() {
     }
 }
 
+const subtitleListEl = document.getElementById('subtitleList')
+const streamSubtitlesEl = document.getElementById('streamSubtitles')
+
+function renderSubtitles(subs) {
+    subtitleListEl.innerHTML = ''
+    if (!subs.length) {
+        subtitleListEl.innerHTML = '<li class="empty">Keine separaten Untertitel-Dateien gefunden.</li>'
+        return
+    }
+    subs.forEach(sub => {
+        const li = document.createElement('li')
+        li.innerHTML = '<input type="checkbox" checked><span class="tag"></span><span class="url"></span>'
+        li.querySelector('input').subtitle = sub
+        li.querySelector('.tag').textContent = sub.lang || '?'
+        li.querySelector('.url').textContent = sub.url.split('?')[0].split('/').pop()
+        li.title = sub.url
+        subtitleListEl.appendChild(li)
+    })
+}
+
+function selectedSubtitles() {
+    return Array.from(subtitleListEl.querySelectorAll('input:checked')).map(el => ({url: el.subtitle.url, lang: el.subtitle.lang}))
+}
+
+chrome.storage.local.get('streamSubtitles', ({streamSubtitles}) => { streamSubtitlesEl.checked = streamSubtitles !== false })
+streamSubtitlesEl.onchange = () => chrome.storage.local.set({streamSubtitles: streamSubtitlesEl.checked})
+
 async function renderMedia() {
-    const media = await chrome.runtime.sendMessage({command: 'getMedia', tabId: currentTab.id}) || []
+    let media = await chrome.runtime.sendMessage({command: 'getMedia', tabId: currentTab.id}) || []
     const frames = await scanDom()
     // vom Benutzer geänderter Name bleibt beim erneuten Scannen erhalten
     if (!nameInput.dataset.edited) nameInput.value = safeName(pickName(frames))
@@ -140,6 +173,13 @@ async function renderMedia() {
             media.push({url, kind: /\.m3u8(\?|#|$)/i.test(url) ? 'hls' : /\.mpd(\?|#|$)/i.test(url) ? 'dash' : 'file', size: 0})
         }
     })
+
+    frames.flatMap(f => f.tracks || []).forEach(t => {
+        if (!media.some(m => m.url === t.url)) media.push({url: t.url, kind: 'subtitle', lang: t.lang})
+    })
+    // Untertitel-Dateien separat anzeigen (werden beim Download mitgenommen)
+    renderSubtitles(media.filter(m => m.kind === 'subtitle'))
+    media = media.filter(m => m.kind !== 'subtitle')
 
     listEl.innerHTML = ''
     if (!media.length) {
@@ -164,7 +204,10 @@ async function renderMedia() {
         btn.onclick = async () => {
             btn.disabled = true
             btn.textContent = 'Gestartet'
-            await chrome.runtime.sendMessage({command: 'startDownload', url: m.url, kind: m.kind, name: safeName(nameInput.value)})
+            await chrome.runtime.sendMessage({
+                command: 'startDownload', url: m.url, kind: m.kind, name: safeName(nameInput.value),
+                subtitles: selectedSubtitles(), streamSubtitles: streamSubtitlesEl.checked
+            })
         }
         li.appendChild(btn)
         listEl.appendChild(li)

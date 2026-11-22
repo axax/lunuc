@@ -123,7 +123,68 @@ async function saveParts(ctx, parts, filename, mime) {
     }
 }
 
-function finish(ctx, files) {
+// ---------- Untertitel ----------
+// WebVTT-Teilstücke zu einer Datei zusammenführen (Kopfzeilen weg, doppelte Cues an Segmentgrenzen weg)
+function mergeVtt(texts) {
+    const seen = new Set()
+    const cues = []
+    for (const text of texts) {
+        for (const block of text.replace(/^\uFEFF/, '').replace(/\r/g, '').split(/\n{2,}/)) {
+            const lines = block.trim().split('\n')
+            const timing = lines.findIndex(l => l.includes('-->'))
+            if (timing < 0) continue // WEBVTT-Kopf, NOTE, STYLE, REGION
+            const cue = lines.slice(timing).join('\n')
+            if (!seen.has(cue)) {
+                seen.add(cue)
+                cues.push(cue)
+            }
+        }
+    }
+    return 'WEBVTT\n\n' + cues.join('\n\n') + '\n'
+}
+
+const decode = buffers => buffers.map(b => new TextDecoder('utf-8').decode(b))
+
+async function loadSubtitle(ctx, src) {
+    if (src.kind === 'hls') {
+        const {segments} = playlistSegments(await fetchText(src.url), src.url)
+        return {format: 'vtt', text: mergeVtt(decode(await fetchAll(ctx, segments, 'Untertitel')))}
+    }
+    if (src.kind === 'segments') {
+        return {format: 'vtt', text: mergeVtt(decode(await fetchAll(ctx, src.urls, 'Untertitel')))}
+    }
+    const text = await fetchText(src.url)
+    if (/^\uFEFF?\s*WEBVTT/.test(text)) return {format: 'vtt', text}
+    if (/\d+:\d+:\d+[,.]\d+\s*-->/.test(text)) return {format: 'srt', text}
+    throw new Error('Unbekanntes Untertitel-Format')
+}
+
+// Untertitel speichern; ein Fehler bei einem Untertitel bricht den Download nicht ab
+async function saveSubtitles(ctx, sources) {
+    const files = []
+    const used = {}
+    for (const src of sources) {
+        try {
+            const {format, text} = await loadSubtitle(ctx, src)
+            const lang = (src.lang || 'und').replace(/[^a-z0-9-]/gi, '')
+            used[lang] = (used[lang] || 0) + 1
+            const filename = `${ctx.name}.${lang}${used[lang] > 1 ? '.' + used[lang] : ''}.${format}`
+            files.push({...await saveParts(ctx, [text], filename, 'text/' + format), subtitle: true, lang: src.lang || ''})
+        } catch (e) {
+            if (signal().aborted) throw e
+            console.warn('Untertitel übersprungen', src.url, e.message)
+        }
+    }
+    return files
+}
+
+async function finish(ctx, files, streamSubtitles = []) {
+    if (signal().aborted) return
+    // separat gefundene Dateien + (falls gewünscht) Untertitel aus dem Stream, ohne Doppelte
+    const sources = [...(ctx.job.subtitles || []).map(s => ({...s, kind: 'file'})),
+        ...(ctx.job.streamSubtitles !== false ? streamSubtitles : [])]
+        .filter((s, i, all) => all.findIndex(o => o.url === s.url) === i)
+    if (sources.length) files = files.concat(await saveSubtitles(ctx, sources))
     if (signal().aborted) return
     send({command: 'jobFiles', id: ctx.job.id, files, name: ctx.name})
 }
@@ -149,7 +210,7 @@ async function runFile(ctx) {
         if (!item) throw new Error('Download nicht gefunden')
         if (item.state === 'interrupted') throw new Error('Download unterbrochen: ' + item.error)
         if (item.state === 'complete') {
-            finish(ctx, [{filename: item.filename.split(/[\\/]/).pop(), path: item.filename}])
+            await finish(ctx, [{filename: item.filename.split(/[\\/]/).pop(), path: item.filename}])
             return
         }
         const p = item.totalBytes > 0 ? item.bytesReceived / item.totalBytes : 0
@@ -167,7 +228,7 @@ function parseAttrs(line) {
 // Master-Playlist → beste Variante wählen (+ separate Audiospur, falls vorhanden)
 async function resolvePlaylists(url) {
     const text = await fetchText(url)
-    if (!text.includes('#EXT-X-STREAM-INF')) return {video: {url, text}, audio: null}
+    if (!text.includes('#EXT-X-STREAM-INF')) return {video: {url, text}, audio: null, subtitles: []}
 
     const lines = text.split(/\r?\n/)
     let best = null
@@ -178,23 +239,29 @@ async function resolvePlaylists(url) {
             let j = i + 1
             while (j < lines.length && (!lines[j].trim() || lines[j].startsWith('#'))) j++
             if (j < lines.length && (!best || bw > best.bw)) {
-                best = {bw, audioGroup: attrs.AUDIO, url: new URL(lines[j].trim(), url).href}
+                best = {bw, audioGroup: attrs.AUDIO, subtitleGroup: attrs.SUBTITLES, url: new URL(lines[j].trim(), url).href}
             }
         }
     }
     if (!best) throw new Error('Keine Variante in der Master-Playlist gefunden')
 
+    const media = lines.filter(l => l.startsWith('#EXT-X-MEDIA')).map(parseAttrs)
     let audioUrl = null
     if (best.audioGroup) {
-        const renditions = lines.filter(l => l.startsWith('#EXT-X-MEDIA')).map(parseAttrs)
-            .filter(a => a.TYPE === 'AUDIO' && a['GROUP-ID'] === best.audioGroup && a.URI)
+        const renditions = media.filter(a => a.TYPE === 'AUDIO' && a['GROUP-ID'] === best.audioGroup && a.URI)
         const pick = renditions.find(a => a.DEFAULT === 'YES') || renditions[0]
         if (pick) audioUrl = new URL(pick.URI, url).href
     }
 
+    // Untertitel-Spuren (alle Sprachen der zur Variante gehörenden Gruppe)
+    const subtitles = media
+        .filter(a => a.TYPE === 'SUBTITLES' && a.URI && (!best.subtitleGroup || a['GROUP-ID'] === best.subtitleGroup))
+        .map(a => ({kind: 'hls', url: new URL(a.URI, url).href, lang: (a.LANGUAGE || '').toLowerCase()}))
+
     return {
         video: {url: best.url, text: await fetchText(best.url)},
-        audio: audioUrl ? {url: audioUrl, text: await fetchText(audioUrl)} : null
+        audio: audioUrl ? {url: audioUrl, text: await fetchText(audioUrl)} : null,
+        subtitles
     }
 }
 
@@ -207,7 +274,7 @@ function checkPlaylist(text) {
     }
 }
 
-async function downloadMediaPlaylist(ctx, {url: playlistUrl, text}, label) {
+function playlistSegments(text, playlistUrl) {
     let initUrl = null
     const segments = []
     for (const line of text.split(/\r?\n/)) {
@@ -218,6 +285,11 @@ async function downloadMediaPlaylist(ctx, {url: playlistUrl, text}, label) {
             segments.push(new URL(l, playlistUrl).href)
         }
     }
+    return {initUrl, segments}
+}
+
+async function downloadMediaPlaylist(ctx, {url: playlistUrl, text}, label) {
+    const {initUrl, segments} = playlistSegments(text, playlistUrl)
     if (!segments.length) throw new Error('Keine Segmente gefunden')
 
     const parts = await fetchAll(ctx, segments, label)
@@ -226,7 +298,7 @@ async function downloadMediaPlaylist(ctx, {url: playlistUrl, text}, label) {
 }
 
 async function runHls(ctx) {
-    const {video, audio} = await resolvePlaylists(ctx.job.url)
+    const {video, audio, subtitles} = await resolvePlaylists(ctx.job.url)
     checkPlaylist(video.text)
     if (audio) checkPlaylist(audio.text)
 
@@ -237,7 +309,7 @@ async function runHls(ctx) {
         const a = await downloadMediaPlaylist(ctx, audio, 'Audio')
         files.push(await saveParts(ctx, a.parts, `${ctx.name}.audio.${a.fmp4 ? 'm4a' : 'ts'}`, a.fmp4 ? 'audio/mp4' : 'video/mp2t'))
     }
-    finish(ctx, files)
+    await finish(ctx, files, subtitles)
 }
 
 // ---------- DASH ----------
@@ -351,6 +423,25 @@ function pickBest(sets, type) {
     return best
 }
 
+// WebVTT-Textspuren einer MPD (eingebettete fMP4-Untertitel wvtt/stpp werden nicht unterstützt)
+function dashSubtitles(sets, period, base, periodDuration) {
+    const subs = []
+    for (const set of sets) {
+        const rep = child(set, 'Representation')
+        if (!rep) continue
+        const mime = rep.getAttribute('mimeType') || set.getAttribute('mimeType') || ''
+        if (mime !== 'text/vtt') continue
+        try {
+            const {init, urls} = representationSegments(rep, set, period, base, periodDuration)
+            if (init || !urls.length) continue
+            subs.push({kind: urls.length > 1 ? 'segments' : 'file', url: urls[0], urls, lang: (set.getAttribute('lang') || '').toLowerCase()})
+        } catch (e) {
+            console.warn('Untertitel', e)
+        }
+    }
+    return subs
+}
+
 async function runDash(ctx) {
     const xml = await fetchText(ctx.job.url)
     const doc = new DOMParser().parseFromString(xml, 'application/xml')
@@ -383,5 +474,5 @@ async function runDash(ctx) {
         if (init) parts.unshift(await fetchBuffer(init))
         files.push(await saveParts(ctx, parts, ctx.name + t.suffix, t.mime))
     }
-    finish(ctx, files)
+    await finish(ctx, files, dashSubtitles(sets, period, base, periodDuration))
 }

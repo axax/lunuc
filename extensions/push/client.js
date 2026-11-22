@@ -30,10 +30,14 @@ const initPushClient = () => {
     navigator.serviceWorker.addEventListener('message', (event) => {
         const data = event.data
         if (data && data.type === 'lunuc-push-navigate' && typeof data.url === 'string' && data.url[0] === '/' && data.url[1] !== '/') {
-            if (_app_.history && _app_.history.push) {
-                _app_.history.push(data.url)
-            } else {
+            // the page shown may handle it itself (e.g. system/llm opens the chat): preventDefault()
+            const event = new CustomEvent('lunucpushnavigate', {detail: {url: data.url}, cancelable: true})
+            if (!window.dispatchEvent(event)) return
+            const target = new URL(data.url, location.origin)
+            if (target.pathname !== location.pathname || !_app_.history || !_app_.history.push) {
                 location.href = data.url
+            } else {
+                _app_.history.push(data.url)
             }
         }
     })

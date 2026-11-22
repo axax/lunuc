@@ -177,15 +177,33 @@ self.addEventListener('notificationclick', event => {
     const url = event.notification.data && event.notification.data.url
     event.waitUntil((async () => {
         const windows = await self.clients.matchAll({type: 'window', includeUncontrolled: true})
-        const client = windows.find(c => c.focused) || windows.find(c => 'focus' in c)
+        const target = url ? new URL(url, self.location.origin) : null
+        const pathOf = c => {
+            try {
+                return new URL(c.url).pathname
+            } catch (e) {
+                return ''
+            }
+        }
+        // a window that already shows the page of the notification first (several lunuc apps of the
+        // same origin share this service worker - another app must not be navigated client-side)
+        const client = (target && windows.find(c => pathOf(c) === target.pathname)) ||
+            windows.find(c => c.focused) || windows.find(c => 'focus' in c)
         if (client) {
             await client.focus().catch(() => {})
-            if (url) {
-                // handled by the page without a reload (extensions/push/client.js)
+            if (!target) return
+            if (pathOf(client) === target.pathname) {
+                // same page: handled without a reload (extensions/push/client.js)
                 client.postMessage({type: 'lunuc-push-navigate', url})
+            } else if (client.navigate) {
+                // another page: loaded completely (a client-side switch from another app showed
+                // "page does not exist")
+                await client.navigate(target.href).catch(() => self.clients.openWindow && self.clients.openWindow(target.href))
+            } else if (self.clients.openWindow) {
+                await self.clients.openWindow(target.href)
             }
-        } else if (url && self.clients.openWindow) {
-            await self.clients.openWindow(url)
+        } else if (target && self.clients.openWindow) {
+            await self.clients.openWindow(target.href)
         }
     })())
 })
