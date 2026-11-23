@@ -769,7 +769,7 @@ const startListening = async (db, context) => {
                     mailAccountFolder: folder._id,
                     flags: flags ? flags.filter(f=>!!f): [],
                     data
-                }, {context}, false)
+                }, {context}, {skipCheck: true, publish: false})
 
                 this.notifier.addEntries(
                     session,

@@ -358,7 +358,7 @@ const startListening = async (db, context) => {
                                     mailAccountFolder: inbox._id,
                                     data,
                                     spamScore
-                                }, {context}, false)
+                                }, {context}, {skipCheck: true, publish: false})
 
                                 const contentType = data.headers.get('content-type') || {}
 

@@ -4,6 +4,123 @@ import {findProjection} from '../../util/project.mjs'
 import {getGenericTypeDefinitionWithStructure} from './util/index.mjs'
 import {narrowLookupProjection} from './narrowLookupProjection.mjs'
 import {markBatchableLookup} from '../../api/resolver/generic/lookupBatching.mjs'
+import Util from '../../api/util/index.mjs'
+import {CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
+import {ObjectId} from 'mongodb'
+
+/**
+ * Who is reading - decides what a lookup with publicProjection returns.
+ * The beforeTypeLoaded hook puts a lazy getter into otherOptions.getLookupViewer:
+ * the viewer is only determined when a field with publicProjection is looked up.
+ */
+export const createLookupViewer = async (db, context) => ({
+    canSeeAll: await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS),
+    ids: await Util.userAndJuniorIds(db, context?.id),
+    groups: (context?.group || []).map(g => new ObjectId(g))
+})
+
+/**
+ * Builds an aggregation expression that keeps only the given paths of `base`
+ * (like a $project, but usable inside $cond). Arrays are mapped element by element,
+ * e.g. 'meta.addresses.firstname' keeps the first names of all addresses.
+ */
+const projectPathsExpr = (paths, base = '$$ROOT', depth = 0) => {
+    const tree = {}
+    paths.forEach(path => {
+        let node = tree
+        const parts = path.split('.')
+        parts.forEach((part, i) => {
+            if (i === parts.length - 1) {
+                node[part] = true
+            } else if (node[part] !== true) {
+                node = node[part] = node[part] || {}
+            }
+        })
+    })
+    const build = (node, ref, level) => {
+        const obj = {}
+        Object.keys(node).forEach(key => {
+            const value = `${ref}.${key}`
+            if (node[key] === true) {
+                obj[key] = value
+            } else {
+                const v = `e${level}`
+                obj[key] = {
+                    $cond: [{$isArray: value},
+                        {$map: {input: value, as: v, in: build(node[key], `$$${v}`, level + 1)}},
+                        {$cond: [{$eq: [{$type: value}, 'object']}, build(node[key], value, level + 1), '$$REMOVE']}]
+                }
+            }
+        })
+        return obj
+    }
+    return build(tree, base === '$$ROOT' ? '$$ROOT' : base, depth)
+}
+
+/**
+ * Referenced entries (e.g. users of a public list) are looked up without the access rules of their
+ * type. With `publicProjection` on the field, a reader without manage_other_users gets the full
+ * row (within `projection`) only for entries that belong to him, his juniors or one of his groups
+ * (type User: the user himself / his groups, other types: createdBy / ownerGroup).
+ * For all other entries only the paths of `publicProjection` (plus _id).
+ * Runs before the $project of the whitelist, so the owner and group fields are still there.
+ */
+/**
+ * Paths without collisions for a $project ('meta' and 'meta.hideName' together are an error:
+ * the parent path wins).
+ */
+const normalizePaths = (paths) => {
+    const unique = [...new Set(paths.filter(p => p && typeof p === 'string'))]
+    return unique.filter(p => !unique.some(other => other !== p && p.startsWith(other + '.')))
+}
+
+/**
+ * The stages a lookup with publicProjection needs for this viewer (empty: no restriction).
+ * - viewer without login (no own ids, no groups): nothing can belong to him, a plain $project
+ *   of the public paths is enough (no expression per row)
+ * - logged in: the rows are first narrowed to the fields that are needed at all, then
+ *   the per row decision (own / group -> full row, otherwise the public paths)
+ */
+const publicProjectionStages = (field, viewer, $projectParent) => {
+    if (!viewer || viewer.canSeeAll) {
+        return []
+    }
+    const publicPaths = normalizePaths(['_id', ...field.publicProjection])
+    if (viewer.ids.length === 0 && viewer.groups.length === 0) {
+        const $project = {}
+        publicPaths.forEach(p => $project[p] = 1)
+        return [{$project}]
+    }
+    const stages = []
+    if (field.projection) {
+        const isUser = field.type === 'User'
+        const needed = normalizePaths(['_id', ...Object.keys($projectParent), ...field.publicProjection,
+            isUser ? 'group' : 'createdBy', isUser ? '_id' : 'ownerGroup'])
+        const $project = {}
+        needed.forEach(p => $project[p] = 1)
+        stages.push({$project})
+    }
+    stages.push(publicProjectionStage(field, viewer))
+    return stages
+}
+
+const publicProjectionStage = (field, viewer) => {
+    const isUser = field.type === 'User'
+    const ownerField = isUser ? '$_id' : '$createdBy'
+    const groupField = isUser ? '$group' : '$ownerGroup'
+    const allowed = {
+        $or: [
+            {$in: [ownerField, viewer.ids]},
+            {$gt: [{$size: {$setIntersection: [{$cond: [{$isArray: groupField}, groupField, []]}, viewer.groups]}}, 0]}
+        ]
+    }
+    const paths = ['_id', ...field.publicProjection.filter(p => p && p !== '_id')]
+    return {
+        $replaceRoot: {
+            newRoot: {$cond: [allowed, '$$ROOT', projectPathsExpr(paths)]}
+        }
+    }
+}
 
 /**
  * Element of the lookup result `rows` whose _id equals ids[i], or MISSING if
@@ -33,7 +150,7 @@ export async function addGenericTypeLookup(field, otherOptions, projection, db, 
         await addGenericTypeLookupForGenericType(field, otherOptions, projection, db, key)
 
     } else if (field.lookup && field.type) {
-        addGenericTypeLookupForType(field, otherOptions, projection)
+        await addGenericTypeLookupForType(field, otherOptions, projection)
 
     } else if (field.uitype === 'wrapper' && field.subFields) {
         addGenericTypeLookupForWrapperFields(field, otherOptions, projection)
@@ -140,7 +257,7 @@ function addGenericTypeLookupForWrapperFields(field, otherOptions, projection) {
     }
 }
 
-function addGenericTypeLookupForType(field, otherOptions, projection) {
+async function addGenericTypeLookupForType(field, otherOptions, projection) {
 
     //check if lookup is needed at all
     let {lookupIsNeeded, fieldProjection} = checkIfLookupIsNeededOrMapId(field, projection)
@@ -180,6 +297,9 @@ function addGenericTypeLookupForType(field, otherOptions, projection) {
     // may add reference fields to $projectParent so the raw ids survive the parent $project.
     const nestedStages = buildNestedLookupStages(field.type, fieldProjection && fieldProjection.data, $projectParent)
 
+    if (Array.isArray(field.publicProjection) && otherOptions.getLookupViewer) {
+        pipeline.push(...publicProjectionStages(field, await otherOptions.getLookupViewer(), $projectParent))
+    }
     if (field.projection) {
         pipeline.push({$project: $projectParent})
     }
@@ -311,7 +431,8 @@ async function addGenericTypeLookupForGenericType(field, otherOptions, projectio
                 if (subField.genericType) {
                     await addGenericTypeLookup(subField, {
                         lookups: subLookup,
-                        lookupLevel: otherOptions.lookupLevel - 1
+                        lookupLevel: otherOptions.lookupLevel - 1,
+                        getLookupViewer: otherOptions.getLookupViewer
                     }, fieldProjection.data, db)
                 }
             }

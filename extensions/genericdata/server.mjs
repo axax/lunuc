@@ -8,7 +8,7 @@ import Util from '../../api/util/index.mjs'
 import {ObjectId} from 'mongodb'
 import {matchExpr, parseOrElse} from '../../client/util/json.mjs'
 import {getGenericTypeDefinitionWithStructure} from './util/index.mjs'
-import {addGenericTypeLookup, postLookupResult} from './addGenericTypeLookup.mjs'
+import {addGenericTypeLookup, postLookupResult, createLookupViewer} from './addGenericTypeLookup.mjs'
 import ClientUtil from '../../client/util/index.mjs'
 import {resolveDynamicFieldQuery} from '../../api/resolver/generic/postQueryConverter.mjs'
 import {schema as fieldTemplatesSchema, resolver as fieldTemplatesResolver} from './fieldTemplates.mjs'
@@ -284,6 +284,12 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
 
                 match.definition = {$eq: new ObjectId(def._id)}
                 if (struct.fields) {
+                    // reader for lookups with publicProjection (see addGenericTypeLookup),
+                    // determined only when such a lookup needs it, at most once per query
+                    if (!otherOptions.getLookupViewer) {
+                        let viewerPromise
+                        otherOptions.getLookupViewer = () => viewerPromise || (viewerPromise = createLookupViewer(db, context))
+                    }
 
                     for (let i = 0; i < struct.fields.length; i++) {
                         const field = struct.fields[i]

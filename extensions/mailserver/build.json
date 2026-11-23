@@ -87,7 +87,7 @@
       "name": "MailAccountFolder",
       "entryClonable": true,
       "access": {
-        "create": "anonymous"
+        "create": "manage_other_users"
       },
       "fields": [
         {
@@ -149,7 +149,7 @@
       "name": "MailAccountMessage",
       "backupEssential": false,
       "access": {
-        "create": "anonymous"
+        "create": "manage_other_users"
       },
       "fields": [
         {

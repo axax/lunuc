@@ -297,7 +297,12 @@ const GenericResolver = {
         let cacheKey = null
 
         if (cacheOpts && !isNaN(cacheOpts.cacheTime) && cacheOpts.cacheTime > 0) {
-            cacheKey = cacheOpts.cacheKey ?? (
+            // a fixed key (e.g. "PokerheldenTurnierStats" in a dataResolver) is shared by all readers, but
+            // results can depend on the reader (access rules, restricted user lookups): separate entries
+            // for users with manage_other_users, each logged in user and visitors without login
+            cacheKey = (cacheOpts.cacheKey !== undefined && cacheOpts.cacheKey !== null)
+                ? cacheOpts.cacheKey + (userCanManageOtherUsers ? '#all' : context.id ? '#u' + context.id : '#guest')
+                : (
                 collectionName
                 + (context.id || '')
                 + (Object.keys(match).length > 0 ? JSON.stringify(match) : '')
@@ -584,7 +589,8 @@ const GenericResolver = {
         let userContext = context
 
         if (typeDefinition && typeDefinition.access && typeDefinition.access.create) {
-            if (await Util.userHasCapability(db, context, typeDefinition.access.create)) {
+            // skipCheck (server side code only, e.g. the SMTP/IMAP server) also skips the role check of the type
+            if (skipCheck || await Util.userHasCapability(db, context, typeDefinition.access.create)) {
                 userContext = await Util.userOrAnonymousContext(db, context)
             }else {
                 throw new Error('Benutzerrole ist nicht befähigt zum Erstellen von neuen Einträgen')

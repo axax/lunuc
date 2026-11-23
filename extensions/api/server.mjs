@@ -368,30 +368,107 @@ const findApiToken = async (db, api, token) => {
     return result
 }
 
-// Access log for api tokens with scopes.accessLog = true (fire and forget, never blocks the response).
-// The token itself is never logged (it is sent in the Authorization header, not in the url).
-const logTokenAccess = ({db, req, slug, token, status, startTime}) => {
-    const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress
+// Access log (fire and forget, never blocks the response). Written to the Log collection
+// (location 'api-access', meta.apiId), one entry per request when it is finished or aborted.
+// Enabled per api (field accessLog), per token (scopes.accessLog) and always for rate limited token requests.
+// Secrets (token, password) are never logged - only the token name and the basic auth user.
+const getClientIp = (req) => {
+    const forwarded = req.headers['x-forwarded-for']
+    return (forwarded ? String(forwarded).split(',')[0].trim() : '') || req.socket?.remoteAddress
+}
+
+const logApiAccess = ({db, req, res, api, slug, startTime}) => {
+    const access = req.apiAccess || {}
+    const ctx = req.context || {}
+    const status = res.writableFinished ? res.statusCode : 499 // 499: client closed the connection before the response was complete
+    const who = ctx.username || (access.token && `token:${access.token.name}`) || (access.basicAuthUser && `basic:${access.basicAuthUser}`) || 'anonymous'
     GenericResolver.createEntity(db, {context: {lang: 'en'}}, 'Log', {
         location: 'api-access',
         type: 'apiAccess',
-        message: `${req.method} /${slug} ${status} (${token.name})`,
+        message: `${req.method} /${slug} ${status} (${who})`,
         meta: {
-            token: token.name,
-            tokenId: token._id.toString(),
+            apiId: api._id.toString(),
+            api: api.name,
+            slug,
             method: req.method,
             url: req.originalUrl || req.url,
             status,
-            ip,
+            auth: access.auth || (ctx.id ? 'session' : 'none'),
+            ...(ctx.id ? {userId: ctx.id, username: ctx.username} : {}),
+            ...(access.token ? {token: access.token.name, tokenId: access.token._id.toString()} : {}),
+            ...(access.basicAuthUser ? {basicAuthUser: access.basicAuthUser} : {}),
+            ip: getClientIp(req),
             userAgent: req.headers['user-agent'],
+            referer: req.headers['referer'],
             durationMs: new Date().getTime() - startTime,
             ...(req.apiAccessInfo ? {info: req.apiAccessInfo} : {})
         }
     }, {skipCheck: true}).catch(e => console.warn('[API] access log failed', e.message))
 }
 
+// registers the access log for this request (only once, even if several conditions enable it)
+const enableAccessLog = ({db, req, res, api, slug, startTime}) => {
+    if (req._apiAccessLogEnabled) {
+        return
+    }
+    req._apiAccessLogEnabled = true
+    res.once('close', () => logApiAccess({db, req, res, api, slug, startTime}))
+}
+
+// Usage statistics (accessCount, lastAccessAt) of Api and ApiToken - always on, for every api.
+// A request only increments a counter in memory (no db access, no hook, no cache clearing);
+// the counters are written in one bulkWrite per collection every USAGE_FLUSH_INTERVAL_MS and on shutdown.
+// $inc / $max: correct with several server instances and when two flushes overlap.
+// Written directly to the collection (no typeUpdated_Api hook), so the api caches are not cleared.
+const USAGE_FLUSH_INTERVAL_MS = 30000
+const usageStats = {Api: new Map(), ApiToken: new Map()}
+let usageDb = null
+
+const trackUsage = (collection, id, now) => {
+    const map = usageStats[collection]
+    const key = String(id)
+    const entry = map.get(key)
+    if (entry) {
+        entry.count++
+        entry.last = now
+    } else {
+        map.set(key, {_id: id, count: 1, last: now})
+    }
+}
+
+const flushUsage = async () => {
+    if (!usageDb) {
+        return
+    }
+    await Promise.all(Object.keys(usageStats).map(async collection => {
+        const map = usageStats[collection]
+        if (map.size === 0) {
+            return
+        }
+        // swap the map first: requests during the write go into the next flush
+        const entries = [...map.values()]
+        map.clear()
+        try {
+            await usageDb.collection(collection).bulkWrite(entries.map(e => ({
+                updateOne: {
+                    filter: {_id: e._id},
+                    update: {$inc: {accessCount: e.count}, $max: {lastAccessAt: e.last}}
+                }
+            })), {ordered: false})
+        } catch (e) {
+            console.warn(`[API] usage stats flush failed (${collection})`, e.message)
+        }
+    }))
+}
+
+Hook.on('appexit', flushUsage)
+
 // Hook when db is ready
 Hook.on('appready', ({app, db}) => {
+
+    usageDb = db
+    // unref: the timer never keeps the process alive
+    setInterval(flushUsage, USAGE_FLUSH_INTERVAL_MS).unref()
 
     const API_PREFIXES = config.API_PREFIX?(Array.isArray(config.API_PREFIX)? config.API_PREFIX : [config.API_PREFIX]):[]
 
@@ -416,6 +493,11 @@ Hook.on('appready', ({app, db}) => {
                     res.end(JSON.stringify({status: 'notfound', message: `Api for '${slug}' not found`}))
                 } else {
 
+                    req.apiAccess = {}
+                    if (api.accessLog) {
+                        enableAccessLog({db, req, res, api, slug, startTime})
+                    }
+
                     if(api.workerThread && isTemporarilyBlocked({requestTimeInMs: 5000, requestPerTime: 10,requestBlockForInMs:30000, key:'apiScript-' + api._id})){
                         console.warn(`[API] BLOCKED (rate limit): ${slug}`)
                         res.writeHead(503, {'content-type': 'application/json'})
@@ -423,9 +505,13 @@ Hook.on('appready', ({app, db}) => {
                         return
                     }
 
-                    if(api.basicAuth && !await checkBasicAuth(req, res, {id: api._id, login:api.baUser, password: api.baPassword})) {
-                        console.debug(`[API] basicAuth rejected: ${slug}`)
-                        return
+                    if(api.basicAuth) {
+                        req.apiAccess.auth = 'basic'
+                        if (!await checkBasicAuth(req, res, {id: api._id, login: api.baUser, password: api.baPassword})) {
+                            console.debug(`[API] basicAuth rejected: ${slug}`)
+                            return
+                        }
+                        req.apiAccess.basicAuthUser = api.baUser
                     }
 
                     if(api?.apiToken?.length>0){
@@ -437,6 +523,7 @@ Hook.on('appready', ({app, db}) => {
                             return res.status(401).json({ error: 'API Bearer Token missing' });
                         }
 
+                        req.apiAccess.auth = 'token'
                         const result = await findApiToken(db, api, token)
 
                         if (!result) {
@@ -445,6 +532,7 @@ Hook.on('appready', ({app, db}) => {
                                 // login token has an id. The user must still be valid as well.
                                 const context = await validateContextUser(db, decodeToken((token.indexOf('JWT')<0?'JWT ':'') + token))
                                 if(context.id){
+                                    req.apiAccess.auth = 'tokenFallback'
                                     req.context = {...req.context,...context}
                                 }else{
                                     console.log(`[API] token fallback invalid: ${slug}`)
@@ -459,6 +547,8 @@ Hook.on('appready', ({app, db}) => {
                             // e.g. to restrict what it may do with token.scopes
                             // scopes is copied: the token comes from the cache, a script must not change it for the following requests
                             req.apiToken = {_id: result._id, name: result.name, scopes: result.scopes ? structuredClone(result.scopes) : null}
+                            req.apiAccess.token = {_id: result._id, name: result.name}
+                            trackUsage('ApiToken', result._id, startTime)
 
                             const scopes = result.scopes && result.scopes.constructor === Object ? result.scopes : null
                             if (scopes && scopes.rateLimit && isTemporarilyBlocked({
@@ -467,12 +557,12 @@ Hook.on('appready', ({app, db}) => {
                                 requestBlockForInMs: (scopes.rateLimit.blockSeconds || scopes.rateLimit.perSeconds || 60) * 1000,
                                 key: 'apiToken-' + result._id})) {
                                 console.warn(`[API] BLOCKED (token rate limit): ${slug} | token=${result.name}`)
-                                logTokenAccess({db, req, slug, token: result, status: 429, startTime})
+                                enableAccessLog({db, req, res, api, slug, startTime})
                                 res.set('Retry-After', String(scopes.rateLimit.blockSeconds || scopes.rateLimit.perSeconds || 60))
                                 return res.status(429).json({error: 'Too many requests. Please try again later.'})
                             }
                             if (scopes && scopes.accessLog) {
-                                res.on('finish', () => logTokenAccess({db, req, slug, token: result, status: res.statusCode, startTime}))
+                                enableAccessLog({db, req, res, api, slug, startTime})
                             }
 
                             if(result.userContext !== null && result.userContext !== undefined){
@@ -484,6 +574,8 @@ Hook.on('appready', ({app, db}) => {
                             }
                         }
                     }
+
+                    trackUsage('Api', api._id, startTime)
 
                     console.debug(`[API] runApiScript start: ${slug} (${new Date().getTime()-startTime}ms)`)
                     const result = await runApiScript({api, slug, db, req, res, startTime})
