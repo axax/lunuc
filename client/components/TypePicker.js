@@ -30,7 +30,7 @@ import Util from '../util/index.mjs'
 import {csv2json} from 'util/csv.mjs'
 import Hook from '../../util/hook.cjs'
 import GenericForm from './GenericForm'
-import {openWindow} from '../util/window'
+import {openWindow, openTab} from '../util/window'
 import {projectionToQueryString} from '../../util/project.mjs'
 import styled from '@emotion/styled'
 import {_t} from '../../util/i18n.mjs'
@@ -506,7 +506,7 @@ class TypePicker extends React.Component {
                                 <StyledMetaImageThumb src={getImageSrc(singleValue, 'thumbnail')} alt=""
                                                       draggable={false}
                                                       onClick={() => {
-                                                          window.open(getImageSrc(singleValue, 'full'), '_blank').focus()
+                                                          openTab(getImageSrc(singleValue, 'full'))
                                                       }}/>
                                 <StyledMetaImageBody>
                                     <StyledMetaImageName>{typeDataToLabel(singleValue, pickerField, this.refreshLabels)}</StyledMetaImageName>
@@ -537,7 +537,7 @@ class TypePicker extends React.Component {
                                 {value.length > 1 && <StyledImageTileIndex>{singleValueIndex + 1}</StyledImageTileIndex>}
                                 <StyledImageTileActions className="tile-actions">
                                     <IconButton size="small" onClick={() => {
-                                        window.open(getImageSrc(singleValue, 'full'), '_blank').focus()
+                                        openTab(getImageSrc(singleValue, 'full'))
                                     }}>
                                         <LaunchIcon/>
                                     </IconButton>
@@ -574,7 +574,7 @@ class TypePicker extends React.Component {
 
                                 <StyledDummyButton sx={{left:'40px'}} edge="end"
                                             onClick={() => {
-                                                window.open(getImageSrc(singleValue,'full'), '_blank').focus()
+                                                openTab(getImageSrc(singleValue,'full'))
                                             }}>
                                     <LaunchIcon/>
                                 </StyledDummyButton>
@@ -651,7 +651,7 @@ class TypePicker extends React.Component {
                                                       onDelete={!readOnly && this.handleRemovePick.bind(this, singleValueIndex)}
                                                       onClick={() => {
                                                           if (singleValue.type === 'Media' || singleValue.__typename === 'Media') {
-                                                              window.open(getImageSrc(singleValue,'full'), '_blank').focus()
+                                                              openTab(getImageSrc(singleValue,'full'))
                                                           } else {
                                                               openTypeWindow(singleValue)
                                                           }

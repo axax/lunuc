@@ -22,7 +22,9 @@ import {generatePassword} from '../../util/password.mjs'
 import {
     addInvalidLoginAttempt,
     clearInvalidLoginAttempt,
-    hasTooManyInvalidLoginAttempts
+    hasTooManyInvalidLoginAttempts,
+    ipBlockKey,
+    USERNAME_LOCKOUT_OPTIONS
 } from '../util/loginBlocker.mjs'
 import HookAsync from '../../util/hookAsync.mjs'
 import {parseOrElse} from '../../client/util/json.mjs'
@@ -381,12 +383,18 @@ export const userResolver = (db) => ({
         login: async ({username, password, domain, meta}, req) => {
             const {context} = req
             const ip = clientAddress(req)
+            // per IP (IPv6 per /64) and per username - the second key catches guessing
+            // that rotates the source IP (see loginBlocker.mjs)
+            const ipKey = ipBlockKey(ip)
+            const userKey = `login:${domain || ''}:${String(username || '').toLowerCase()}`
 
-            if(hasTooManyInvalidLoginAttempts(ip)){
+            if(hasTooManyInvalidLoginAttempts(ipKey) || hasTooManyInvalidLoginAttempts(userKey, USERNAME_LOCKOUT_OPTIONS)){
                 return {error: _t('core.login.blocked.temporarily', context.lang), token: null, user: null}
             }
 
             const result = await auth.createToken({username, password, domain, db, context})
+            const knownUser = result.knownUser
+            delete result.knownUser
 
             /*if(!result.token && domain) {
                 //try without domain
@@ -397,14 +405,19 @@ export const userResolver = (db) => ({
 
             if (!result.token) {
 
-                addInvalidLoginAttempt(ip)
+                addInvalidLoginAttempt(ipKey)
+                // only existing accounts - unknown usernames would just fill the map
+                if (knownUser) {
+                    addInvalidLoginAttempt(userKey)
+                }
 
                 console.log(`Invalid login attempt from ${username}`)
                 Hook.call('invalidLogin', {context, db, username, domain, ip})
 
                 //invalid login
             } else {
-                clearInvalidLoginAttempt(ip)
+                clearInvalidLoginAttempt(ipKey)
+                clearInvalidLoginAttempt(userKey)
 
                 if (USE_COOKIES && !metaObj.oauth) {
                     setAuthCookies(result, req, req.res)

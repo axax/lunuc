@@ -328,18 +328,20 @@ class LoginContainer extends React.Component {
                                type="text"
                                name="domain"/>:''}
 
-                    <div style={{display:'flex',justifyContent: 'space-between'}}>
+                    <SimpleButton variant="contained" color="primary"
+                                  fullWidth
+                                  disableElevation
+                                  showProgress={loading}
+                                  type="submit"
+                                  sx={{mt: 1}}
+                                  onClick={this.login.bind(this)}>Login</SimpleButton>
 
-                        <SimpleButton onClick={()=>{
-                            this.setState({forgotPassword:true})
-
-                        }}>{_t('Login.forgotPassword')}</SimpleButton>
-
-                        <SimpleButton variant="contained" color="primary"
-                                      showProgress={loading}
-                                      type="submit"
-                                      onClick={this.login.bind(this)}>Login</SimpleButton>
-
+                    <div style={{textAlign: 'center', marginTop: '1rem'}}>
+                        <SimpleButton size="small"
+                                      sx={{color: 'text.secondary', '&:hover': {color: 'text.primary', background: 'transparent'}}}
+                                      onClick={()=>{
+                                          this.setState({forgotPassword:true})
+                                      }}>{_t('Login.forgotPassword')}</SimpleButton>
                     </div>
                     {showSignupLink && <Typography>Don&apos;t have an account? <Link
                         to={signupLink || config.ADMIN_BASE_URL + '/signup'}>Sign

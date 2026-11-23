@@ -98,7 +98,10 @@ const RISKY_EXT = /\.(html?|shtml|xhtml|svg|js|vbs|hta|lnk|scr|exe|iso|img|vhdx?
 // attachment announced in the text ("Im Anhang finden Sie ...")
 const ANNOUNCED_ATTACHMENT = /(im anhang|anbei|beiliegend|in der beilage|in der anlage|angehaengt|attached (is|you will find|please find)|please find attached|see attached|en piece jointe|in bijlage|in allegato)/i
 const RISKY_TYPE = /^(text\/html|application\/xhtml\+xml|image\/svg\+xml)/i
-const INVOICE = /(rechnung|invoice|factuur|facture|fattura|zahlung|mahnung|payment)/i
+// (?<!be): "Berechnung" is no invoice
+const INVOICE = /((?<!be)rechnung|invoice|factuur|facture|fattura|zahlung|mahnung|payment)/i
+// file names in link text ("cv.pdf") are not domains
+const FILE_EXT = /\.(pdf|docx?|xlsx?|pptx?|odt|ods|rtf|txt|csv|jpe?g|png|gif|webp)$/i
 const SCRIPT_IN_ATTACHMENT = /<script[^>]+src\s*=\s*["']?https?:|\beval\s*\(|\batob\s*\(|window\.location|document\.write\s*\(|location\.(href|replace)\s*=/i
 
 const rootDomainsRelated = (a, b) => {
@@ -270,7 +273,7 @@ export const structuralScore = ({text = '', sender, html, attachments, messageId
             // resolve click-tracking redirects to the real destination
             const target = unwrapTrackingHost(m[1], w.trackingDomains) || host
             const shown = m[3].replace(/<[^>]+>/g, '').match(/[a-z0-9._-]{1,253}\.[a-z]{2,24}/i)
-            if (shown) {
+            if (shown && !FILE_EXT.test(shown[0])) {
                 const shownDomain = shown[0].toLowerCase().split('@').pop().replace(/^www\./, '')
                 if (!rootDomainsRelated(shownDomain, host) && !rootDomainsRelated(shownDomain, target)) {
                     add(w.linkMismatch, `link text "${shownDomain}" points to "${target}"${target !== host ? ` (via ${host})` : ''}`)

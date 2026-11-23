@@ -95,6 +95,7 @@ import {
 } from '../components/jsondomhelper/JsonDomStyledElements'
 import {deepMergeOptional} from '../../../util/deepMerge.mjs'
 import {onExternalHistory} from '../util/editHistory.mjs'
+import {openTab} from '../../../client/util/window'
 
 const StyledBox = styled(Box)(({theme})=>({
     display: 'flex',
@@ -1217,8 +1218,7 @@ class CmsViewEditorContainer extends React.Component {
                     {
                         sideMenu.map(menu => {
                             return <MenuListItem onClick={e => {
-                                const win = window.open(menu.link, '_blank')
-                                win.focus()
+                                openTab(menu.link)
                             }} button primary={menu.label}/>
                         })
                     }
@@ -1779,14 +1779,14 @@ class CmsViewEditorContainer extends React.Component {
                     name: _t('CmsViewEditorContainer.preview'),
                     icon: <PreviewIcon/>,
                     onClick: () => {
-                        window.open(Util.baseUrl('',{...Util.extractQueryParams(),preview:true}), '_blank').focus();
+                        openTab(Util.baseUrl('',{...Util.extractQueryParams(),preview:true}))
                     }
                 },
                 {
                     name: _t('CmsViewEditorContainer.previewResponsive'),
                     icon: 'devices',
                     onClick: () => {
-                        window.open(`/system/responsive-viewer?url=${encodeURIComponent(Util.baseUrl('',{...Util.extractQueryParams(),preview:true}))}&preview=true`, '_blank').focus();
+                        openTab(`/system/responsive-viewer?url=${encodeURIComponent(Util.baseUrl('',{...Util.extractQueryParams(),preview:true}))}&preview=true`)
                     }
                 },
                 {
@@ -1796,7 +1796,7 @@ class CmsViewEditorContainer extends React.Component {
                         fetch(`/${Array.isArray(config.API_PREFIX)?config.API_PREFIX[0]:config.API_PREFIX}/s?url=${encodeURIComponent(location.href)}&name=${encodeURIComponent(_t(cmsPage.name))}`).then(response => response.json().then(
                             json=>{
                                 if(json.shortUrl){
-                                    window.open(`/core/qrcode?content=${location.origin}${encodeURIComponent(json.shortUrl)}&preview=true`, '_blank').focus();
+                                    openTab(`/core/qrcode?content=${location.origin}${encodeURIComponent(json.shortUrl)}&preview=true`)
                                 }else{
                                     alert(json.message)
                                 }

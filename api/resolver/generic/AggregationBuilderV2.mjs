@@ -1,3 +1,4 @@
+import {ObjectId} from 'mongodb'
 import Util from '../../util/index.mjs'
 import { getType } from '../../../util/types.mjs'
 import { getFormFieldsByType } from '../../../util/typesAdmin.mjs'
@@ -884,6 +885,11 @@ export default class AggregationBuilderV2 {
         }
 
 
+        // 2b. A free search term that is exactly an ObjectId (24 hex chars) also
+        //     matches the document _id. It is OR'ed into the term's slot, so the
+        //     other fields keep matching the term as text.
+        this._addObjectIdRestMatches(filters, match);
+
         // 3. Process residual queries ($$restQuery)
         if (match.$$restQuery?.length > 0) {
             const restPart = this._buildRestQuery(match.$$restQuery);
@@ -1090,6 +1096,24 @@ export default class AggregationBuilderV2 {
 
         await this.createFilterForField(fieldDefinition, match, { filters })
 
+    }
+
+    /**
+     * Helper: adds {_id: ObjectId} to the rest query slot of every free search
+     * term that is a 24-char hex ObjectId string.
+     */
+    _addObjectIdRestMatches(filters, match) {
+        const rest = filters?.rest
+        if (!rest?.length) return
+        for (let i = 0; i < rest.length; i++) {
+            const value = rest[i]?.value
+            if (typeof value !== 'string' || !/^[0-9a-fA-F]{24}$/.test(value)) continue
+            if (!match.$$restQuery) match.$$restQuery = []
+            if (!match.$$restQuery[i]) {
+                match.$$restQuery[i] = { $: [], operator: filters.operator }
+            }
+            match.$$restQuery[i].$.push({ _id: new ObjectId(value) })
+        }
     }
 
     /**

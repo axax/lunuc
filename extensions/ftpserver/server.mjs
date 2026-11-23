@@ -11,7 +11,8 @@ import {ensureDirectoryExistence} from '../../util/fileUtil.mjs'
 import {
     addInvalidLoginAttempt,
     clearInvalidLoginAttempt,
-    hasTooManyInvalidLoginAttempts
+    hasTooManyInvalidLoginAttempts,
+    USERNAME_LOCKOUT_OPTIONS
 } from '../../api/util/loginBlocker.mjs'
 import {_t} from '../../util/i18nServer.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
@@ -35,13 +36,9 @@ const ROOT_DIR = path.resolve()
 // trying the same known/guessed username (e.g. guessing LUNUC_SUPER_PASSWORD
 // against a fixed username from many different IPs, which the per-IP
 // lockout alone would not catch).
+// USERNAME_LOCKOUT_OPTIONS (shared with the web login) is deliberately more lenient
+// than the per-IP default, see loginBlocker.mjs
 const usernameKey = (username) => `ftpuser:${username}`
-// Deliberately more lenient than loginBlocker's per-IP default (10 / 180s):
-// more attempts allowed, and a longer window, so a legitimate user who
-// mistypes their password a few times isn't locked out by this secondary
-// check - the per-IP lockout above still catches fast brute-forcing from a
-// single source.
-const USERNAME_LOCKOUT_OPTIONS = {maxAttempts: 20, delayInSec: 900}
 
 const startFtpServer = async (db)=> {
 

@@ -210,7 +210,7 @@ export const translations = {
         'Login.username':'Benutzername',
         'Login.password':'Passwort',
         'Login.domain':'Domain',
-        'Login.subtitle':'Sie müssen sich anmelden um die Seite %pathname% zusehen',
+        'Login.subtitle':'Sie müssen sich anmelden um die Seite %pathname% zu sehen',
         'Login.changePasswordTitle': 'Wählen Sie ein neues Passwort',
         'Login.changePasswordSubtitle': 'Sie werden aufgefordert ein neues Passwort festzulegen. Es muss mindestens 8 Zeichen lang sein.',
         'Login.changePasswordButton': 'Passwort übernehmen',

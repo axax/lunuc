@@ -24,7 +24,9 @@ export const auth = {
             await db.collection('User').updateOne({_id: user._id}, {$set: {lastLogin: new Date().getTime()}})
             return await auth.signPayload(db, user)
         } else {
-            return {error: _t('core.login.invalid', context.lang), token: null, user: null}
+            // knownUser: the account exists, only the password was wrong - the login resolver
+            // counts per-username attempts only for existing accounts (never sent to the client)
+            return {error: _t('core.login.invalid', context.lang), token: null, user: null, knownUser: true}
         }
     },
     signPayload: async (db, user, payload) => {

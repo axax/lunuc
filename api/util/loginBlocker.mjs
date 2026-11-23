@@ -1,6 +1,33 @@
+import net from 'net'
+
 const LOGIN_ATTEMPTS_MAP = {},
     MAX_LOGIN_ATTEMPTS = 5,
     LOGIN_DELAY_IN_SEC = 180
+
+// Per-username lockout (second key next to the per-IP one): catches guessing that rotates
+// the source IP but keeps the same username. Deliberately more lenient than the per-IP
+// limit - whoever knows a username could otherwise lock its owner out with a few
+// failed logins. Used by the web login and the ftp server.
+export const USERNAME_LOCKOUT_OPTIONS = {maxAttempts: 20, delayInSec: 900}
+
+// Key for the per-IP counter. An IPv6 connection usually owns a whole /64 network
+// (2^64 addresses) - counted per address the limit would be useless there, so
+// IPv6 is counted per /64 prefix. IPv4 stays as it is.
+export const ipBlockKey = (ip) => {
+    if (!ip || !net.isIPv6(ip)) {
+        return ip
+    }
+    const [head, tail] = ip.split('%')[0].toLowerCase().split('::')
+    const headGroups = head ? head.split(':') : []
+    let groups = headGroups
+    if (tail !== undefined) {
+        const tailGroups = tail ? tail.split(':') : []
+        // an embedded IPv4 (::ffff:1.2.3.4) takes two groups
+        const tailLength = tailGroups.reduce((n, g) => n + (g.includes('.') ? 2 : 1), 0)
+        groups = [...headGroups, ...Array(Math.max(0, 8 - headGroups.length - tailLength)).fill('0'), ...tailGroups]
+    }
+    return groups.slice(0, 4).map(g => (parseInt(g, 16) || 0).toString(16)).join(':') + '::/64'
+}
 
 // Callers can override the threshold/window per call (e.g. a per-username
 // lockout that is deliberately more lenient than the default per-IP one -
@@ -18,7 +45,9 @@ const LOGIN_ATTEMPTS_MAP = {},
 // "ip:ftp" style keys). A periodic sweep removes stale entries regardless
 // of how many attempts they made, and a hard cap bounds worst-case memory
 // even between sweeps.
-const ENTRY_MAX_AGE_MS = LOGIN_DELAY_IN_SEC * 1000 * 2
+// must cover the longest block window in use (USERNAME_LOCKOUT_OPTIONS), otherwise the
+// sweep would lift a username block before it expires
+const ENTRY_MAX_AGE_MS = Math.max(LOGIN_DELAY_IN_SEC, USERNAME_LOCKOUT_OPTIONS.delayInSec) * 1000 * 2
 const SWEEP_INTERVAL_MS = 5 * 60 * 1000
 const MAX_TRACKED_KEYS = 50000
 

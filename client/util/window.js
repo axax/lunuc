@@ -9,3 +9,13 @@ export const openWindow = ({url, target})=>{
         'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left)
 
 }
+
+/* open a url in a new tab and focus it - window.open returns null when a popup blocker
+   (or an embedded browser) refuses the new window, so don't call focus() on null */
+export const openTab = (url) => {
+    const win = window.open(url, '_blank')
+    if (win) {
+        win.focus()
+    }
+    return win
+}
