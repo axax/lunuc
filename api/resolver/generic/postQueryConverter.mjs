@@ -145,7 +145,12 @@ export default async function (response, {typeName, db, graphqlInfo}){
                                 item[field.name] = JSON.stringify(item[field.name])
                             }
                         }else if(field.type==='String' || (!field.type && !field.enum && !field.localized)){
-                            if (item[field.name] && item[field.name].constructor !== String) {
+                            if (field.multi && Array.isArray(item[field.name])) {
+                                // multi field: the schema type is [String] - keep the array,
+                                // only entries that are not strings are converted
+                                item[field.name] = item[field.name].map(entry =>
+                                    entry === null || entry === undefined || entry.constructor === String ? entry : JSON.stringify(entry))
+                            } else if (item[field.name] && item[field.name].constructor !== String) {
                                 //console.log(`convert ${typeName}.${field.name} to string`)
                                 item[field.name] = JSON.stringify(item[field.name])
                             }
