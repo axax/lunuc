@@ -4,6 +4,11 @@
       "description": "",
       "name": "Media",
       "entryClonable": true,
+      "searchIndex": {
+        "title": ["name"],
+        "fields": ["name", "alt", "imageKeyword", "imageDescription", "imageText"],
+        "includeSearchable": true
+      },
       "onlyRequestedFields": true,
       "fields": [
         {

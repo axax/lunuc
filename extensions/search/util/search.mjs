@@ -4,7 +4,7 @@ import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 import {createMatchForCurrentUser, filterReadableIds} from '../../../api/util/dbquery.mjs'
 import {getGenericTypeDefinitionWithStructure} from '../../genericdata/util/index.mjs'
 import ClientUtil from '../../../client/util/index.mjs'
-import {SEARCH_COLLECTION, INDEXED_TYPES, DEFAULT_LANGUAGE, ANY_LANGUAGE, textLanguage} from './config.mjs'
+import {SEARCH_COLLECTION, getIndexedTypes, DEFAULT_LANGUAGE, ANY_LANGUAGE, textLanguage} from './config.mjs'
 import {MAX_WORD_LENGTH} from './extract.mjs'
 
 const MAX_LIMIT = 50
@@ -145,7 +145,7 @@ const adminUrl = (hit) => {
  *
  *  query     search terms
  *  lang      language of the query (default: DEFAULT_LANGUAGE), entries without language are always included
- *  types     subset of GenericData, CmsPage, Media
+ *  types     subset of the indexed types (types with searchIndex in build.json)
  *  genericTypes  only these GenericData types (names)
  *
  * Returns {total, results: [{type, genericType, _id, title, field, snippet, score, lang, url, adminUrl}]}
@@ -166,7 +166,8 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
         lang: {$in: [language, ANY_LANGUAGE]},
         ...viewerMatch(viewer)
     }
-    const typeList = (Array.isArray(types) && types.length > 0 ? types : INDEXED_TYPES).filter(t => INDEXED_TYPES.includes(t))
+    const indexedTypes = getIndexedTypes()
+    const typeList = (Array.isArray(types) && types.length > 0 ? types : indexedTypes).filter(t => indexedTypes.includes(t))
     filter.type = {$in: typeList}
     if (Array.isArray(genericTypes) && genericTypes.length > 0) {
         filter.$and = [{$or: [{type: {$ne: 'GenericData'}}, {genericType: {$in: genericTypes}}]}]

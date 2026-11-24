@@ -59,11 +59,11 @@ const textByLanguage = (value) => {
  *
  * @returns [{lang, language, title, text, words, parts: [{f, t}]}]
  */
-export const buildEntries = ({source, titleFields = [], fieldNames = [], maxTextLength = 20000}) => {
+export const buildEntries = ({source, titleFields = [], fieldNames = [], fieldPaths = {}, maxTextLength = 20000}) => {
     const perField = []
     const languages = new Set()
     for (const name of [...new Set([...titleFields, ...fieldNames])]) {
-        const byLang = textByLanguage(getPath(source, name))
+        const byLang = textByLanguage(getPath(source, fieldPaths[name] || name))
         if (Object.keys(byLang).length > 0) {
             perField.push({name, byLang})
             Object.keys(byLang).forEach(lang => lang !== ANY_LANGUAGE && languages.add(lang))

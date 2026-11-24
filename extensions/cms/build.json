@@ -7,6 +7,11 @@
       "entryClonable": true,
       "mutationResult": "CmsPage",
       "wildcardTextIndex": true,
+      "searchIndex": {
+        "title": ["name"],
+        "fields": ["name", "keyword", "description", "slug"],
+        "publicField": "public"
+      },
       "fields": [
         {
           "name": "slug",

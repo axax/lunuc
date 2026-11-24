@@ -2,7 +2,7 @@ import {ObjectId} from 'mongodb'
 import {createHash} from 'crypto'
 import {getType} from '../../../util/types.mjs'
 import {getGenericTypeDefinitionWithStructure} from '../../genericdata/util/index.mjs'
-import {SEARCH_COLLECTION, INDEXED_TYPES, getSettings} from './config.mjs'
+import {SEARCH_COLLECTION, isIndexedType, getIndexedTypes, coreTypeConfig, getSettings} from './config.mjs'
 import {buildEntries} from './extract.mjs'
 
 const toObjectId = (id) => {
@@ -18,37 +18,32 @@ const sha1 = (value) => createHash('sha1').update(JSON.stringify(value)).digest(
 // entries with this type store the state of a GenericDataDefinition (hash of what the index depends on)
 const DEFINITION_META_TYPE = '_definition'
 
-// which fields of a GenericData type are indexed - null: the type is not searchable
+// which entries and fields of a GenericData type are indexed - null: the type is not indexed
+// structure.searchIndex: missing / true = indexed (default), false = not indexed,
+// {"title": [...], "fields": [...]} = only these fields (title: weighted higher)
 const genericDataConfig = (definition) => {
     const structure = definition && definition.structure
     // types without access rules are not offered by any search (same rule as the search api)
-    if (!structure || !structure.access) {
+    if (!structure || !structure.access || structure.searchIndex === false) {
         return null
     }
+    const searchIndex = structure.searchIndex && structure.searchIndex.constructor === Object ? structure.searchIndex : {}
     // references (to other types or GenericData) and json objects contain no searchable text
     const isPlainField = f => f && f.name && !f.genericType && f.type !== 'Object' && !(f.type && getType(f.type))
-    let fieldNames = (structure.fields || []).filter(f => f.searchable && isPlainField(f)).map(f => f.name)
-    const titleFields = asArray(structure.pickerField || structure.searchFields || 'name')
-    if (fieldNames.length === 0) {
-        fieldNames = structure.searchFields ? asArray(structure.searchFields) : titleFields
+    const titleFields = searchIndex.title ? asArray(searchIndex.title) : asArray(structure.pickerField || structure.searchFields || 'name')
+    let fieldNames
+    if (searchIndex.fields) {
+        fieldNames = asArray(searchIndex.fields)
+    } else {
+        fieldNames = (structure.fields || []).filter(f => f.searchable && isPlainField(f)).map(f => f.name)
+        if (fieldNames.length === 0) {
+            fieldNames = structure.searchFields ? asArray(structure.searchFields) : titleFields
+        }
     }
     const read = structure.access.read
     // like GraphQL: entries of other users are only readable with force (for every user with the role)
     const readRoles = read && read.constructor === Object && read.force ? asArray(read.role || read.capability) : []
     return {titleFields, fieldNames, readRoles}
-}
-
-const coreTypeConfig = (type, settings) => {
-    const conf = settings.coreTypes && settings.coreTypes[type]
-    if (!conf) return null
-    let fieldNames = asArray(conf.fields)
-    if (conf.useSearchableFields) {
-        const typeDefinition = getType(type)
-        if (typeDefinition && typeDefinition.fields) {
-            fieldNames = [...fieldNames, ...typeDefinition.fields.filter(f => f.searchable).map(f => f.name)]
-        }
-    }
-    return {titleFields: asArray(conf.title), fieldNames, publicField: conf.publicField}
 }
 
 // only the fields the index needs are loaded (CmsPage e.g. without template, script and style)
@@ -58,9 +53,10 @@ const documentProjection = (type, settings) => {
     if (type === 'GenericData') {
         paths = [...BASE_FIELDS, 'definition', 'data']
     } else {
-        const conf = coreTypeConfig(type, settings)
+        const conf = coreTypeConfig(type)
         if (!conf) return undefined
-        paths = [...BASE_FIELDS, ...conf.titleFields, ...conf.fieldNames, ...(conf.publicField ? [conf.publicField] : [])]
+        const fieldPaths = conf.fieldPaths || {}
+        paths = [...BASE_FIELDS, ...[...conf.titleFields, ...conf.fieldNames].map(f => fieldPaths[f] || f), ...(conf.publicField ? [conf.publicField] : [])]
     }
     // a path inside another one (a and a.b) is not allowed in a projection - the shorter one is enough
     const unique = [...new Set(paths.map(String))].sort((a, b) => a.length - b.length)
@@ -93,7 +89,7 @@ const indexDocuments = async (db, type, docs, settings, now) => {
             genericType = def.name
             readRoles = conf.readRoles
         } else {
-            conf = coreTypeConfig(type, settings)
+            conf = coreTypeConfig(type)
             if (!conf) continue
             source = doc
             if (conf.publicField && doc[conf.publicField] === true) {
@@ -104,6 +100,7 @@ const indexDocuments = async (db, type, docs, settings, now) => {
             source,
             titleFields: conf.titleFields,
             fieldNames: conf.fieldNames,
+            fieldPaths: conf.fieldPaths,
             maxTextLength: settings.maxTextLength
         })
         for (const entry of entries) {
@@ -152,7 +149,7 @@ const indexDocuments = async (db, type, docs, settings, now) => {
  * Reindexes documents by id (deleted ones lose their entries).
  */
 export const reindexByIds = async (db, type, ids) => {
-    if (!INDEXED_TYPES.includes(type)) return 0
+    if (!isIndexedType(type)) return 0
     const objectIds = toObjectIds(ids)
     if (objectIds.length === 0) return 0
     const settings = await getSettings(db)
@@ -183,6 +180,7 @@ const definitionHash = (def) => {
         read: (structure.access && structure.access.read) || null,
         pickerField: structure.pickerField || null,
         searchFields: structure.searchFields || null,
+        searchIndex: structure.searchIndex === undefined ? true : structure.searchIndex,
         fields: (structure.fields || []).map(f => f && {name: f.name, searchable: !!f.searchable, type: f.type || null, genericType: f.genericType || null})
     })
 }
@@ -212,16 +210,16 @@ export const reindexDefinition = async (db, definitionId, {force = false} = {}) 
 
 /**
  * Builds the index for all (or only recently modified) documents.
- *  - types: subset of INDEXED_TYPES
+ *  - types: subset of the indexed types (default: all types with searchIndex)
  *  - since: only documents with modifiedAt >= since (incremental run)
  *  - removeStale: full run only - removes entries whose document no longer exists
  */
-export const rebuild = async (db, {types = INDEXED_TYPES, since, match = {}, removeStale = true, batchSize = 200, log = () => {}} = {}) => {
+export const rebuild = async (db, {types = getIndexedTypes(), since, match = {}, removeStale = true, batchSize = 200, log = () => {}} = {}) => {
     const settings = await getSettings(db)
     const start = Date.now()
     let total = 0
     for (const type of types) {
-        if (!INDEXED_TYPES.includes(type)) continue
+        if (!isIndexedType(type)) continue
         const query = {...match}
         if (since) query.modifiedAt = {$gte: since}
         const cursor = db.collection(type).find(query, {projection: documentProjection(type, settings)})
@@ -278,13 +276,13 @@ const addTo = (map, type, ids) => {
 }
 
 export const queueReindex = (db, type, ids) => {
-    if (!INDEXED_TYPES.includes(type)) return
+    if (!isIndexedType(type)) return
     addTo(queue, type, ids)
     scheduleFlush(db)
 }
 
 export const queueRemove = (db, type, ids) => {
-    if (!INDEXED_TYPES.includes(type)) return
+    if (!isIndexedType(type)) return
     addTo(deleteQueue, type, ids)
     scheduleFlush(db)
 }

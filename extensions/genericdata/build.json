@@ -30,6 +30,7 @@
     {
       "name": "GenericData",
       "entryClonable": true,
+      "searchIndex": true,
       "addMetaDataInQuery": true,
       "fields": [
         {
