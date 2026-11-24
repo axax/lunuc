@@ -1,0 +1,10 @@
+{
+  "name": "Search",
+  "description": "Full text search over GenericData, CmsPage and Media (collection SearchIndex, one entry per document and language)",
+  "author": "Simon Schärer",
+  "dependencies": [
+    "cms",
+    "genericdata",
+    "media"
+  ]
+}

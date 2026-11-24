@@ -87,6 +87,9 @@
     "log": {
       "active": true
     },
+    "search": {
+      "active": true
+    },
     "ftpserver": {
       "active": true
     },
