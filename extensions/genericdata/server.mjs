@@ -479,12 +479,21 @@ Hook.on(['typeUpdated_GenericData', 'typeCreated_GenericData'], async ({db, resu
 })
 
 Hook.on(['typeDeleted_GenericData'], async ({db, deletedDocuments}) => {
-    for (const deltedDoc of deletedDocuments) {
-        if (deltedDoc.definition) {
-            const def = await getGenericTypeDefinitionWithStructure(db, {id: deltedDoc.definition})
-            if (def) {
-                Cache.clearStartWith(def.name)
+    // one clearStartWith for all types (each call walks through the whole cache) -
+    // before: one call per deleted document, also for the same type again and again
+    const names = new Set()
+    try {
+        for (const deltedDoc of deletedDocuments) {
+            if (deltedDoc.definition) {
+                const def = await getGenericTypeDefinitionWithStructure(db, {id: deltedDoc.definition})
+                if (def) {
+                    names.add(def.name)
+                }
             }
+        }
+    } finally {
+        if (names.size > 0) {
+            Cache.clearStartWith([...names])
         }
     }
 })

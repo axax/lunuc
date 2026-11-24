@@ -649,9 +649,8 @@ Hook.on('appready', ({app, db}) => {
 Hook.on(['typeCreated_Api', 'typeUpdated_Api', 'typeCloned_Api', 'typeDeleted_Api'], () => {
     apiGeneration++
     compiledScripts.clear()
-    Cache.clearStartWith(CACHE_PREFIX)
-    Cache.clearStartWith(AUTH_CACHE_PREFIX)
-    Cache.clearStartWith(TOKEN_CACHE_PREFIX)
+    // one call: each clearStartWith walks through the whole cache
+    Cache.clearStartWith([CACHE_PREFIX, AUTH_CACHE_PREFIX, TOKEN_CACHE_PREFIX])
 })
 
 // Hook when an ApiToken is changed: e.g. a revoked or expired token is invalid immediately

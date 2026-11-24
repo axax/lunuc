@@ -165,13 +165,7 @@ import MaterialCardContent from '@mui/material/CardContent'
 export CardContent from '@mui/material/CardContent'
 export CardActions from '@mui/material/CardActions'
 
-export const Card = ({children, ...rest}) => {
-    return <MaterialCard {...rest}>
-        <MaterialCardContent>
-            {children}
-        </MaterialCardContent>
-    </MaterialCard>
-}
+export Card from './Card'
 
 // ExpansionPanel
 import MaterialExpansionPanel from '@mui/material/Accordion'

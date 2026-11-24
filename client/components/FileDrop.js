@@ -1,6 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import {CloudUploadIcon, Typography, LinearProgress} from 'ui/admin'
+// single components instead of the whole ui (also used on pages for visitors), see uiBase.js
+import './ui/impl/material/uiBase'
+import Typography from '@mui/material/Typography'
+import LinearProgress from '@mui/material/LinearProgress'
+import {CloudUploadIcon} from 'ui/admin/icons'
 import UploadUtil from 'client/util/upload'
 import {_t, registerTrs} from 'util/i18n.mjs'
 import config from 'gen/config-client'

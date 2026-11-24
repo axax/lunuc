@@ -77,7 +77,13 @@ export const comparatorMap = {
 // Set gives O(1) lookup instead of O(n) Array.indexOf
 const RANGE_COMPARATORS = new Set(['$gt', '$gte', '$lt', '$lte'])
 
+// A 24 hex char value is an ObjectId. Accents are meaningless there, but the
+// expansion would still turn every a/c/e into a character class
+// ("60486d12147[aáàâåãä]373...") and make the regex needlessly expensive.
+const OBJECT_ID_PATTERN = /^[0-9a-f]{24}$/i
+
 const makeAccentInsensitive = (str) => {
+    if (OBJECT_ID_PATTERN.test(str)) return str
     return str
         .replace(/ss|ß|ẞ/gi, '(?:ss|ß|ẞ)')
         .replace(/ae|ä/gi, '(?:ae|ä)')

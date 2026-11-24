@@ -56,10 +56,14 @@ Hook.on('index', ({db}) => {
 
 
 const backfillSearchFields = async (postCollection) => {
-    const cursor = postCollection.find({editor: 'lexical', body: {$exists: true, $ne: ''}}, {projection: {body: 1, editor: 1}})
+    const cursor = postCollection.find({editor: 'lexical', body: {$exists: true, $ne: ''}}, {projection: {body: 1, editor: 1, search: 1}})
     let count = 0
     for await (const post of cursor) {
         const search = searchFieldsForBody(post.body, post.editor)
+        // already up to date (the normal case after the first start): no write needed
+        if (JSON.stringify(post.search) === JSON.stringify(search)) {
+            continue
+        }
         await postCollection.updateOne({_id: post._id}, {$set: {search}})
         count++
     }

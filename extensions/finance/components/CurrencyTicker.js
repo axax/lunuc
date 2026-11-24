@@ -5,7 +5,7 @@ import Async from '../../../client/components/Async'
 import {client} from '../../../client/middleware/graphql'
 
 const Card = (props) => <Async {...props} expose="Card"
-                               load={() =>import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
+                               load={() =>import(/* webpackChunkName: "finance-ui" */ './ui')}/>
 
 
 class CurrencyTicker extends React.Component {

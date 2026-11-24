@@ -1,0 +1,43 @@
+{
+  "types": [
+    {
+      "name": "SearchIndex",
+      "noUserRelation": true,
+      "access": {
+        "read": "manage_other_users",
+        "create": "manage_other_users",
+        "update": "manage_other_users",
+        "delete": "manage_other_users"
+      },
+      "fields": [
+        {"name": "type", "label": "Type"},
+        {"name": "genericType", "label": "Generic type"},
+        {"name": "definition", "label": "Definition", "type": "GenericDataDefinition", "fields": ["name"], "hideColumnInTypes": true},
+        {"name": "ref", "label": "Reference id"},
+        {"name": "lang", "label": "Language"},
+        {"name": "language", "label": "Text search language", "hideColumnInTypes": true},
+        {"name": "title", "label": "Title"},
+        {"name": "text", "label": "Indexed text", "hideColumnInTypes": true},
+        {"name": "parts", "label": "Fields", "type": "Object", "uitype": "json", "alwaysLoad": false, "hideColumnInTypes": true},
+        {"name": "ownerGroup", "label": "Owner group", "type": "UserGroup", "multi": true, "fields": ["name"], "hideColumnInTypes": true},
+        {"name": "readRoles", "label": "Readable for roles", "multi": true, "hideColumnInTypes": true},
+        {"name": "modifiedAt", "label": "Document modified", "type": "Float", "hideColumnInTypes": true},
+        {"name": "indexedAt", "label": "Indexed", "type": "Float"}
+      ],
+      "indexes": [
+        {
+          "fields": {"title": "text", "text": "text"},
+          "options": {
+            "name": "search_text",
+            "weights": {"title": 10, "text": 1},
+            "default_language": "none",
+            "language_override": "language"
+          }
+        },
+        {"fields": {"type": 1, "ref": 1}},
+        {"fields": {"definition": 1}},
+        {"fields": {"type": 1, "indexedAt": 1}}
+      ]
+    }
+  ]
+}

@@ -93,7 +93,9 @@ export default () => {
         if (payload && payload.msg && payload.meta && payload.meta.query && payload.meta.variables) {
             if (payload.meta.query.startsWith('mutation createLog') ||
                 payload.msg.startsWith('503 - Service Unavailable') ||
-                payload.msg.startsWith('404 - Not Found')) return
+                payload.msg.startsWith('404 - Not Found') ||
+                // blocked by the server (request rules / bot protection) - already handled there
+                payload.msg.startsWith('403 - Forbidden')) return
 
             report('dispatcherAddError', payload)
         }

@@ -2,7 +2,7 @@ import {ObjectId} from 'mongodb'
 import {createHash} from 'crypto'
 import {getType} from '../../../util/types.mjs'
 import {getGenericTypeDefinitionWithStructure} from '../../genericdata/util/index.mjs'
-import {SEARCH_COLLECTION, INDEXED_TYPES, DEFAULT_LANGUAGE, textLanguage, getSettings} from './config.mjs'
+import {SEARCH_COLLECTION, INDEXED_TYPES, getSettings} from './config.mjs'
 import {buildEntries} from './extract.mjs'
 
 const toObjectId = (id) => {
@@ -17,26 +17,6 @@ const sha1 = (value) => createHash('sha1').update(JSON.stringify(value)).digest(
 
 // entries with this type store the state of a GenericDataDefinition (hash of what the index depends on)
 const DEFINITION_META_TYPE = '_definition'
-
-/**
- * Text index (one per collection, the language per entry via language_override) and lookups by reference.
- */
-export const ensureIndexes = async (db) => {
-    const collection = db.collection(SEARCH_COLLECTION)
-    await Promise.all([
-        collection.createIndex({title: 'text', text: 'text'}, {
-            name: 'search_text',
-            weights: {title: 10, text: 1},
-            default_language: textLanguage(DEFAULT_LANGUAGE),
-            language_override: 'language'
-        }),
-        collection.createIndex({type: 1, ref: 1}),
-        collection.createIndex({definition: 1}),
-        collection.createIndex({type: 1, indexedAt: 1}),
-        // prefix search on words (search.mjs, before the slow substring search)
-        collection.createIndex({words: 1}, {name: 'search_words'})
-    ]).catch(e => console.error('search: index creation failed', e))
-}
 
 // which fields of a GenericData type are indexed - null: the type is not searchable
 const genericDataConfig = (definition) => {

@@ -1,16 +1,23 @@
+import schema from './gensrc/schema.mjs'
+import resolver from './gensrc/resolver.mjs'
 import Hook from '../../util/hook.cjs'
+import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {INDEXED_TYPES} from './util/config.mjs'
-import {ensureIndexes, queueReindex, queueRemove, queueDefinition} from './util/sync.mjs'
+import {queueReindex, queueRemove, queueDefinition} from './util/sync.mjs'
 
 /*
- Search extension: keeps the collection SearchIndex in sync with GenericData, CmsPage and Media.
- Changes are queued and written a moment later, so saving a document does not wait for the index.
- Changes that bypass the GenericResolver (direct db writes) are picked up by a periodic
- rebuild (cronjob, see util/sync.mjs rebuild with since).
+ Search extension: keeps the collection SearchIndex (type and indexes in build.json) in sync with
+ GenericData, CmsPage and Media. Changes are queued and written a moment later, so saving a document
+ does not wait for the index. Changes that bypass the GenericResolver (direct db writes) are picked up
+ by a periodic rebuild (cronjob, see util/sync.mjs rebuild with since).
  */
 
-Hook.on('index', ({db}) => {
-    ensureIndexes(db)
+Hook.on('resolver', ({db, resolvers}) => {
+    deepMergeToFirst(resolvers, resolver(db))
+})
+
+Hook.on('schema', ({schemas}) => {
+    schemas.push(schema)
 })
 
 Hook.on('typeCreated', ({type, result, db}) => {

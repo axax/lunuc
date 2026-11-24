@@ -4,8 +4,45 @@ import MimeType from '../../util/mime.mjs'
 import fs from 'fs'
 import path from 'path'
 import {parseOrElse} from "../../client/util/json.mjs";
+import {parseCookies} from '../../api/util/parseCookies.mjs'
+import {decodeToken} from '../../api/util/jwt.mjs'
 
 const DEFAULT_FORMAT = 'jpeg'
+
+// Upper bounds for the url parameters: without them anyone could request e.g. ?width=30000&height=30000
+// (several GB of memory in this process) or ?density=5000 for an svg. Larger values are scaled down
+// (width and height by the same factor, so the aspect ratio stays) - the variant gets the name of the
+// scaled down values, so all oversized requests of an image share one file.
+// The pages use at most 2000px (templates, srcset), the client at most 1600px.
+const MAX_DIMENSION = parseInt(process.env.LUNUC_RESIZE_MAX_DIMENSION) || 5000
+const MAX_DENSITY = parseInt(process.env.LUNUC_RESIZE_MAX_DENSITY) || 600
+
+// At most this many variants are generated at the same time, the others wait (no limit for the
+// waiting ones, they need hardly any memory). sharp uses one thread per cpu core for every run anyway,
+// so the total time stays about the same - but only a few decoded images are in memory at once.
+const RESIZE_CONCURRENCY = parseInt(process.env.LUNUC_RESIZE_CONCURRENCY) || 3
+
+// No file cache of libvips: it keeps up to 20 source files open and in memory, and a file replaced under
+// the same name could be read from the cache. Variants are stored on disk, a source is rarely read twice.
+sharp.cache({files: 0})
+
+let activeResizes = 0
+const resizeQueue = []
+const acquireResizeSlot = () => {
+    if (activeResizes < RESIZE_CONCURRENCY) {
+        activeResizes++
+        return Promise.resolve()
+    }
+    return new Promise(resolve => resizeQueue.push(resolve))
+}
+const releaseResizeSlot = () => {
+    const next = resizeQueue.shift()
+    if (next) {
+        next() // hand the slot over, activeResizes stays the same
+    } else {
+        activeResizes--
+    }
+}
 
 // Deduplicates concurrent generation of the same variant:
 // two parallel requests for the same modfilename share one sharp run.
@@ -25,15 +62,24 @@ export const resizeImage = async (parsedUrl, req, filename, sourceStat) => {
         (parsedUrl.query.width || parsedUrl.query.height || parsedUrl.query.format || parsedUrl.query.flip || parsedUrl.query.flop ||
             parsedUrl.query.removebg || parsedUrl.query.crop)) {
 
-        const width = parseInt(parsedUrl.query.width),
-            height = parseInt(parsedUrl.query.height),
-            fit = parsedUrl.query.fit,
+        let width = parseInt(parsedUrl.query.width),
+            height = parseInt(parsedUrl.query.height)
+        const scale = Math.min(1, width > MAX_DIMENSION ? MAX_DIMENSION / width : 1, height > MAX_DIMENSION ? MAX_DIMENSION / height : 1)
+        if (scale < 1) {
+            console.log(`resize ${parsedUrl.pathname}: ${width}x${height} scaled down to max ${MAX_DIMENSION}px`)
+            if (!isNaN(width)) width = Math.max(1, Math.round(width * scale))
+            if (!isNaN(height)) height = Math.max(1, Math.round(height * scale))
+        }
+        let density = parsedUrl.query.density
+        if (parseInt(density) > MAX_DENSITY) {
+            density = String(MAX_DENSITY)
+        }
+        const fit = parsedUrl.query.fit,
             bg = parsedUrl.query.bg,
             flip = parsedUrl.query.flip,
             flop = parsedUrl.query.flop,
             position = parsedUrl.query.position,
             withoutEnlargement = parsedUrl.query.noenlarge,
-            density = parsedUrl.query.density,
             removeBg = parsedUrl.query.removebg,
             crop = parseCrop(parsedUrl.query.crop)
 
@@ -90,7 +136,13 @@ export const resizeImage = async (parsedUrl, req, filename, sourceStat) => {
                 // does not exist yet
             }
 
-            if (!modExists || parsedUrl.query.force === 'true') {
+            // ?force=true generates an existing variant again - only for logged in users, otherwise anyone
+            // could keep the cpu busy with it (not used by the code, for manual use only). The login is only
+            // checked when force is set, a normal request does not decode the token.
+            // decodeToken only verifies the token (contextByRequest would renew an older token and
+            // set a cookie, which fails without an express response)
+            const force = parsedUrl.query.force === 'true' && !!decodeToken(parseCookies(req).auth, {silent: true}).id
+            if (!modExists || force) {
 
                 // if another request is already generating this variant, wait for it
                 if (inFlightResizes.has(modfilename)) {
@@ -101,6 +153,16 @@ export const resizeImage = async (parsedUrl, req, filename, sourceStat) => {
                 }
 
                 const generatePromise = (async () => {
+                    await acquireResizeSlot()
+                    try {
+                        return await generateVariant()
+                    } finally {
+                        releaseResizeSlot()
+                    }
+                })()
+
+                // the actual work, runs inside a slot (see RESIZE_CONCURRENCY)
+                async function generateVariant() {
                     console.log(`modify file ${filename} to ${modfilename}`)
 
                     let sourceFile = filename
@@ -191,7 +253,7 @@ export const resizeImage = async (parsedUrl, req, filename, sourceStat) => {
                         } catch (unlinkErr) {}
                         return {success: false}
                     }
-                })()
+                }
 
                 inFlightResizes.set(modfilename, generatePromise)
 

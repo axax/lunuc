@@ -1,5 +1,6 @@
 import {MongoClient} from 'mongodb'
 import {attachMongoMonitor, MONGO_MONITOR_ENABLED} from '../util/mongoMonitor.mjs'
+import {installMongoSizeGuard} from '../util/mongoSizeGuard.mjs'
 import {createAllInitialData} from './data/initialData.mjs'
 import ClientUtil from '../client/util/index.mjs'
 import Hook from '../util/hook.cjs'
@@ -176,6 +177,8 @@ export const dbConnection = (dburl, cb) => {
             // diagnostic only - see util/mongoMonitor.mjs
             options.monitorCommands = true
         }
+        // names collection, operation and size in the error when a document exceeds the BSON size limit
+        installMongoSizeGuard()
         const client = new MongoClient(urlParts[0], options)
         attachMongoMonitor(client)
         console.log(`Start connecting to db ${dburl} (compressors: ${options.compressors || 'none'})... ${new Date() - _app_.start}ms`)

@@ -120,11 +120,14 @@ const compileIf = ($if, loc, scope) => {
 
 
 const JsonDomHelper = lazy(() => import(/* webpackChunkName: "jsondom" */ './JsonDomHelper'))
-const PrettyErrorMessage = lazy(() => import(/* webpackChunkName: "admin" */ './PrettyErrorMessage'))
-const ContentEditable = lazy(() => import(/* webpackChunkName: "admin" */ '../../../client/components/ContentEditable'))
-const FileDrop = lazy(() => import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop'))
-const Print = lazy(() => import(/* webpackChunkName: "admin" */ '../../../client/components/Print'))
-const QuillEditor = lazy(() => import(/* webpackChunkName: "admin" */ '../../../client/components/QuillEditor'))
+// Own chunk names (not "admin"): these components are also used on pages for visitors. With the
+// shared name "admin" each of them loaded the whole admin package (~480 KB brotli: MUI, editor, admin
+// containers ...), now only what it needs itself.
+const PrettyErrorMessage = lazy(() => import(/* webpackChunkName: "prettyerror" */ './PrettyErrorMessage'))
+const ContentEditable = lazy(() => import(/* webpackChunkName: "contenteditable" */ '../../../client/components/ContentEditable'))
+const FileDrop = lazy(() => import(/* webpackChunkName: "filedrop" */ '../../../client/components/FileDrop'))
+const Print = lazy(() => import(/* webpackChunkName: "print" */ '../../../client/components/Print'))
+const QuillEditor = lazy(() => import(/* webpackChunkName: "quilleditor" */ '../../../client/components/QuillEditor'))
 const CodeEditor = lazy(() => import(/* webpackChunkName: "codeeditor" */ '../../../client/components/CodeEditor'))
 const MarkDown = lazy(() => import(/* webpackChunkName: "markdown" */ '../../../client/components/MarkDown'))
 const ShadowRoot = lazy(() => import(/* webpackChunkName: "shadowroot" */ '../../../client/components/ShadowRoot'))

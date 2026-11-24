@@ -93,7 +93,10 @@ export const contextByRequest = (req, res) => {
         const cookies = parseCookies(req)
         context = decodeTokenOfRequest(req, cookies.auth)
 
-        if (context.exp) {
+        // renew only with a response to set the cookie on: the web server (server/server.mjs) calls
+        // this without res - renewing there threw for tokens older than half their lifetime (500 on
+        // backup download, server commands, screenshots). The next api request renews the token.
+        if (context.exp && res) {
             const exp = new Date(context.exp * 1000)
 
             if (exp - new Date() - AUTH_EXPIRES_IN_COOKIE / 2 < 0) {
