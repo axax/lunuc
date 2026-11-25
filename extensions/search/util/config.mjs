@@ -29,7 +29,12 @@ const asArray = (value) => Array.isArray(value) ? value : (value ? [value] : [])
  GenericData: the type itself needs "searchIndex": true, which entries and fields are indexed is
  decided per GenericDataDefinition (structure.searchIndex, see sync.mjs).
  */
+// the type SearchIndex only exists (gensrc) when the extension is active in buildconfig.json - the files are
+// there in any case, callers like the search api use this to fall back to their old search
+export const isSearchActive = () => !!getType(SEARCH_COLLECTION)
+
 export const isIndexedType = (type) => {
+    if (!isSearchActive()) return false
     const typeDefinition = getType(type)
     return !!(typeDefinition && typeDefinition.searchIndex)
 }

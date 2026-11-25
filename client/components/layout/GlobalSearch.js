@@ -41,6 +41,76 @@ const SearchWrapper = styled('div')(({ theme }) => ({
 }))
 
 
+// one request to the search api: types in the SearchIndex (GenericData, CmsPage, Media) are found there
+// (ranked, tolerant of typos), the others with the old search. Order of the groups in the list:
+const TYPES = ['GenericData', 'CmsPage', 'Media', 'Api', 'CronJob', 'StaticFile', 'Hook', 'KeyValueGlobal']
+
+const localizedName = (item) => {
+    let name = item.name || item.key
+    if (name && name[_app_.lang]) {
+        name = name[_app_.lang]
+    }
+    return name
+}
+
+// the query with every corrected term replaced by its first correction
+const correctedQuery = (text, corrections) => text.replace(/[\p{L}\p{N}]+/gu,
+    word => (corrections[word.toLowerCase()] && corrections[word.toLowerCase()][0]) || word)
+
+const itemHref = (type, item) => {
+    if (type === 'CmsPage') return `/${item.slug}`
+    if (type === 'GenericData') return `/admin/types/GenericData?fixType=GenericData&meta=${encodeURIComponent(item.genericType)}&open=${item._id}`
+    return `/admin/types/${type}?open=${item._id}`
+}
+
+const loadOptions = async (input) => {
+    let text = input, typeFilter = ''
+    // "media: ..." / "thalverein: ..." -> only types whose name contains the prefix
+    const prefix = text.match(/^(\w+):/)
+    if (prefix) {
+        typeFilter = prefix[1].toLowerCase()
+        text = text.substring(prefix[0].length).trim()
+    }
+    if (!text) {
+        return []
+    }
+    let types = TYPES
+    let params = ''
+    if (typeFilter) {
+        types = TYPES.filter(type => type !== 'GenericData' && type.toLowerCase().indexOf(typeFilter) >= 0)
+        // GenericData: all types ("genericdata: ...") or the types whose name contains the prefix
+        types.unshift('GenericData')
+        if ('genericdata'.indexOf(typeFilter) < 0) {
+            params = '&typeFilter=' + encodeURIComponent(typeFilter)
+        }
+    }
+    const json = await fetch(`/lunucapi/search?coreType=${types.join(',')}&suggest=true&lang=${_app_.lang}&s=${encodeURIComponent(text)}${params}`)
+        .then(response => response.status === 200 ? response.json() : null).catch(() => null)
+    if (!json) {
+        return []
+    }
+
+    const options = []
+    if (json.corrections) {
+        const corrected = correctedQuery(text, json.corrections)
+        if (corrected !== text) {
+            options.push({key: 'correction', name: `${_t('GlobalSearch.didYouMean')}: ${corrected}`, replaceText: (prefix ? prefix[0] + ' ' : '') + corrected})
+        }
+    }
+    types.forEach(type => {
+        (json[type] || []).forEach(item => {
+            const name = localizedName(item) || item._id
+            options.push({
+                key: `${type}-${item._id}`,
+                name: `${type === 'GenericData' ? item.genericType : type}: ${name}`,
+                secondary: item._snippet && item._snippet !== name ? item._snippet : undefined,
+                href: itemHref(type, item)
+            })
+        })
+    })
+    return options
+}
+
 const GlobalSearch = props => {
 
     return <SearchWrapper><SimpleAutosuggest
@@ -48,43 +118,15 @@ const GlobalSearch = props => {
         search
         fullWidth
         historyKey="GlobalSearch"
-        apiUrl={(searchData)=>{
-            let coreTypes = ['Media', 'CmsPage', 'Api', 'CronJob','StaticFile','Hook','KeyValueGlobal']
-            const regex = /^\w+:/g
-            const matches = searchData.text.match(regex)
-
-            if(matches && matches.length > 0){
-                const match = matches[0].substring(0, matches[0].length-1)
-                const filteredTypes = coreTypes.filter(type => type.toLowerCase().indexOf(match)>=0)
-                if(filteredTypes.length>0) {
-                    coreTypes = filteredTypes
-                }
-                searchData.text = searchData.text.substring(match.length+1)
-            }
-            return `/lunucapi/search?coreType=${coreTypes.join(',')}&s=%search%`
-        }}
+        loadOptions={loadOptions}
         filterOptions={(options)=>options}
         placeholder={_t('GlobalSearch.placeholder')}
         value={''}
-        nameRender={(item, key)=>{
-            let name = item.name || item.key
-            if(name && name[_app_.lang]){
-                name = name[_app_.lang]
-            }
-            return `${key}: ${name}`
-        }}
         onChange={(e, item) => {
-            //_app_.history.push(`/admin/types/${item.__type}?open=${item._id}`)
-            if(item) {
-                console.log(item)
-                if(item.__type==='CmsPage'){
-                    window.location = `/${item.slug}`
-                }else {
-                    window.location = `/admin/types/${item.__type}?open=${item._id}`
-                }
+            // free text (enter without choosing a hit) and history entries have no target
+            if(item && item.href) {
+                window.location = item.href
             }
-           /* e.stopPropagation()
-            e.preventDefault()*/
         } }
         onBlur={()=>{}}
         onClick={()=>{}}/></SearchWrapper>

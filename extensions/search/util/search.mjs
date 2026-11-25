@@ -5,7 +5,7 @@ import {createMatchForCurrentUser, filterReadableIds} from '../../../api/util/db
 import {getGenericTypeDefinitionWithStructure} from '../../genericdata/util/index.mjs'
 import ClientUtil from '../../../client/util/index.mjs'
 import Hook from '../../../util/hook.cjs'
-import {SEARCH_COLLECTION, getIndexedTypes, DEFAULT_LANGUAGE, ANY_LANGUAGE, textLanguage} from './config.mjs'
+import {SEARCH_COLLECTION, getIndexedTypes, isSearchActive, DEFAULT_LANGUAGE, ANY_LANGUAGE, textLanguage} from './config.mjs'
 import {MAX_WORD_LENGTH} from './extract.mjs'
 import {findCorrections} from './fuzzy.mjs'
 
@@ -215,6 +215,10 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
 
     const indexedTypes = getIndexedTypes()
     const typeList = (Array.isArray(types) && types.length > 0 ? types : indexedTypes).filter(t => indexedTypes.includes(t))
+    // extension not active (no index) or none of the requested types is indexed
+    if (!isSearchActive() || typeList.length === 0) {
+        return {total: 0, results: []}
+    }
     const filter = {
         lang: {$in: [language, ANY_LANGUAGE]},
         type: {$in: typeList},

@@ -47,6 +47,9 @@ const genericDataConfig = (definition) => {
     return {titleFields, fieldNames, readRoles}
 }
 
+// whether the entries of a GenericData type (definition with structure) are in the index
+export const isIndexedDefinition = (definition) => isIndexedType('GenericData') && !!genericDataConfig(definition)
+
 // only the fields the index needs are loaded (CmsPage e.g. without template, script and style)
 const BASE_FIELDS = ['_id', 'createdBy', 'ownerGroup', 'modifiedAt']
 const documentProjection = (type, settings, genericConf) => {

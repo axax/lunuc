@@ -26,6 +26,12 @@ const contextAwareSplit = (text, separator) => {
     return result
 }
 
+/*
+ Options are loaded either from props.apiUrl (response {Type: [items]}) or with props.loadOptions(text) => Promise of
+ options. With loadOptions the request starts after props.loadDelay ms (default 200) without typing, and only the
+ answer of the latest request is used. Option attributes besides name: secondary (second line), key (unique key),
+ replaceText (choosing the option replaces the search text instead of calling onChange, e.g. "did you mean").
+ */
 export default function SimpleAutosuggest(props) {
 
     const [open, setOpen] = React.useState(false)
@@ -33,6 +39,10 @@ export default function SimpleAutosuggest(props) {
     const [hadFocus, setHadFocus] = React.useState(false)
     const [text, setText] = React.useState(props.value || '')
     const [options, setOptions] = React.useState(props.options || [])
+    // loadOptions: only the latest request counts, requests start after a short pause in typing
+    const requestRef = React.useRef(0)
+    const timerRef = React.useRef(null)
+    React.useEffect(() => () => clearTimeout(timerRef.current), [])
 
     const settingKey = `SimpleAutosuggestHistory-${props.historyKey}`
     const keyValueData = hadFocus && props.historyKey?useKeyValues([settingKey]):{data:{}}
@@ -51,6 +61,30 @@ export default function SimpleAutosuggest(props) {
     finalOptions.push(...options)
 
     const getData = (searchData)=>{
+        if(props.loadOptions) {
+            clearTimeout(timerRef.current)
+            const textTrimmed = searchData.text.trim()
+            const requestId = ++requestRef.current
+            if(!textTrimmed) {
+                setOptions([])
+                setLoading(false)
+                return
+            }
+            setLoading(true)
+            timerRef.current = setTimeout(() => {
+                Promise.resolve(props.loadOptions(textTrimmed)).then(loaded => {
+                    if(requestId === requestRef.current) {
+                        setOptions(loaded || [])
+                        setLoading(false)
+                    }
+                }).catch(() => {
+                    if(requestId === requestRef.current) {
+                        setLoading(false)
+                    }
+                })
+            }, props.loadDelay !== undefined ? props.loadDelay : 200)
+            return
+        }
         if(!props.apiUrl) {
             return
         }
@@ -148,6 +182,15 @@ export default function SimpleAutosuggest(props) {
                 if(!item){
                     return
                 }
+                if(item.replaceText) {
+                    // e.g. "did you mean": search again with the new text
+                    setText(item.replaceText)
+                    getData({text: item.replaceText})
+                    setTimeout(()=> {
+                        setOpen(true)
+                    },0)
+                    return
+                }
                 if(!item.history) {
                     if(props.historyKey) {
                         const history = addToSearchHistory(settings.history, text)
@@ -196,9 +239,12 @@ export default function SimpleAutosuggest(props) {
             renderOption={(props, option, { selected }) => {
                 const { key, ...optionProps } = props
                 return (
-                    <li key={key} {...optionProps}>
+                    <li key={option.key || key} {...optionProps}>
                         {option.history && <HistoryIcon sx={{marginRight:1}} />}
-                        {option.name}
+                        {option.secondary ? <div style={{minWidth: 0}}>
+                            <div style={option.replaceText ? {fontStyle: 'italic'} : undefined}>{option.name}</div>
+                            <div style={{fontSize: '0.8em', opacity: 0.7, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{option.secondary}</div>
+                        </div> : <span style={option.replaceText ? {fontStyle: 'italic'} : undefined}>{option.name}</span>}
                     </li>
                 );
             }}
