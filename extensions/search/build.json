@@ -17,7 +17,6 @@
         {"name": "lang", "label": "Language"},
         {"name": "language", "label": "Text search language", "hideColumnInTypes": true},
         {"name": "title", "label": "Title"},
-        {"name": "text", "label": "Indexed text", "hideColumnInTypes": true},
         {"name": "words", "label": "Words", "multi": true, "alwaysLoad": false, "hideColumnInTypes": true},
         {"name": "parts", "label": "Fields", "type": "Object", "uitype": "json", "alwaysLoad": false, "hideColumnInTypes": true},
         {"name": "ownerGroup", "label": "Owner group", "type": "UserGroup", "multi": true, "fields": ["name"], "hideColumnInTypes": true},
@@ -27,10 +26,10 @@
       ],
       "indexes": [
         {
-          "fields": {"title": "text", "text": "text"},
+          "fields": {"title": "text", "parts.t": "text"},
           "options": {
-            "name": "search_text",
-            "weights": {"title": 10, "text": 1},
+            "name": "search_text_parts",
+            "weights": {"title": 10, "parts.t": 1},
             "default_language": "none",
             "language_override": "language"
           }

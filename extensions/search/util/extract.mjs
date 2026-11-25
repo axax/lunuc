@@ -57,7 +57,10 @@ const textByLanguage = (value) => {
  * Builds the SearchIndex entries of one document: one entry per language of its localized values,
  * or a single entry (lang "*") if no value is localized. Plain values are part of every entry.
  *
- * @returns [{lang, language, title, text, words, parts: [{f, t}]}]
+ * The text index and the substring search use title and parts.t (no extra field with the whole text).
+ * maxTextLength limits the text of all parts together.
+ *
+ * @returns [{lang, language, title, words, parts: [{f, t}]}]
  */
 export const buildEntries = ({source, titleFields = [], fieldNames = [], fieldPaths = {}, maxTextLength = 20000}) => {
     const perField = []
@@ -81,16 +84,22 @@ export const buildEntries = ({source, titleFields = [], fieldNames = [], fieldPa
             if (text) parts.push({f: name, t: text})
         }
         const titlePart = titleFields.map(f => parts.find(p => p.f === f)).filter(Boolean)
-        let text = parts.map(p => p.t).join(' \n ')
-        if (text.length > maxTextLength) text = text.substring(0, maxTextLength)
+        // limit of all parts together (in the order of the fields, title fields first)
+        const limitedParts = []
+        let remaining = maxTextLength
+        for (const part of parts) {
+            if (remaining <= 0) break
+            const t = part.t.substring(0, remaining)
+            limitedParts.push({f: part.f, t})
+            remaining -= t.length
+        }
         return {
             lang,
             // field used by the text index (language_override): stemming of this entry
             language: textLanguage(lang === ANY_LANGUAGE ? DEFAULT_LANGUAGE : lang),
             title: titlePart.map(p => p.t).join(' ').substring(0, 300),
-            text,
-            words: toWords(titlePart.map(p => p.t).join(' ') + ' ' + text),
-            parts: parts.map(p => ({f: p.f, t: p.t.substring(0, maxTextLength)}))
+            words: toWords(titlePart.map(p => p.t).join(' ') + ' ' + limitedParts.map(p => p.t).join(' ')),
+            parts: limitedParts
         }
     })
 }

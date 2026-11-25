@@ -240,7 +240,7 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
     let corrections = null
     if (candidates.length < offset + limit) {
         const regex = new RegExp(ClientUtil.escapeRegex(q), 'i')
-        const substringMatch = {$or: [{title: regex}, {text: regex}]}
+        const substringMatch = {$or: [{title: regex}, {'parts.t': regex}]}
         const known = new Set(candidates.map(c => c._id.toString()))
         const addCandidates = (list) => list.forEach(c => {
             const id = c._id.toString()
