@@ -83,6 +83,7 @@ export const userSchemaRaw = `
 	type Token {
 		token: String
 		resetToken: String
+		twoFactorToken: String
 		redirectUrl: String
 		error: String
 		user: User

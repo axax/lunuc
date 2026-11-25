@@ -86,6 +86,7 @@ import {DEFAULT_STYLE} from '../constants/cmsDefaults.mjs'
 import CmsPageTools from '../components/CmsPageTools'
 import CmsDataEditDialog from '../components/CmsDataEditDialog'
 import RemoteEditorMarkers from '../components/RemoteEditorMarkers'
+import {createEditorStatusStore, EditorStatus} from '../components/CmsEditorStatus'
 import CmsVersionSwitcher from '../components/CmsVersionSwitcher'
 import {parseCollectionVersion} from '../../../client/util/collectionVersions.mjs'
 import {CAPABILITY_MANAGE_COLLECTION} from '../../../util/capabilities.mjs'
@@ -126,6 +127,9 @@ const HISTORY_KEY_LABELS = {
 }
 
 // what an entry changes, for the menu: label of an external change or the changed keys
+// position of undo / redo in the more menu, replaced by the current entries when the menu renders
+const UNDO_REDO_MENU_PLACEHOLDER = {undoRedoPlaceholder: true}
+
 const historyEntryLabel = entry => entry.external ? (entry.external.label || '') :
     Object.keys(entry.values).map(k => HISTORY_KEY_LABELS[k] || k).join(', ')
 
@@ -276,6 +280,10 @@ class CmsViewEditorContainer extends React.Component {
     _hasHadUndo = false
     _hasHadRedo = false
 
+    /* values that change often while editing. Not in this.state: a change only renders the parts that
+       show them (EditorStatus), not the whole editor (see components/CmsEditorStatus.js) */
+    editorStatus = createEditorStatusStore({saveStatus: null, cmsEditors: null, undoCount: 0, redoCount: 0})
+
     constructor(props) {
         super(props)
         this.state = CmsViewEditorContainer.propsToState(props, null)
@@ -338,8 +346,6 @@ class CmsViewEditorContainer extends React.Component {
             scriptChangeCount:0,
             serverScriptChangeCount:0,
             dataResolverChangeCount:0,
-            undoCount:0,
-            redoCount:0,
             resources,
             script,
             style,
@@ -525,13 +531,13 @@ class CmsViewEditorContainer extends React.Component {
             // nothing is saved until the conflict is resolved, the header keeps showing it
             saveStatus = 'conflict'
         }
-        if (!this._isUnmounted && !this.isLocal && this.state.saveStatus !== saveStatus) {
-            this.setState({saveStatus}, this.reportActivity)
+        if (!this._isUnmounted && !this.isLocal && this.editorStatus.get().saveStatus !== saveStatus) {
+            this.editorStatus.set({saveStatus})
+            this.reportActivity()
         }
     }
 
-    renderSaveStatus() {
-        const {saveStatus} = this.state
+    renderSaveStatus(saveStatus) {
         if (!saveStatus || this.isLocal) {
             return null
         }
@@ -617,7 +623,7 @@ class CmsViewEditorContainer extends React.Component {
                     elementLabel = type ? _t('elements.key.' + type, null, type) : null
                 }
             }
-            const {saveStatus} = this.state
+            const {saveStatus} = this.editorStatus.get()
             const typing = saveStatus === 'pending' || saveStatus === 'saving'
             const key = JSON.stringify([typing, elementKey])
             if (key === this._lastActivity) return
@@ -643,7 +649,7 @@ class CmsViewEditorContainer extends React.Component {
         const key = JSON.stringify(others.map(e => [e.clientId, e.typing, e.elementKey]))
         if (key !== this._editorsKey) {
             this._editorsKey = key
-            this.setState({cmsEditors: others})
+            this.editorStatus.set({cmsEditors: others})
         }
     }
 
@@ -694,7 +700,7 @@ class CmsViewEditorContainer extends React.Component {
     }
 
     hasLocalChanges() {
-        const {saveStatus} = this.state
+        const {saveStatus} = this.editorStatus.get()
         const active = document.activeElement
         return Object.keys(this._keyValueMap).length > 0 ||
             saveStatus === 'pending' || saveStatus === 'saving' || saveStatus === 'error' ||
@@ -774,7 +780,8 @@ class CmsViewEditorContainer extends React.Component {
             })
             this._remoteNoticeShown = false
             this.resetHistory()
-            this.setState({...fresh, ...counts, saveStatus: null})
+            this.setState({...fresh, ...counts})
+            this.editorStatus.set({saveStatus: null})
         }).catch(e => {
             console.warn('reload of the cms page failed', e)
         }).finally(() => {
@@ -936,8 +943,7 @@ class CmsViewEditorContainer extends React.Component {
         delete this._writtenDrafts[draft.key]
     }
 
-    renderEditors() {
-        const editors = this.state.cmsEditors
+    renderEditors(editors) {
         if (!editors || editors.length === 0) {
             return null
         }
@@ -954,6 +960,94 @@ class CmsViewEditorContainer extends React.Component {
                 background: 'rgba(255,255,255,0.18)'
             }}>{_t('CmsViewEditorContainer.editors.alsoOpen', {names: names.join(', ')})}</span>
         </Tooltip>
+    }
+
+    /**
+     * other editors, save status, redo and undo in the toolbar (keys as before, in this order)
+     */
+    renderToolbarStatus({saveStatus, cmsEditors}) {
+        const elements = []
+        const editorsElement = this.renderEditors(cmsEditors)
+        if (editorsElement) {
+            elements.push(editorsElement)
+        }
+        const saveStatusElement = this.renderSaveStatus(saveStatus)
+        if (saveStatusElement) {
+            elements.push(saveStatusElement)
+        }
+
+        const showUndoButton = this.undoHistory.length > 0 || this._hasHadUndo
+        const showRedoButton = this.redoHistory.length > 0 || this._hasHadRedo
+
+        if (showRedoButton) {
+            const redoDisabled = this.redoHistory.length === 0
+            elements.push(
+                <Tooltip key="redoButton" arrow placement="bottom"
+                         title={redoDisabled ? '' : this.renderHistoryTooltip(this.redoHistory[0], _t('CmsViewEditorContainer.redochange'))}>
+                    <span>
+                        <Button startIcon={<ReplayIcon style={{transform: 'scaleX(-1)'}}/>}
+                                size="small"
+                                color="inherit"
+                                disabled={redoDisabled}
+                                onClick={() => {
+                                    this.redoLastChange()
+                                }}>{_t('CmsViewEditorContainer.redochange')}{!redoDisabled ? ` (${this.redoHistory.length})` : ''}</Button>
+                    </span>
+                </Tooltip>)
+        }
+
+        if (showUndoButton) {
+            const undoDisabled = this.undoHistory.length === 0
+            elements.push(
+                <Tooltip key="undoButton" arrow placement="bottom"
+                         title={undoDisabled ? '' : this.renderHistoryTooltip(this.undoHistory[0], _t('CmsViewEditorContainer.undochange'))}>
+                    {/* the span is needed so the tooltip can attach its ref and mouse handlers */}
+                    <span>
+                        <Button startIcon={<ReplayIcon/>}
+                                size="small"
+                                color="inherit"
+                                disabled={undoDisabled}
+                                onClick={() => {
+                                    this.undoLastChange()
+                                }}>{_t('CmsViewEditorContainer.undochange')}{!undoDisabled ? ` (${this.undoHistory.length})` : ''}</Button>
+                    </span>
+                </Tooltip>)
+        }
+        return elements.length ? <>{elements}</> : null
+    }
+
+    /**
+     * items of the more menu with the current undo / redo entries at the position of the placeholder
+     */
+    withUndoRedoMenuItems(moreMenu) {
+        const items = []
+        moreMenu.forEach(item => {
+            if (item !== UNDO_REDO_MENU_PLACEHOLDER) {
+                items.push(item)
+                return
+            }
+            if (this.undoHistory.length > 0) {
+                items.push({
+                    divider: true,
+                    icon: 'replay',
+                    name: `${_t('CmsViewEditorContainer.undochange')} (${this.undoHistory.length}) - ${historyEntryLabel(this.undoHistory[0])}`,
+                    onClick: () => {
+                        this.undoLastChange()
+                    }
+                })
+            }
+            if (this.redoHistory.length > 0) {
+                items.push({
+                    divider: this.undoHistory.length === 0,
+                    icon: <ReplayIcon style={{transform: 'scaleX(-1)'}}/>,
+                    name: `${_t('CmsViewEditorContainer.redochange')} (${this.redoHistory.length}) - ${historyEntryLabel(this.redoHistory[0])}`,
+                    onClick: () => {
+                        this.redoLastChange()
+                    }
+                })
+            }
+        })
+        return items
     }
 
     shouldComponentUpdate(props, state) {
@@ -1044,13 +1138,9 @@ class CmsViewEditorContainer extends React.Component {
             state.styleChangeCount !== this.state.styleChangeCount ||
             state.scriptChangeCount !== this.state.scriptChangeCount ||
             state.serverScriptChangeCount !== this.state.serverScriptChangeCount ||
-            state.undoCount !== this.state.undoCount ||
-            state.saveStatus !== this.state.saveStatus ||
-            state.cmsEditors !== this.state.cmsEditors ||
             state.cmsConflict !== this.state.cmsConflict ||
             state.cmsDraft !== this.state.cmsDraft ||
             state.copyToVersion !== this.state.copyToVersion ||
-            state.redoCount !== this.state.redoCount ||
             state.manual !== this.state.manual ||
             state.EditorOptions !== this.state.EditorOptions ||
             state.liveDevToolsBoxHeight !== this.state.liveDevToolsBoxHeight ||
@@ -1101,9 +1191,8 @@ class CmsViewEditorContainer extends React.Component {
         // extend with value from state because they are more update to date
         const cmsPageWithState = Object.assign({}, cmsPage, {script, style, template, meta: {PageOptions, PageExtensions}})
 
-        // without the cmsPage object: with template and resolvedData it is large, and the
-        // editor console (ConsoleCapture) has to serialize it on every render
-        console.log(`render CmsViewEditorContainer ${this.props.slug} (loading=${loadingState})`)
+        // no console.log here: with the console tab open (ConsoleCapture) every log is a state update
+        // of another component during this render (react warning, additional render per render)
 
         const canViewCmsEditor = Util.hasCapability(props.user, CAPABILITY_VIEW_CMS_EDITOR),
             canMangeCmsContent = Util.hasCapability(props.user, CAPABILITY_MANAGE_CMS_CONTENT),
@@ -1129,6 +1218,7 @@ class CmsViewEditorContainer extends React.Component {
                 style={{left:EditorOptions.drawerOpen?EditorOptions.drawerWidth:0}}
                 boxHeight={EditorOptions.devToolsBoxHeight}
                 tab={EditorOptions.devToolsTab}
+                editorOptions={EditorOptions}
                 data={{slug:cmsPage.realSlug, template, style, script, serverScript, dataResolver}}
                 setCmsPageValue={this.setCmsPageValue.bind(this)}
                 onTemplateChange={this.handleTemplateChange.bind(this)}
@@ -1146,9 +1236,10 @@ class CmsViewEditorContainer extends React.Component {
             !props.dynamic && <NotificationHandler />,
             <NetworkStatusHandler key="networkStatus"/>,
             // frames around the elements other users are editing right now
-            this.state.cmsEditors && this.state.cmsEditors.length > 0 &&
-                <RemoteEditorMarkers key="remoteEditorMarkers" editors={this.state.cmsEditors}
-                                     typingLabel={_t('CmsViewEditorContainer.editors.typing')}/>,
+            <EditorStatus key="remoteEditorMarkers" store={this.editorStatus}
+                          render={({cmsEditors}) => cmsEditors && cmsEditors.length > 0 ?
+                              <RemoteEditorMarkers editors={cmsEditors}
+                                                   typingLabel={_t('CmsViewEditorContainer.editors.typing')}/> : null}/>,
             this.state.cmsConflict && this.renderConflictDialog(),
             this.state.cmsDraft && !this.state.cmsConflict && this.renderDraftDialog(),
             this.state.copyToVersion && this.renderCopyToVersionDialog(),
@@ -1682,81 +1773,17 @@ class CmsViewEditorContainer extends React.Component {
             }
 
 
-            if (this.undoHistory.length > 0) {
-                moreMenu.push(
-                    {
-                        divider: true,
-                        icon: 'replay',
-                        name: `${_t('CmsViewEditorContainer.undochange')} (${this.undoHistory.length}) - ${historyEntryLabel(this.undoHistory[0])}`,
-                        onClick: () => {
-                            this.undoLastChange()
-                        }
-                    })
-            }
-            if (this.redoHistory.length > 0) {
-                moreMenu.push(
-                    {
-                        divider: this.undoHistory.length === 0,
-                        icon: <ReplayIcon style={{transform: 'scaleX(-1)'}}/>,
-                        name: `${_t('CmsViewEditorContainer.redochange')} (${this.redoHistory.length}) - ${historyEntryLabel(this.redoHistory[0])}`,
-                        onClick: () => {
-                            this.redoLastChange()
-                        }
-                    })
-            }
+            // undo / redo: filled in when the menu renders (EditorStatus), they change with every edit
+            moreMenu.push(UNDO_REDO_MENU_PLACEHOLDER)
 
 
             const toolbarRight = []
 
             if(canMangeCmsContent) {
 
-                const editorsElement = this.renderEditors()
-                if (editorsElement) {
-                    toolbarRight.push(editorsElement)
-                }
-                const saveStatusElement = this.renderSaveStatus()
-                if (saveStatusElement) {
-                    toolbarRight.push(saveStatusElement)
-                }
-
-                const showUndoButton = this.undoHistory.length > 0 || this._hasHadUndo
-                const showRedoButton = this.redoHistory.length > 0 || this._hasHadRedo
-
-                if (showRedoButton) {
-                    const redoDisabled = this.redoHistory.length === 0
-                    toolbarRight.push(
-                        <Tooltip key="redoButton" arrow placement="bottom"
-                                 title={redoDisabled ? '' : this.renderHistoryTooltip(this.redoHistory[0], _t('CmsViewEditorContainer.redochange'))}>
-                            <span>
-                                <Button startIcon={<ReplayIcon style={{transform: 'scaleX(-1)'}}/>}
-                                        size="small"
-                                        color="inherit"
-                                        disabled={redoDisabled}
-                                        onClick={() => {
-                                            this.redoLastChange()
-                                        }}>{_t('CmsViewEditorContainer.redochange')}{!redoDisabled ? ` (${this.redoHistory.length})` : ''}</Button>
-                            </span>
-                        </Tooltip>)
-                }
-
-
-                if (showUndoButton) {
-                    const undoDisabled = this.undoHistory.length === 0
-                    toolbarRight.push(
-                        <Tooltip key="undoButton" arrow placement="bottom"
-                                 title={undoDisabled ? '' : this.renderHistoryTooltip(this.undoHistory[0], _t('CmsViewEditorContainer.undochange'))}>
-                            {/* the span is needed so the tooltip can attach its ref and mouse handlers */}
-                            <span>
-                                <Button startIcon={<ReplayIcon/>}
-                                        size="small"
-                                        color="inherit"
-                                        disabled={undoDisabled}
-                                        onClick={() => {
-                                            this.undoLastChange()
-                                        }}>{_t('CmsViewEditorContainer.undochange')}{!undoDisabled ? ` (${this.undoHistory.length})` : ''}</Button>
-                            </span>
-                        </Tooltip>)
-                }
+                // other editors, save status, redo and undo: rendered on their own when they change
+                toolbarRight.push(<EditorStatus key="editorStatus" store={this.editorStatus}
+                                                render={(status) => this.renderToolbarStatus(status)}/>)
 
                 if (isSmallScreen) {
                     moreMenu.unshift({
@@ -1855,7 +1882,8 @@ class CmsViewEditorContainer extends React.Component {
                 <Button key="buttonBack" size="small" color="inherit" onClick={() => {
                     this.props.history.push(config.ADMIN_BASE_URL)
                 }}>Admin</Button>,
-                <SimpleMenu key="moreMenu" color="inherit" items={moreMenu}/>)
+                <EditorStatus key="moreMenu" store={this.editorStatus}
+                              render={() => <SimpleMenu color="inherit" items={this.withUndoRedoMenuItems(moreMenu)}/>}/>)
 
             const pageName = cmsPage.realSlug?cmsPage.realSlug.split('/')[0]:''
 
@@ -2146,7 +2174,7 @@ class CmsViewEditorContainer extends React.Component {
         if (this.redoHistory.length > 0) {
             this._hasHadRedo = true
         }
-        this.setState({undoCount: this.undoHistory.length, redoCount: this.redoHistory.length})
+        this.editorStatus.set({undoCount: this.undoHistory.length, redoCount: this.redoHistory.length})
     }
 
     resetHistory() {
@@ -2156,6 +2184,7 @@ class CmsViewEditorContainer extends React.Component {
         this._openUndoEntry = null
         this._hasHadUndo = false
         this._hasHadRedo = false
+        this.editorStatus.set({undoCount: 0, redoCount: 0})
     }
 
     handleCleanUpTranslations() {

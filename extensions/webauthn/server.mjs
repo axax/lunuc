@@ -4,6 +4,10 @@ import resolverGen from './gensrc/resolver.mjs'
 import schema from './schema/'
 import resolver from './resolver/'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
+import {registerTrs} from '../../util/i18nServer.mjs'
+import {translations} from './translations/server.mjs'
+
+registerTrs(translations)
 
 
 Hook.on('resolver', ({db, resolvers}) => {

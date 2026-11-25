@@ -19,6 +19,7 @@ import {graphql} from '../middleware/graphql'
 import {_t} from 'util/i18n.mjs'
 import TypePicker from '../components/TypePicker'
 import {getImageSrc} from '../util/media'
+import Hook from '../../util/hook.cjs'
 
 const ThemeSelect = () => {
     const themeName = useThemeName()
@@ -215,6 +216,10 @@ class UserProfileContainer extends React.Component {
 
         const pictureSrc = picture && picture.length > 0 ? getImageSrc(picture[0], 'thumbnail') : undefined
 
+        // sections of extensions (e.g. two-factor authentication of webauthn)
+        const extensionSections = []
+        Hook.call('UserProfileSections', {sections: extensionSections, Section, me})
+
         return <Box sx={{maxWidth: 1100}}>
             <Box sx={{display: 'flex', alignItems: 'center', gap: 3, mb: 4, flexWrap: 'wrap'}}>
                 <Avatar src={pictureSrc} alt={username} sx={{
@@ -274,6 +279,8 @@ class UserProfileContainer extends React.Component {
                         <Button variant="outlined" color="primary" onClick={this.createNote}>{_t('Profile.addNote')}</Button>
                     </Actions>
                 </Section>
+
+                {extensionSections}
             </Box>
         </Box>
     }

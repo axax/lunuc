@@ -7,7 +7,6 @@ import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import {clientAddress, getHostFromHeaders, isTrustedProxyAddress} from '../../util/host.mjs'
 import {trackUser, trackEvent, trackBeacon} from './track.mjs'
 import React from 'react'
-import Util from '../../api/util/index.mjs'
 import {TRACK_USER_AGENT_HEADER} from '../../api/constants/index.mjs'
 
 // Hook to add mongodb resolver
@@ -120,17 +119,3 @@ Hook.on('typeBeforeCreate', ({type, data, req}) => {
 })
 
 
-// add some extra data to the table
-Hook.on('cmsPageStatus', async ({db, slug, req, data}) => {
-
-    const keys = ['CmsViewContainerSettings']
-    const keyvalueMap = (await Util.keyvalueMap(db, req.context, keys, {cache: true, parse: true}))
-
-    if (keyvalueMap.CmsViewContainerSettings && keyvalueMap.CmsViewContainerSettings.tracking) {
-
-        const countTotal = await db.collection('UserTracking').count({slug})
-        const lastEntry = await db.collection('UserTracking').findOne({slug}, {sort: {_id: -1}})
-        data.usertracking = {countTotal, lastEntry}
-    }
-
-})

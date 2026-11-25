@@ -1034,40 +1034,63 @@ export const buildDashboard = async (db, {host = '', days = 30, isAdmin = false,
 
 /**
  * views and engagement of one page per day
- * @param path  '/path' with a host, 'host/path' (without www) for all hosts
+ * @param path  '/path' with a host, 'host/path' (without www) for all hosts.
+ *              Also an array of paths (e.g. the language variants of a page), they are summed up.
+ * @param fields  top lists to read, e.g. only ['pages'] if only the views are needed
+ * @param liveToday  true: today from the live aggregation (current, may aggregate the raw data of today),
+ *                   false: today from the snapshot of the cronjob (max. 15 minutes old, one indexed query)
  */
-export const buildPageTrend = async (db, {host = '', days = 30, path}) => {
+const PAGE_TREND_FIELDS = ['pages', 'pageEngagement', 'entryPages', 'exitPages']
+export const buildPageTrend = async (db, {host = '', days = 30, path, fields = PAGE_TREND_FIELDS, liveToday = true}) => {
     days = Math.min(Math.max(parseInt(days) || 30, 1), 731)
     const hosts = host ? hostVariants(host) : [ALL_HOSTS]
     const today = dayFromDate(new Date())
     const rangeFrom = addDays(today, -(days - 1))
     const yesterday = addDays(today, -1)
     const norm = k => host ? k : String(k).replace(/^www\./, '')
-    const target = norm(path)
+    const targets = [...new Set((Array.isArray(path) ? path : [path]).map(p => norm(String(p || ''))))]
+    const targetSet = new Set(targets)
+    // keys as they are stored (in the summary over all hosts also with www.)
+    const keys = host ? targets : [...targets, ...targets.map(t => 'www.' + t)]
+    // only the entries of the page leave mongodb (instead of the top lists with up to 200 entries per day)
+    const onlyTargets = field => ({$filter: {input: {$ifNull: ['$' + field, []]}, cond: {$in: ['$$this.k', keys]}}})
 
-    const docs = await db.collection(DAILY_COLLECTION).find(
-        {host: hosts.length === 1 ? hosts[0] : {$in: hosts}, date: {$gte: dateKey(rangeFrom), $lte: dateKey(yesterday)}},
-        {projection: {date: 1, pages: 1, pageEngagement: 1, entryPages: 1, exitPages: 1}}
-    ).toArray()
-    const live = (await todayDocs(db)).filter(doc => hosts.indexOf(doc.host) >= 0)
+    const docs = await db.collection(DAILY_COLLECTION).aggregate([
+        {$match: {host: hosts.length === 1 ? hosts[0] : {$in: hosts}, date: {$gte: dateKey(rangeFrom), $lte: dateKey(liveToday ? yesterday : today)}}},
+        {$project: fields.reduce((p, f) => (PAGE_TREND_FIELDS.indexOf(f) >= 0 && (p[f] = onlyTargets(f)), p), {_id: 0, date: 1})}
+    ]).toArray()
+    const live = liveToday ? (await todayDocs(db)).filter(doc => hosts.indexOf(doc.host) >= 0) : []
     const byDate = {}
     ;[...docs, ...live].forEach(doc => (byDate[doc.date] || (byDate[doc.date] = [])).push(doc))
 
-    const find = (list, f) => (list || []).filter(item => norm(item.k) === target).reduce((s, item) => s + (item[f] || 0), 0)
+    const find = (list, f) => {
+        let sum = 0
+        if (list) {
+            for (const item of list) {
+                if (targetSet.has(norm(item.k))) sum += item[f] || 0
+            }
+        }
+        return sum
+    }
     const series = dayRange(rangeFrom, today).map(day => {
         const date = dateKey(day)
         const list = byDate[date] || []
-        const views = list.reduce((s, doc) => s + find(doc.pages, 'n'), 0)
-        const jsViews = list.reduce((s, doc) => s + find(doc.pageEngagement, 'n'), 0)
-        const t = list.reduce((s, doc) => s + find(doc.pageEngagement, 't'), 0)
-        const sc = list.reduce((s, doc) => s + find(doc.pageEngagement, 's'), 0)
+        let views = 0, jsViews = 0, t = 0, sc = 0, entries = 0, exits = 0
+        for (const doc of list) {
+            views += find(doc.pages, 'n')
+            jsViews += find(doc.pageEngagement, 'n')
+            t += find(doc.pageEngagement, 't')
+            sc += find(doc.pageEngagement, 's')
+            entries += find(doc.entryPages, 'n')
+            exits += find(doc.exitPages, 'n')
+        }
         return {
-            date, views,
+            date, views, jsViews,
             avgTime: jsViews ? Math.round(t / jsViews) : null,
             avgScroll: jsViews ? Math.round(sc / jsViews) : null,
-            entries: list.reduce((s, doc) => s + find(doc.entryPages, 'n'), 0),
-            exits: list.reduce((s, doc) => s + find(doc.exitPages, 'n'), 0)
+            entries,
+            exits
         }
     })
-    return {path: target, host, days, series}
+    return {path: Array.isArray(path) ? targets : targets[0], host, days, series}
 }

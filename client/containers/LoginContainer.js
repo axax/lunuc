@@ -9,6 +9,7 @@ import {client} from 'client/middleware/graphql'
 import {_t} from 'util/i18n.mjs'
 import Hook from '../../util/hook'
 import {AuthLayout, cardSx} from '../components/AuthLayout'
+import {LOGIN_RESULT_FIELDS} from '../constants/index.mjs'
 
 class LoginContainer extends React.Component {
 
@@ -29,6 +30,8 @@ class LoginContainer extends React.Component {
             resetToken:token || resetToken || '',
             forgotPassword: false,
             forgotPasswordSent: false,
+            // set after a correct password if the user has two-factor authentication
+            twoFactorToken: null,
             passwordVisible:false,
             domain: domain ? domain : _app_.login ? _app_.login.defaultDomain : '',
             oauth: oauth==='true'
@@ -118,25 +121,22 @@ class LoginContainer extends React.Component {
 
         this.setState({loading: true, error: null})
 
-        const params = Util.extractQueryParams()
-
         client.query({
             fetchPolicy: 'no-cache',
-            query: 'query login($username:String!,$password:String!,$domain:String,$meta:String){login(username:$username,password:$password,domain:$domain,meta:$meta){token redirectUrl resetToken error user{username requestNewPassword email _id role{_id capabilities}}}}',
+            query: `query login($username:String!,$password:String!,$domain:String,$meta:String){login(username:$username,password:$password,domain:$domain,meta:$meta){${LOGIN_RESULT_FIELDS}}}`,
             variables: {
                 username: this.state.username,
                 password: this.state.password,
                 domain: this.state.domain,
-                meta: JSON.stringify({
-                    forward: params.forward,
-                    oauth: this.state.oauth
-                })
+                meta: this.getLoginMeta()
             }
         }).then(response => {
             this.setState({loading: false})
             if (response.data && response.data.login) {
 
-                if(response.data.login.redirectUrl){
+                if (response.data.login.twoFactorToken) {
+                    this.setState({twoFactorToken: response.data.login.twoFactorToken, password: ''})
+                } else if(response.data.login.redirectUrl){
                     window.location = response.data.login.redirectUrl
                 }else {
                     this.loginWithResponse(response.data.login)
@@ -144,6 +144,14 @@ class LoginContainer extends React.Component {
             }
         }).catch((response) => {
             this.setState({loading: false, error: response.error.message})
+        })
+    }
+
+    // also used for the second factor (see extensions/webauthn)
+    getLoginMeta() {
+        return JSON.stringify({
+            forward: Util.extractQueryParams().forward,
+            oauth: this.state.oauth
         })
     }
 
@@ -188,10 +196,21 @@ class LoginContainer extends React.Component {
         const {signupLink, showSignupLink} = this.props
         const from = this.getFromUrl()
 
-        const {resetToken, forgotPassword, forgotPasswordSent, redirectToReferrer, loading, username, password, newPassword, domain, error, passwordVisible} = this.state
+        const {resetToken, forgotPassword, forgotPasswordSent, redirectToReferrer, loading, username, password, newPassword, domain, error, passwordVisible, twoFactorToken} = this.state
 
         if (redirectToReferrer) {
             return <Redirect to={from} push={true}/>
+        }
+
+        if (twoFactorToken && !resetToken) {
+            // the second factor is provided by extensions (webauthn)
+            const twoFactorContent = []
+            Hook.call('LoginContainerTwoFactor', {content: twoFactorContent, container: this, twoFactorToken})
+            return <AuthLayout>
+                <Card sx={cardSx}>
+                    {twoFactorContent.length ? twoFactorContent : <Typography>Two-factor authentication is not available</Typography>}
+                </Card>
+            </AuthLayout>
         }
 
         const loginAlternatives = []

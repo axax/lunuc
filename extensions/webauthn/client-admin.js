@@ -8,6 +8,10 @@ import {
     Button
 } from 'ui/admin'
 import {loginWebAuthn} from './util/navigator.mjs'
+import {lazy} from 'client/components/Async'
+
+const TwoFactorSettings = lazy(() => import(/* webpackChunkName: "admin" */ './components/TwoFactorSettings'))
+const TwoFactorLogin = lazy(() => import(/* webpackChunkName: "admin" */ './components/TwoFactorLogin'))
 
 registerTrs(translations, 'WebAuthn')
 
@@ -26,16 +30,27 @@ export default () => {
     Hook.on('LoginContainerBeforeRender', ({loginAlternatives, container}) => {
         loginAlternatives.push(<Button sx={{width:'100%'}} color="secondary" variant="outlined" endIcon={<FingerprintIcon />}
                                        onClick={async ()=>{
-                                           const response = await loginWebAuthn()
+                                           const response = await loginWebAuthn({meta: container.getLoginMeta()})
                                            if(response.error) {
-
+                                               if(!response.cancelled) {
+                                                   container.setState({error: response.error})
+                                               }
                                            }else{
-                                               console.log(response.data.loginWebAuthnPasskey)
                                                container.loginWithResponse(response.data.loginWebAuthnPasskey)
                                            }
                                        }}>
             {_t('webauthn.loginWithPasskey')}
         </Button>)
+    })
+
+    // two-factor settings in the user profile
+    Hook.on('UserProfileSections', ({sections, Section}) => {
+        sections.push(<TwoFactorSettings key="webauthn" Wrapper={Section} passkeyActions={true}/>)
+    })
+
+    // second factor after the password (user has two-factor authentication enabled)
+    Hook.on('LoginContainerTwoFactor', ({content, container, twoFactorToken}) => {
+        content.push(<TwoFactorLogin key="webauthn" container={container} twoFactorToken={twoFactorToken}/>)
     })
 
 }

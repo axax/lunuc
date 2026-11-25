@@ -3,12 +3,15 @@ import crypto from 'crypto'
 import {getHostFromHeaders} from '../../../util/host.mjs'
 import {decodeAttestation, parseAuthData} from '../util/attestation.mjs'
 import genResolver from '../gensrc/resolver.mjs'
-import {USE_COOKIES} from '../../../api/constants/index.mjs'
-import {setAuthCookies} from "../../../api/util/sessionContext.mjs";
 import jwkToPem from 'jwk-to-pem'
 import {ObjectId} from 'mongodb'
 import {auth} from '../../../api/auth.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
+import {clientAddress} from '../../../util/host.mjs'
+import {addInvalidLoginAttempt, clearInvalidLoginAttempt, hasTooManyInvalidLoginAttempts, ipBlockKey} from '../../../api/util/loginBlocker.mjs'
+import {parseOrElse} from '../../../client/util/json.mjs'
+import {_t} from '../../../util/i18nServer.mjs'
+import {CODE_LENGTH, consumeRecoveryCode, countUnusedRecoveryCodes, generateRecoveryCodes, normalize} from '../util/recoveryCodes.mjs'
 
 
 const sha256 = (data) => {
@@ -79,6 +82,91 @@ function checkRpIdHashAndFlags(expectedHost, authData) {
     }
 }
 
+// checks a passkey assertion (navigator.credentials.get) and returns the stored credential
+const verifyAssertion = async (db, req, {id, clientData, signature, authenticatorData}) => {
+    const clientDataJson = JSON.parse(clientData)
+
+    if (clientDataJson.type !== 'webauthn.get') {
+        throw new Error('The value of property "clientDataJson.type" is not "webauhn.get"')
+    }
+
+    checkChallenge(clientDataJson,req.context)
+
+    const expectedHost = getHostFromHeaders(req.headers)
+    checkOrigin(clientDataJson, expectedHost)
+
+    const authData = parseAuthData(Buffer.from(authenticatorData, 'base64'))
+    checkRpIdHashAndFlags(expectedHost, authData)
+
+    // Verify that the values of the client extension outputs in clientExtensionResults and the authenticator
+    // extension outputs in the extensions in authData are as expected, considering the client extension input values
+    // that were given as the extensions option in the get() call.
+    if (authData.extensions) {
+        // We didn't request any extensions. If extensionData is defined, fail.
+        throw new Error('Received unexpected extension data')
+    }
+
+    const credential = await db.collection('WebAuthnCredential').findOne({credId: id})
+
+    // a credential only logs in the user it was registered for. Credentials without
+    // owner (created before this check existed) are not accepted any more.
+    if(!credential || !credential.publicKey || !credential.createdBy){
+        throw Error('Invalid credential')
+    }
+
+    // Let hash be the result of computing a hash over the cData using SHA-256.
+    const clientDataHash = sha256(clientData)
+
+    // Using the credential public key looked up in step 3, verify that sig is a valid signature
+    // over the binary concatenation of authData and hash.
+    const verify = credential.publicKey.kty === 'RSA' ? crypto.createVerify('RSA-SHA256') : crypto.createVerify('sha256')
+
+    verify.update(Buffer.from(authenticatorData, 'base64'))
+    verify.update(clientDataHash)
+
+    const sig = Buffer.from(signature, 'base64')
+
+    if (!verify.verify(jwkToPem(credential.publicKey), sig)) {
+        throw new Error('Could not verify signature')
+    }
+
+    return {credential, authData}
+}
+
+const FLAG_USER_VERIFIED = 0b00000100
+
+// issues the login token for a user whose authentication is complete
+const finishLogin = async (db, req, user, meta) => {
+    await db.collection('User').updateOne({_id: user._id}, {$set: {lastLogin: new Date().getTime()}})
+    // same token content as the password login
+    const result = await auth.signPayload(db, user)
+    return auth.completeLogin({db, req, result, metaObj: parseOrElse(meta, {})})
+}
+
+const pendingUserOrError = async (db, twoFactorToken, context) => {
+    const user = await auth.verifyTwoFactorToken(db, twoFactorToken)
+    if (!user) {
+        throw new Error(_t('webauthn.twoFactor.expired', context.lang))
+    }
+    return user
+}
+
+const userWithPassword = async (db, context, password) => {
+    Util.checkIfUserIsLoggedIn(context)
+    const user = await db.collection('User').findOne({_id: new ObjectId(context.id)})
+    if (!user || !password || !(await Util.compareWithHashedPasswordAsync(password, user.password))) {
+        throw new Error(_t('core.login.invalid', context.lang))
+    }
+    return user
+}
+
+const twoFactorStatus = async (db, user, recoveryCodes) => ({
+    enabled: !!user.twoFactor,
+    passkeys: await db.collection('WebAuthnCredential').countDocuments({createdBy: user._id}),
+    recoveryCodesLeft: countUnusedRecoveryCodes(user),
+    recoveryCodes
+})
+
 export default (db) => ({
     Query: {
         getWebAuthnChallenge:  async ({}, {context}) => {
@@ -91,59 +179,18 @@ export default (db) => ({
             return {challenge}
 
         },
-        loginWebAuthnPasskey: async ({id,clientData,userHandle,signature,authenticatorData}, req) => {
+        loginWebAuthnPasskey: async ({id,clientData,userHandle,signature,authenticatorData,twoFactorToken,meta}, req) => {
 
-            const clientDataJson = JSON.parse(clientData)
+            // as second factor: the password was already checked
+            const pendingUser = twoFactorToken ? await pendingUserOrError(db, twoFactorToken, req.context) : null
 
-            if (clientDataJson.type !== 'webauthn.get') {
-                throw new Error('The value of property "clientDataJson.type" is not "webauhn.get"')
-            }
+            const {credential, authData} = await verifyAssertion(db, req, {id, clientData, signature, authenticatorData})
 
-            checkChallenge(clientDataJson,req.context)
-
-            const expectedHost = getHostFromHeaders(req.headers)
-            checkOrigin(clientDataJson, expectedHost)
-
-            const authData = parseAuthData(Buffer.from(authenticatorData, 'base64'))
-            checkRpIdHashAndFlags(expectedHost, authData)
-
-            // Verify that the values of the client extension outputs in clientExtensionResults and the authenticator
-            // extension outputs in the extensions in authData are as expected, considering the client extension input values
-            // that were given as the extensions option in the get() call.
-            if (authData.extensions) {
-                // We didn't request any extensions. If extensionData is defined, fail.
-                throw new Error('Received unexpected extension data')
-            }
-
-            const credential = await db.collection('WebAuthnCredential').findOne({credId: id})
-
-            // a credential only logs in the user it was registered for. Credentials without
-            // owner (created before this check existed) are not accepted any more.
-            if(!credential || !credential.publicKey || !credential.createdBy){
+            if (pendingUser && String(credential.createdBy) !== String(pendingUser._id)) {
                 throw Error('Invalid credential')
             }
 
-            // Let hash be the result of computing a hash over the cData using SHA-256.
-            const clientDataHash = sha256(clientData)
-
-            // Using the credential public key looked up in step 3, verify that sig is a valid signature
-            // over the binary concatenation of authData and hash.
-            const verify = credential.publicKey.kty === 'RSA' ? crypto.createVerify('RSA-SHA256') : crypto.createVerify('sha256')
-
-            verify.update(Buffer.from(authenticatorData, 'base64'))
-            verify.update(clientDataHash)
-
-            const sig = Buffer.from(signature, 'base64')
-
-            if (!verify.verify(jwkToPem(credential.publicKey), sig)) {
-                throw new Error('Could not verify signature')
-            }
-
-
-            const user = await db.collection('User').findOneAndUpdate(
-                {_id: new ObjectId(credential.createdBy)},
-                {$set: {lastLogin: new Date().getTime()}}
-            )
+            const user = pendingUser || await db.collection('User').findOne({_id: new ObjectId(credential.createdBy)})
             if (!user || user.blocked || user.username === 'anonymous') {
                 throw new Error('Login not possible')
             }
@@ -153,17 +200,45 @@ export default (db) => ({
                 throw new Error('Invalid user handle')
             }
 
-            // same token content as the password login
-            const result = await auth.signPayload(db, user)
-
-            if (USE_COOKIES) {
-                setAuthCookies(result, req, req.res)
-                // delete token because it is handled by cookies
-                delete result.token
+            // a passkey alone counts as two factors only with user verification (Face ID, PIN ...)
+            if (!pendingUser && user.twoFactor && (authData.flags & FLAG_USER_VERIFIED) === 0) {
+                throw new Error(_t('webauthn.twoFactor.userVerificationRequired', req.context.lang))
             }
 
-            return result
+            return finishLogin(db, req, user, meta)
 
+        },
+        loginTwoFactorRecoveryCode: async ({twoFactorToken, code, meta}, req) => {
+            const {context} = req
+            const user = await pendingUserOrError(db, twoFactorToken, context)
+
+            const ipKey = ipBlockKey(clientAddress(req)), userKey = '2fa:' + user._id
+            if (hasTooManyInvalidLoginAttempts(ipKey) || hasTooManyInvalidLoginAttempts(userKey)) {
+                throw new Error(_t('core.login.blocked.temporarily', context.lang))
+            }
+
+            // e.g. the whole list was pasted - a typing error, not a guess
+            if (normalize(code).length > CODE_LENGTH) {
+                throw new Error(_t('webauthn.twoFactor.oneCodeOnly', context.lang))
+            }
+
+            if (!(await consumeRecoveryCode(db, user._id, code))) {
+                addInvalidLoginAttempt(ipKey)
+                addInvalidLoginAttempt(userKey)
+                throw new Error(_t('webauthn.twoFactor.invalidCode', context.lang))
+            }
+            clearInvalidLoginAttempt(userKey)
+            Util.clearUserCache(user._id)
+
+            return finishLogin(db, req, user, meta)
+        },
+        twoFactorStatus: async ({}, {context}) => {
+            Util.checkIfUserIsLoggedIn(context)
+            const user = await db.collection('User').findOne({_id: new ObjectId(context.id)})
+            if (!user) {
+                throw new Error('Not allowed')
+            }
+            return twoFactorStatus(db, user)
         },
         addWebAuthnPasskey: async ({id,clientData,attestation}, req) => {
             Util.checkIfUserIsLoggedIn(req.context)
@@ -238,6 +313,54 @@ export default (db) => ({
         }
     },
     Mutation: {
+        setTwoFactor: async ({enabled, password, passkey}, req) => {
+            const {context} = req
+            const user = await userWithPassword(db, context, password)
+            let recoveryCodes
+            if (enabled) {
+                // only with a passkey that really works on this host - otherwise the user locks himself out
+                if (!passkey) {
+                    throw new Error(_t('webauthn.twoFactor.passkeyRequired', context.lang))
+                }
+                const {credential} = await verifyAssertion(db, req, parseOrElse(passkey, {}))
+                if (String(credential.createdBy) !== String(user._id)) {
+                    throw Error('Invalid credential')
+                }
+                const generated = generateRecoveryCodes()
+                recoveryCodes = generated.codes
+                user.twoFactor = true
+                user.twoFactorRecoveryCodes = generated.entries
+                await db.collection('User').updateOne({_id: user._id}, {$set: {twoFactor: true, twoFactorRecoveryCodes: generated.entries}})
+            } else {
+                user.twoFactor = false
+                user.twoFactorRecoveryCodes = []
+                await db.collection('User').updateOne({_id: user._id}, {$unset: {twoFactor: '', twoFactorRecoveryCodes: ''}})
+            }
+            Util.clearUserCache(user._id)
+            return twoFactorStatus(db, user, recoveryCodes)
+        },
+        regenerateTwoFactorRecoveryCodes: async ({password}, {context}) => {
+            const user = await userWithPassword(db, context, password)
+            if (!user.twoFactor) {
+                throw new Error('Two-factor authentication is not enabled')
+            }
+            const {codes, entries} = generateRecoveryCodes()
+            user.twoFactorRecoveryCodes = entries
+            await db.collection('User').updateOne({_id: user._id}, {$set: {twoFactorRecoveryCodes: entries}})
+            Util.clearUserCache(user._id)
+            return twoFactorStatus(db, user, codes)
+        },
+        resetTwoFactor: async ({userId}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+            const _id = new ObjectId(userId)
+            await db.collection('User').updateOne({_id}, {$unset: {twoFactor: '', twoFactorRecoveryCodes: ''}})
+            Util.clearUserCache(_id)
+            const user = await db.collection('User').findOne({_id})
+            if (!user) {
+                throw new Error('User not found')
+            }
+            return twoFactorStatus(db, user)
+        },
         // The generated mutation was open for everyone (access.create "anonymous") and allowed
         // to store any public key - which then could be used to log in. Only admins may use it.
         createWebAuthnCredential: async (data, req, options) => {

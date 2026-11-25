@@ -37,6 +37,10 @@ const LogEntry = React.memo(({log}) => (
                     </div>
 ))
 
+let logId = 0
+// older entries are dropped: the list (and the logged objects it keeps alive) must not grow forever
+const MAX_LOGS = 500
+
 const ConsoleCapture = () => {
     const [logs, setLogs] = useState([]);
     const logContainerRef = useRef(null); // Ref for the log container
@@ -51,14 +55,26 @@ const ConsoleCapture = () => {
             originalMethods[method] = console[method];
         });
 
+        // Logs are collected and applied once per frame: a console call can happen while another
+        // component renders (setState there is not allowed), and many logs cause only one render
+        let queue = [], frame = null
+        const flush = () => {
+            frame = null
+            const entries = queue
+            queue = []
+            setLogs((prevLogs) => {
+                const next = prevLogs.concat(entries)
+                return next.length > MAX_LOGS ? next.slice(next.length - MAX_LOGS) : next
+            })
+        }
+
         // Override console methods
         methods.forEach((method) => {
             console[method] = (...args) => {
                 // Capture the log with method type
-                const logEntry = { type: method, message: args, timestamp: new Date() };
-
-                // Update the state with the new log entry
-                setLogs((prevLogs) => [...prevLogs, logEntry]);
+                queue.push({ type: method, message: args, timestamp: new Date(), id: ++logId });
+                if (queue.length > MAX_LOGS) queue.shift()
+                if (frame === null) frame = requestAnimationFrame(flush)
 
                 // Call the original console method
                 originalMethods[method].apply(console, args);
@@ -68,6 +84,7 @@ const ConsoleCapture = () => {
 
         // Cleanup: Restore the original console methods on component unmount
         return () => {
+            if (frame !== null) cancelAnimationFrame(frame)
             methods.forEach((method) => {
                 console[method] = originalMethods[method];
             });
@@ -93,8 +110,8 @@ const ConsoleCapture = () => {
                     fontSize:'10px'
                 }}
             >
-                {logs.map((log, index) => (
-                    <LogEntry key={index} log={log}/>
+                {logs.map((log) => (
+                    <LogEntry key={log.id} log={log}/>
                 ))}
             </div>
     );

@@ -15,11 +15,19 @@ import {
 import Util from "../../../client/util/index.mjs";
 import {CAPABILITY_RUN_COMMAND} from '../../../util/capabilities.mjs'
 import {getIconByKey} from '../../../client/components/ui/impl/material/icon'
+import Hook from '../../../util/hook.cjs'
 
 // Keys that may be changed through a lunuc_component message.
 const PATCHABLE_KEYS = ['script', 'serverScript', 'style', 'dataResolver']
 const ALLOWED_KEYS = ['template', ...PATCHABLE_KEYS]
 
+/*
+ Extensions can add tabs with the hook CmsPageToolsTabs:
+   Hook.on('CmsPageToolsTabs', ({tabs, data, editorOptions}) => {
+       tabs.push({name, label: () => 'Label', icon, render: ({height, data}) => <Component/>})
+   })
+ The content of such a tab is only rendered while the tab is open.
+*/
 const TABS = [
     {name: 'console', label: () => 'Console'},
     {name: 'scope', label: () => 'Scope'},
@@ -31,6 +39,8 @@ const MIN_BOX_HEIGHT = 50
 const MAX_BOX_HEIGHT_RATIO = 0.8 // matches CSS maxHeight: 80vh
 
 const IFRAME_STYLE = {width: '100%', height: '100%', border: 'none'}
+// tabs rendered by extensions show normal ui instead of code
+const EXTENSION_TAB_STYLE = {fontFamily: 'inherit', whiteSpace: 'normal', lineHeight: 1.5}
 
 
 const StyledBox = styled('div')(({theme}) => ({
@@ -113,6 +123,23 @@ const StyledButton = styled('button', {
 export default function CmsPageTools(props) {
 
     const [tab, setTab] = React.useState(props.tab)
+
+    // the tab can also be opened from outside (e.g. the analytics button in the toolbar)
+    useEffect(() => {
+        if (props.tab !== undefined && props.tab !== tab) {
+            setTab(props.tab)
+            if (props.tab) {
+                setMountedTabs((prev) => (prev[props.tab] ? prev : {...prev, [props.tab]: true}))
+            }
+        }
+    }, [props.tab])
+
+    // height set from outside (e.g. a minimum height when the analytics tab is opened)
+    useEffect(() => {
+        if (props.boxHeight && props.boxHeight !== boxHeightRef.current && dragStartHeightRef.current === null) {
+            setBoxHeight(props.boxHeight)
+        }
+    }, [props.boxHeight])
     const [boxHeight, setBoxHeight] = React.useState(props.boxHeight || 200)
 
     // Tabs the user has opened at least once. Their iframes stay mounted so
@@ -147,6 +174,9 @@ export default function CmsPageTools(props) {
     // against this frozen value - measuring against the current height would
     // apply the growing delta again and again, making the box accelerate.
     const dragStartHeightRef = useRef(null)
+
+    // height of the running drag, given to the parent on mouseup
+    const pendingHeightRef = useRef(null)
 
     // Keep refs in sync with the committed render, but preserve locally edited
     // parts so an unrelated parent re-render cannot discard in-flight edits.
@@ -297,6 +327,15 @@ export default function CmsPageTools(props) {
     useEffect(() => {
         const resetDragBaseline = () => {
             dragStartHeightRef.current = null
+            // the parent gets the new height once, at the end of the drag: during the drag only this
+            // box changes, otherwise the whole editor with the page would render on every mousemove
+            if (pendingHeightRef.current !== null) {
+                const height = pendingHeightRef.current
+                pendingHeightRef.current = null
+                if (propsRef.current.onBoxHeightChange) {
+                    propsRef.current.onBoxHeightChange(height)
+                }
+            }
         }
         window.addEventListener('mouseup', resetDragBaseline)
         return () => {
@@ -337,10 +376,7 @@ export default function CmsPageTools(props) {
         }
 
         setBoxHeight(next)
-
-        if (propsRef.current.onBoxHeightChange) {
-            propsRef.current.onBoxHeightChange(next)
-        }
+        pendingHeightRef.current = next
     }, [])
 
     // Memoized so the iframe src stays referentially stable across re-renders
@@ -363,11 +399,19 @@ export default function CmsPageTools(props) {
         </StyledInfoBox>
     }
 
+    // core tabs and the ones of extensions (hook call is cheap, no handlers registered = no copy needed)
+    let tabs = TABS
+    if (Hook.hooks['CmsPageToolsTabs'] && Hook.hooks['CmsPageToolsTabs'].length) {
+        tabs = [...TABS]
+        Hook.call('CmsPageToolsTabs', {tabs, data: props.data, editorOptions: props.editorOptions || {}})
+    }
+    const extensionTab = tabs.find(t => t.name === tab && t.render)
+
     return <StyledBox style={props.style}>
         {tab && <ResizableDivider direction="vertical" onResize={handleResize}/>}
 
         <StyledButtonGroup role="tablist">
-            {TABS.map(({name, label, capa, icon}) => {
+            {tabs.map(({name, label, capa, icon}) => {
 
                 if(capa && !Util.hasCapability(_app_.user, capa)){
                     return
@@ -402,5 +446,10 @@ export default function CmsPageTools(props) {
             'Server console'
         )}
         {renderIframeTab('aiAssistent', aiAssistenUrl, _t('CodeEditor.aiAssistent'))}
+
+        {extensionTab &&
+            <StyledInfoBox height={boxHeight} style={EXTENSION_TAB_STYLE}>
+                {extensionTab.render({height: boxHeight, data: props.data})}
+            </StyledInfoBox>}
     </StyledBox>
 }

@@ -93,6 +93,22 @@ Hook.on('appexit', async () => {
     await flushBuffer(true)
 })
 
+// ------------------------------------------------------------------ last visit per page (cms editor)
+
+// last human page view per cms slug of this process, so the editor does not have to search the raw data
+const LAST_VISIT = new Map()
+const MAX_LAST_VISIT = 5000
+
+const rememberVisit = (slug) => {
+    // delete + set keeps the map ordered by time, the oldest entry is dropped first
+    LAST_VISIT.delete(slug)
+    LAST_VISIT.set(slug, Date.now())
+    if (LAST_VISIT.size > MAX_LAST_VISIT) LAST_VISIT.delete(LAST_VISIT.keys().next().value)
+}
+
+/** time (ms) of the last human page view of the slug seen by this process, or 0 */
+export const getLastVisit = (slug) => LAST_VISIT.get(slug) || 0
+
 // ------------------------------------------------------------------ request path (cheap)
 
 /**
@@ -170,6 +186,9 @@ export const trackEvent = (raw) => {
             entry._soft404 = true
         }
         BUFFER.entries.push(entry)
+        if (!entry.isBot && entry.slug !== undefined && entry.slug !== null && (!entry.event || entry.event === 'visit')) {
+            rememberVisit(entry.slug)
+        }
 
         // live view and hooks only if somebody listens, outside of the request
         const ee = pubsub.ee

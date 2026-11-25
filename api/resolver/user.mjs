@@ -403,7 +403,11 @@ export const userResolver = (db) => ({
 
             const metaObj = parseOrElse(meta, {})
 
-            if (!result.token) {
+            if (result.twoFactorToken) {
+                // password is correct - the login is completed after the second factor
+                clearInvalidLoginAttempt(ipKey)
+                clearInvalidLoginAttempt(userKey)
+            } else if (!result.token) {
 
                 addInvalidLoginAttempt(ipKey)
                 // only existing accounts - unknown usernames would just fill the map
@@ -419,26 +423,7 @@ export const userResolver = (db) => ({
                 clearInvalidLoginAttempt(ipKey)
                 clearInvalidLoginAttempt(userKey)
 
-                if (USE_COOKIES && !metaObj.oauth) {
-                    setAuthCookies(result, req, req.res)
-
-                    // delete token because it is handled by cookies
-                    delete result.token
-                }
-
-                if (result.user.requestNewPassword) {
-                    // generate reset token
-                    const resetToken = crypto.randomBytes(16).toString('hex')
-                    await db.collection('User').findOneAndUpdate({_id: new ObjectId(result.user._id)}, {
-                        $set: {
-                            passwordReset: new Date().getTime(),
-                            resetToken
-                        }
-                    })
-                    result.resetToken = resetToken
-                }
-
-                await HookAsync.call('login', {req, result, context, db, user: result.user, metaObj})
+                await auth.completeLogin({db, req, result, metaObj})
             }
             return result
         },

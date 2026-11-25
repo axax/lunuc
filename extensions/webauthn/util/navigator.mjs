@@ -1,40 +1,55 @@
 import {client} from '../../../client/middleware/graphql.js'
 import {arrayBufferToString, base64encode} from './parse.mjs'
+import {LOGIN_RESULT_FIELDS} from '../../../client/constants/index.mjs'
 
 
-export const loginWebAuthn = async () => {
+// asks the browser for a passkey of this host and returns the signed challenge
+export const getPasskeyAssertion = async () => {
     const challengeResponse = await client.query({fetchPolicy: 'network-only',query: 'query{getWebAuthnChallenge{challenge}}' })
     const challenge = challengeResponse?.data?.getWebAuthnChallenge?.challenge
-    if(challenge) {
-        let credentials
-
-        try {
-            credentials = await navigator.credentials.get({
-                publicKey: {
-                    challenge: new TextEncoder().encode(challenge), // Server-generated random challenge
-                    timeout: 60000, // Timeout for the operation
-                    userVerification: 'preferred', // Specify user verification preference
-                },
-            })
-        }catch (error){
-            console.log(error)
-            return {error}
-        }
-
-        const loginPasskeyResult = await client.query({
-            fetchPolicy: 'network-only',
-            variables: {
-                id: base64encode(credentials.rawId),
-                clientData: arrayBufferToString(credentials.response.clientDataJSON),
-                userHandle: base64encode(credentials.response.userHandle),
-                signature: base64encode(credentials.response.signature),
-                authenticatorData: base64encode(credentials.response.authenticatorData)
-            },
-            query: 'query loginWebAuthnPasskey($id:String!,$clientData:String!,$userHandle:String!,$signature:String!,$authenticatorData:String!){loginWebAuthnPasskey(id:$id,clientData:$clientData,signature:$signature,userHandle:$userHandle,authenticatorData:$authenticatorData){token user{username}}}'
-        })
-        return loginPasskeyResult
-    }else{
+    if(!challenge) {
         return {error:'No challenge'}
+    }
+    let credentials
+    try {
+        credentials = await navigator.credentials.get({
+            publicKey: {
+                challenge: new TextEncoder().encode(challenge), // Server-generated random challenge
+                timeout: 60000, // Timeout for the operation
+                userVerification: 'preferred', // Specify user verification preference
+            },
+        })
+    }catch (error){
+        console.log(error)
+        return {error: error?.message || String(error), cancelled: error?.name === 'NotAllowedError'}
+    }
+    return {
+        assertion: {
+            id: base64encode(credentials.rawId),
+            clientData: arrayBufferToString(credentials.response.clientDataJSON),
+            userHandle: base64encode(credentials.response.userHandle),
+            signature: base64encode(credentials.response.signature),
+            authenticatorData: base64encode(credentials.response.authenticatorData)
+        }
+    }
+}
+
+// twoFactorToken: passkey as second factor after the password
+export const loginWebAuthn = async ({twoFactorToken, meta} = {}) => {
+    const {assertion, error, cancelled} = await getPasskeyAssertion()
+    if (error) {
+        return {error, cancelled}
+    }
+    try {
+        return await client.query({
+            fetchPolicy: 'network-only',
+            silent: true,
+            variables: {...assertion, twoFactorToken, meta},
+            query: `query loginWebAuthnPasskey($id:String!,$clientData:String!,$userHandle:String!,$signature:String!,$authenticatorData:String!,$twoFactorToken:String,$meta:String){loginWebAuthnPasskey(id:$id,clientData:$clientData,signature:$signature,userHandle:$userHandle,authenticatorData:$authenticatorData,twoFactorToken:$twoFactorToken,meta:$meta){${LOGIN_RESULT_FIELDS}}}`
+        })
+    } catch (e) {
+        // graphql error (invalid passkey, expired ...)
+        return {error: e?.error?.message || String(e)}
     }
 }
 

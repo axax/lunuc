@@ -7,6 +7,7 @@ import {
 import {registerWebAuthn} from '../util/navigator.mjs'
 import TypesContainer from '../../../client/containers/TypesContainer'
 import {_t} from '../../../util/i18n.mjs'
+import TwoFactorSettings from '../components/TwoFactorSettings'
 
 class PasskeyContainer extends React.Component {
     constructor(props) {
@@ -26,10 +27,13 @@ class PasskeyContainer extends React.Component {
                     alert(result.error)
                 }else {
                     this.typeContainer.getData(this.typeContainer.pageParams, false)
+                    this.twoFactor?.reload()
                 }
             }}>
                 {_t('PasskeyContainer.createNewPasskey')}
             </Button>
+
+            <TwoFactorSettings ref={ref => (this.twoFactor = ref)}/>
 
             <TypesContainer onRef={ref => (this.typeContainer = ref)}
                             baseUrl={location.pathname}
