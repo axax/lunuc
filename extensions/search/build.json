@@ -37,6 +37,7 @@
           }
         },
         {"fields": {"type": 1, "ref": 1}},
+        {"fields": {"type": 1, "genericType": 1}},
         {"fields": {"definition": 1}},
         {"fields": {"type": 1, "indexedAt": 1}},
         {"fields": {"words": 1}, "options": {"name": "search_words"}}

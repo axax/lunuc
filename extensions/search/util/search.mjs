@@ -11,9 +11,21 @@ import {MAX_WORD_LENGTH} from './extract.mjs'
 import {findCorrections} from './fuzzy.mjs'
 
 const MAX_LIMIT = 50
+
+// optional measuring: timings (object) gets the milliseconds per step (search api with timings=1)
+const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now())
+const timed = async (timings, name, fn) => {
+    if (!timings) return fn()
+    const start = now()
+    try {
+        return await fn()
+    } finally {
+        timings[name] = Math.round(((timings[name] || 0) + now() - start) * 10) / 10
+    }
+}
 const SNIPPET_LENGTH = 180
 // the substring search cannot use an index: it is stopped after this time and the hits found so far are used
-const SUBSTRING_SEARCH_MAX_MS = 1000
+const SUBSTRING_SEARCH_MAX_MS = 500
 
 const getViewer = async (db, context) => {
     const id = context && context.id
@@ -202,13 +214,17 @@ const adminUrl = (hit) => {
  *  lang      language of the query (default: DEFAULT_LANGUAGE), entries without language are always included
  *  types     subset of the indexed types (types with searchIndex in build.json)
  *  genericTypes  only these GenericData types (names)
+ *  fallbackBelow  the slower steps (prefix, fuzzy, substring) only run while there are fewer hits than this
+ *            (default offset + limit). For callers that fetch more candidates than they show (e.g. to filter them
+ *            afterwards), so that a large limit does not run all steps every time
  *  fuzzy     default true: if there are not enough hits, misspelled terms are corrected to similar words
+ *  timings   optional object, gets the milliseconds per step (viewer, text, prefix, fuzzy, substring, access, parts)
  *
  * Returns {total, results: [{type, genericType, _id, title, field, snippet, score, lang, url, adminUrl}], corrections}
  * corrections (only if used): {term: [similar words that were searched as well]}
  * total = number of readable hits found (at most the candidates that were checked)
  */
-export const search = async (db, context, {query, lang, types, genericTypes, limit = 10, offset = 0, fuzzy = true} = {}) => {
+export const search = async (db, context, {query, lang, types, genericTypes, limit = 10, offset = 0, fuzzy = true, fallbackBelow, timings} = {}) => {
     const q = String(query || '').trim()
     if (q.length < 2) {
         return {total: 0, results: []}
@@ -216,7 +232,7 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
     limit = Math.max(1, Math.min(parseInt(limit) || 10, MAX_LIMIT))
     offset = Math.max(0, parseInt(offset) || 0)
     const language = lang || DEFAULT_LANGUAGE
-    const viewer = await getViewer(db, context)
+    const viewer = await timed(timings, 'viewer', () => getViewer(db, context))
     const collection = db.collection(SEARCH_COLLECTION)
 
     const indexedTypes = getIndexedTypes()
@@ -231,24 +247,32 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
         ...viewerMatch(viewer, context, typeList)
     }
     if (Array.isArray(genericTypes) && genericTypes.length > 0) {
-        filter.$and = [{$or: [{type: {$ne: 'GenericData'}}, {genericType: {$in: genericTypes}}]}]
+        if (typeList.length === 1 && typeList[0] === 'GenericData') {
+            // only GenericData: a plain condition, so the index {type, genericType} narrows the substring search
+            filter.genericType = {$in: genericTypes}
+        } else {
+            filter.$and = [{$or: [{type: {$ne: 'GenericData'}}, {genericType: {$in: genericTypes}}]}]
+        }
     }
     const candidateLimit = Math.min((offset + limit) * 4, 400)
+    const wanted = Math.min(fallbackBelow > 0 ? fallbackBelow : offset + limit, offset + limit)
+    const needMore = () => candidates.length < wanted
     // candidates without text and parts (can be large) - the parts are loaded for the returned hits only
     const projection = {_id: 1, type: 1, ref: 1, definition: 1, genericType: 1, lang: 1, title: 1, readRoles: 1}
 
     // 1. text search (stemming in the language of the entry, ranked)
-    let candidates = await collection.aggregate([
+    let candidates = await timed(timings, 'text', () => collection.aggregate([
         {$match: {$text: {$search: q, $language: textLanguage(language)}, ...filter}},
         {$addFields: {score: {$meta: 'textScore'}}},
         {$sort: {score: -1}},
         {$limit: candidateLimit},
         {$project: {...projection, score: 1}}
-    ]).toArray()
+    ]).toArray())
+    if (timings) timings.textHits = candidates.length
 
     // 2. not enough hits: substring search (parts of words, article numbers, names)
     let corrections = null
-    if (candidates.length < offset + limit) {
+    if (needMore()) {
         const regex = new RegExp(ClientUtil.escapeRegex(q), 'i')
         const substringMatch = {$or: [{title: regex}, {'parts.t': regex}]}
         const known = new Set(candidates.map(c => c._id.toString()))
@@ -265,9 +289,9 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
         const terms = [...new Set(searchTerms(q).map(t => t.substring(0, MAX_WORD_LENGTH)))].sort((a, b) => b.length - a.length)
         if (terms.length > 0) {
             try {
-                addCandidates(await collection.find({
+                addCandidates(await timed(timings, 'prefix', () => collection.find({
                     $and: [filter, {words: {$all: terms.map(t => new RegExp('^' + ClientUtil.escapeRegex(t)))}}, substringMatch]
-                }, {projection}).hint('search_words').limit(candidateLimit).toArray())
+                }, {projection}).hint('search_words').limit(candidateLimit).toArray()))
             } catch (e) {
                 // e.g. index not created yet: 2b finds these hits as well
                 console.warn('search: prefix search failed', e.message)
@@ -276,16 +300,16 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
         // 2c. still not enough: fuzzy - misspelled terms are replaced by similar words of the vocabulary,
         //     every term has to match (itself as beginning of a word or one of its corrections)
         const allTerms = [...new Set(searchTerms(q).map(t => t.substring(0, MAX_WORD_LENGTH)))]
-        if (fuzzy && candidates.length < offset + limit && allTerms.length > 0) {
+        if (fuzzy && needMore() && allTerms.length > 0) {
             try {
-                const found = await findCorrections(db, allTerms)
+                const found = await timed(timings, 'fuzzyWords', () => findCorrections(db, allTerms))
                 if (Object.keys(found).length > 0) {
                     corrections = found
                     const termMatches = allTerms.map(t => ({
                         words: {$in: [new RegExp('^' + ClientUtil.escapeRegex(t)), ...(found[t] || [])]}
                     }))
-                    addCandidates(await collection.find({$and: [filter, ...termMatches]}, {projection})
-                        .limit(candidateLimit).toArray())
+                    addCandidates(await timed(timings, 'fuzzy', () => collection.find({$and: [filter, ...termMatches]}, {projection})
+                        .limit(candidateLimit).toArray()))
                 }
             } catch (e) {
                 // e.g. vocabulary not built yet
@@ -293,10 +317,10 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
             }
         }
         // 2b. still not enough: the rest (the term in the middle of a word), cannot use an index -> time limit
-        if (candidates.length < offset + limit) {
+        if (needMore()) {
             try {
-                addCandidates(await collection.find({$and: [filter, substringMatch]}, {projection})
-                    .maxTimeMS(SUBSTRING_SEARCH_MAX_MS).limit(candidateLimit).toArray())
+                addCandidates(await timed(timings, 'substring', () => collection.find({$and: [filter, substringMatch]}, {projection})
+                    .maxTimeMS(SUBSTRING_SEARCH_MAX_MS).limit(candidateLimit).toArray()))
             } catch (e) {
                 if (e && (e.code === 50 || e.codeName === 'MaxTimeMSExpired')) {
                     console.warn(`search: substring search for "${q}" stopped after ${SUBSTRING_SEARCH_MAX_MS}ms`)
@@ -316,7 +340,7 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
     const unique = [...best.values()].sort((a, b) => b.score - a.score)
 
     // 3. final check on the documents with the normal rights
-    const allowed = await checkAccess(db, context, viewer, unique)
+    const allowed = await timed(timings, 'access', () => checkAccess(db, context, viewer, unique))
     const terms = [...searchTerms(q), ...(corrections ? Object.values(corrections).flat() : [])]
     const readable = unique.filter(c => allowed.has(c.type + ':' + c.ref))
 
@@ -324,7 +348,7 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
     // the parts (texts per field) for snippets and urls, only for the returned hits
     const partsById = new Map()
     if (page.length > 0) {
-        const docs = await collection.find({_id: {$in: page.map(c => c._id)}}, {projection: {parts: 1}}).toArray()
+        const docs = await timed(timings, 'parts', () => collection.find({_id: {$in: page.map(c => c._id)}}, {projection: {parts: 1}}).toArray())
         docs.forEach(d => partsById.set(d._id.toString(), d.parts || []))
     }
 
