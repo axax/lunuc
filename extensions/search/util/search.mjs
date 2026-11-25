@@ -96,6 +96,23 @@ export const viewerMatch = (viewer, context, types) => {
 // same splitting as toWords in extract.mjs
 const searchTerms = (query) => String(query).toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(t => t.length >= 2)
 
+// German compounds: "wasser versorgung" is one word in the text ("Wasserversorgung"), the text index does not split
+// compounds. For 2 to 4 terms the joined neighbours and the whole query joined are searched as well
+const MAX_COMPOUND_TERMS = 4
+const compoundVariants = (terms) => {
+    if (terms.length < 2 || terms.length > MAX_COMPOUND_TERMS) return []
+    const variants = new Set()
+    for (let i = 0; i < terms.length - 1; i++) {
+        variants.add(terms[i] + terms[i + 1])
+    }
+    variants.add(terms.join(''))
+    return [...variants]
+}
+
+// bonus for hits whose title contains all terms (also joined, e.g. "Wasserversorgung" for "wasser versorgung"):
+// the text search combines the terms with OR, these hits should come first
+const ALL_TERMS_IN_TITLE_BONUS = 10
+
 const makeSnippet = (parts, terms, allowedFields) => {
     const usable = allowedFields ? parts.filter(p => allowedFields.includes(p.f)) : parts
     // match stems too: "turniere" -> "turnier"
@@ -266,9 +283,54 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
     // candidates without text and parts (can be large) - the parts are loaded for the returned hits only
     const projection = {_id: 1, type: 1, ref: 1, definition: 1, genericType: 1, lang: 1, title: 1, readRoles: 1}
 
+    const queryTerms = [...new Set(searchTerms(q))]
+    const compounds = compoundVariants(queryTerms)
+    let corrections = null
+
+    // 0. several terms: AND - every term (or its correction, for typos) has to occur somewhere in the title or the
+    //    text, also as part of a word ("wasser versogung" -> "Trinkwasserversorgung", "Versorgung mit Wasser").
+    //    These hits are the result, ranked by the text search below. Without such hits: the usual steps (OR)
+    const multiTerm = queryTerms.length > 1
+    let alternatives = queryTerms.map(t => [t])
+    let allTermsHits = null
+    if (multiTerm) {
+        if (fuzzy) {
+            try {
+                const found = await timed(timings, 'fuzzyWords', () => findCorrections(db, queryTerms))
+                if (Object.keys(found).length > 0) {
+                    corrections = found
+                    alternatives = queryTerms.map(t => [t, ...(found[t] || [])])
+                }
+            } catch (e) {
+                console.warn('search: fuzzy search failed', e.message)
+            }
+        }
+        const allTermsMatch = {
+            $and: alternatives.map(alts => ({
+                $or: alts.flatMap(a => {
+                    const regex = new RegExp(ClientUtil.escapeRegex(a), 'i')
+                    return [{title: regex}, {'parts.t': regex}]
+                })
+            }))
+        }
+        try {
+            allTermsHits = await timed(timings, 'allTerms', () => collection.find({$and: [filter, allTermsMatch]}, {projection})
+                .maxTimeMS(SUBSTRING_SEARCH_MAX_MS).limit(candidateLimit).toArray())
+        } catch (e) {
+            if (e && (e.code === 50 || e.codeName === 'MaxTimeMSExpired')) {
+                console.warn(`search: all terms search for "${q}" stopped after ${SUBSTRING_SEARCH_MAX_MS}ms`)
+            } else {
+                throw e
+            }
+        }
+        if (timings) timings.allTermsHits = allTermsHits ? allTermsHits.length : 'stopped'
+    }
+    const correctionWords = corrections ? Object.values(corrections).flat() : []
+    const textQuery = [q, ...compounds, ...correctionWords].join(' ')
+
     // 1. text search (stemming in the language of the entry, ranked)
     let candidates = await timed(timings, 'text', () => collection.aggregate([
-        {$match: {$text: {$search: q, $language: textLanguage(language)}, ...filter}},
+        {$match: {$text: {$search: textQuery, $language: textLanguage(language)}, ...filter}},
         {$addFields: {score: {$meta: 'textScore'}}},
         {$sort: {score: -1}},
         {$limit: candidateLimit},
@@ -277,15 +339,25 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
     if (timings) {
         timings.textHits = candidates.length
         // for diagnosis: the query of the text step and the file of this module
-        timings.textQuery = {search: q, language: textLanguage(language), filter: JSON.parse(JSON.stringify(filter))}
+        timings.textQuery = {search: textQuery, language: textLanguage(language), filter: JSON.parse(JSON.stringify(filter))}
         timings.module = import.meta.url
     }
 
+    // several terms with hits containing all of them: only these, scored by the text search
+    const useAllTerms = !!(allTermsHits && allTermsHits.length > 0)
+    if (useAllTerms) {
+        const textScores = new Map(candidates.map(c => [c._id.toString(), c.score]))
+        candidates = allTermsHits.map(c => ({...c, score: textScores.get(c._id.toString()) || 0.5}))
+    }
+
     // 2. not enough hits: substring search (parts of words, article numbers, names)
-    let corrections = null
-    if (needMore()) {
-        const regex = new RegExp(ClientUtil.escapeRegex(q), 'i')
-        const substringMatch = {$or: [{title: regex}, {'parts.t': regex}]}
+    if (!useAllTerms && needMore()) {
+        // one term (or e.g. an article number): the query as it is; several terms: every term somewhere (AND), so that
+        // "wasser versorgung" also finds "Wasserversorgung"
+        const inTitleOrParts = regex => ({$or: [{title: regex}, {'parts.t': regex}]})
+        const substringMatch = queryTerms.length > 1
+            ? {$and: queryTerms.map(t => inTitleOrParts(new RegExp(ClientUtil.escapeRegex(t), 'i')))}
+            : inTitleOrParts(new RegExp(ClientUtil.escapeRegex(q), 'i'))
         const known = new Set(candidates.map(c => c._id.toString()))
         const addCandidates = (list) => list.forEach(c => {
             const id = c._id.toString()
@@ -313,7 +385,8 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
         const allTerms = [...new Set(searchTerms(q).map(t => t.substring(0, MAX_WORD_LENGTH)))]
         if (fuzzy && needMore() && allTerms.length > 0) {
             try {
-                const found = await timed(timings, 'fuzzyWords', () => findCorrections(db, allTerms))
+                // several terms: already computed in step 0
+                const found = corrections || await timed(timings, 'fuzzyWords', () => findCorrections(db, allTerms))
                 if (Object.keys(found).length > 0) {
                     corrections = found
                     const termMatches = allTerms.map(t => ({
@@ -347,6 +420,14 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
     for (const c of candidates) {
         const key = c.type + ':' + c.ref
         if (!best.has(key) || best.get(key).score < c.score) best.set(key, c)
+    }
+    if (multiTerm) {
+        for (const c of best.values()) {
+            const title = String(c.title || '').toLowerCase()
+            if (alternatives.every(alts => alts.some(a => title.indexOf(a) >= 0))) {
+                c.score = (c.score || 0) + ALL_TERMS_IN_TITLE_BONUS
+            }
+        }
     }
     const unique = [...best.values()].sort((a, b) => b.score - a.score)
 
