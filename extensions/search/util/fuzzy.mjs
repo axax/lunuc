@@ -157,7 +157,10 @@ export const findSimilarWords = async (db, term) => {
 
 const computeSimilarWords = async (db, term, max) => {
     const collection = db.collection(WORD_COLLECTION)
-    if (await collection.findOne({word: term}, {projection: {_id: 1}})) return []
+    // a word of the vocabulary, or the beginning of one (still typing: "wass" -> "wasser"): no corrections.
+    // Prefix query on the unique index of word
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    if (await collection.findOne({word: {$regex: '^' + escaped}}, {projection: {_id: 1}})) return []
 
     const grams = trigrams(term)
     const len = {$gte: term.length - max, $lte: term.length + max}
