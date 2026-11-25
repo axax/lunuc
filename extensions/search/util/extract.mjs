@@ -23,9 +23,43 @@ const clean = (text) => String(text)
     .replace(/\s+/g, ' ')
     .trim()
 
+// lunuc template (CmsEditor content, as object or json string): only the texts of the elements (c and $c),
+// not the element names, keys and properties. ${...} expressions are left out.
+const looksLikeTemplate = (node) => Array.isArray(node)
+    ? node.some(looksLikeTemplate)
+    : !!node && node.constructor === Object && (node.t !== undefined || node.$c !== undefined) && ('c' in node || '$c' in node || 'p' in node)
+
+const templateText = (node, out = []) => {
+    if (Array.isArray(node)) {
+        node.forEach(n => templateText(n, out))
+    } else if (node && node.constructor === Object) {
+        ;['$c', 'c'].forEach(key => {
+            const v = node[key]
+            if (typeof v === 'string') out.push(v.replace(/\$\{[^}]*\}/g, ' '))
+            else if (v && typeof v === 'object') templateText(v, out)
+        })
+    }
+    return out
+}
+
+const parseTemplate = (value) => {
+    if (typeof value === 'string') {
+        const trimmed = value.trim()
+        if (trimmed.length < 2 || (trimmed[0] !== '[' && trimmed[0] !== '{')) return null
+        try {
+            value = JSON.parse(trimmed)
+        } catch (e) {
+            return null
+        }
+    }
+    return looksLikeTemplate(value) ? value : null
+}
+
 // plain values only: references (ObjectId) and other objects are not indexed
 const toText = (value) => {
     if (value === null || value === undefined) return ''
+    const template = (typeof value === 'string' || typeof value === 'object') ? parseTemplate(value) : null
+    if (template) return templateText(template).join(' ')
     if (typeof value === 'string') return value
     if (typeof value === 'number' || typeof value === 'boolean') return String(value)
     if (Array.isArray(value)) return value.map(toText).filter(Boolean).join(' ')

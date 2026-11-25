@@ -13,6 +13,7 @@ import ClientUtil from '../../client/util/index.mjs'
 import {resolveDynamicFieldQuery} from '../../api/resolver/generic/postQueryConverter.mjs'
 import {schema as fieldTemplatesSchema, resolver as fieldTemplatesResolver} from './fieldTemplates.mjs'
 import {narrowDefinitionProjection} from './narrowDefinitionProjection.mjs'
+import {getPublicReadFilter} from './util/publicFilter.mjs'
 
 
 /*
@@ -281,6 +282,11 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
                         match.$and = [...(match.$and || []), accessMatch]
                     } else if (struct.access.read.force) {
                         delete match.createdBy
+                    }
+                    // condition every reader has to meet (e.g. no drafts), see util/publicFilter.mjs
+                    const publicFilter = await getPublicReadFilter(db, context, struct)
+                    if (publicFilter) {
+                        match.$and = [...(match.$and || []), publicFilter]
                     }
 
                 }

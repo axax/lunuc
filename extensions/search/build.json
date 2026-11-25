@@ -3,6 +3,7 @@
     {
       "name": "SearchIndex",
       "noUserRelation": true,
+      "backupEssential": false,
       "access": {
         "read": "manage_other_users",
         "create": "manage_other_users",
@@ -19,6 +20,7 @@
         {"name": "title", "label": "Title"},
         {"name": "words", "label": "Words", "multi": true, "alwaysLoad": false, "hideColumnInTypes": true},
         {"name": "parts", "label": "Fields", "type": "Object", "uitype": "json", "alwaysLoad": false, "hideColumnInTypes": true},
+        {"name": "createdBy", "label": "Owner (of the document)", "type": "User", "fields": ["username"], "readOnly": true},
         {"name": "ownerGroup", "label": "Owner group", "type": "UserGroup", "multi": true, "fields": ["name"], "hideColumnInTypes": true},
         {"name": "readRoles", "label": "Readable for roles", "multi": true, "hideColumnInTypes": true},
         {"name": "modifiedAt", "label": "Document modified", "type": "Float", "hideColumnInTypes": true},
@@ -43,6 +45,7 @@
     {
       "name": "SearchWord",
       "noUserRelation": true,
+      "backupEssential": false,
       "access": {
         "read": "manage_other_users",
         "create": "manage_other_users",

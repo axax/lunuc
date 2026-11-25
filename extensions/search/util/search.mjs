@@ -3,6 +3,7 @@ import Util from '../../../api/util/index.mjs'
 import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 import {createMatchForCurrentUser, filterReadableIds} from '../../../api/util/dbquery.mjs'
 import {getGenericTypeDefinitionWithStructure} from '../../genericdata/util/index.mjs'
+import {getPublicReadFilter} from '../../genericdata/util/publicFilter.mjs'
 import ClientUtil from '../../../client/util/index.mjs'
 import Hook from '../../../util/hook.cjs'
 import {SEARCH_COLLECTION, getIndexedTypes, isSearchActive, DEFAULT_LANGUAGE, ANY_LANGUAGE, textLanguage} from './config.mjs'
@@ -165,6 +166,11 @@ const checkAccess = async (db, context, viewer, candidates) => {
                 } else if (read.force) {
                     delete match.createdBy
                 }
+            }
+            // condition every reader has to meet (e.g. no drafts), like GraphQL
+            const publicFilter = await getPublicReadFilter(db, context, structure)
+            if (publicFilter) {
+                match.$and = [...(match.$and || []), publicFilter]
             }
             const docs = await db.collection('GenericData')
                 .find({$and: [{_id: {$in: refs}}, {definition: def._id}, match]}, {projection: {_id: 1}}).toArray()
