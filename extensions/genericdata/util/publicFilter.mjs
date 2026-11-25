@@ -33,8 +33,10 @@ const resolveRefs = async (db, value) => {
         let ids = Cache.get(cacheKey)
         if (!ids) {
             const definition = type ? await db.collection('GenericDataDefinition').findOne({name: type}, {projection: {_id: 1}}) : null
+            // references are stored as ObjectId or as string: both are matched
             ids = definition
-                ? (await db.collection('GenericData').find({$and: [{definition: definition._id}, match]}, {projection: {_id: 1}}).toArray()).map(d => d._id)
+                ? (await db.collection('GenericData').find({$and: [{definition: definition._id}, match]}, {projection: {_id: 1}}).toArray())
+                    .flatMap(d => [d._id, d._id.toString()])
                 : []
             Cache.set(cacheKey, ids, REF_CACHE_MS)
         }
