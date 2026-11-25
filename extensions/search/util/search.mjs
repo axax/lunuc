@@ -175,7 +175,13 @@ const checkAccess = async (db, context, viewer, candidates) => {
                 } else if (Object.keys(accessMatch).length > 0) {
                     // e.g. roleGroup without the role: {$or: [own entries, own group]} (same as genericdata beforeTypeLoaded)
                     match.$and = [...(match.$and || []), accessMatch]
+                } else if (structure.publicSearch) {
+                    // publicSearch: the type is declared public for the search and the reader meets access.read -
+                    // all entries readable (like the search api before the index), only user restrictions apply
+                    match = {}
+                    Hook.call('enhanceTypeMatch', {type: 'GenericData', context, match})
                 } else if (read.force) {
+                    // entries of others readable (like GraphQL)
                     delete match.createdBy
                 }
             }

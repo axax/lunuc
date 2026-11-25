@@ -42,8 +42,12 @@ const genericDataConfig = (definition) => {
         }
     }
     const read = structure.access.read
-    // like GraphQL: entries of other users are only readable with force (for every user with the role)
-    const readRoles = read && read.constructor === Object && read.force ? asArray(read.role || read.capability) : []
+    // like GraphQL: entries of other users are only readable with force (for every user with the role).
+    // publicSearch: the type is declared public for the search - with a read role (e.g. anonymous) and no force its
+    // entries are readable for everybody with that role as well (like the search api always did)
+    const isRole = read && read.constructor === Object && (read.type === 'role' || read.type === 'roleGroup' || !read.type)
+    const readRoles = read && read.constructor === Object && (read.force || (structure.publicSearch && isRole && read.type !== 'roleGroup'))
+        ? asArray(read.role || read.capability) : []
     return {titleFields, fieldNames, readRoles}
 }
 
@@ -187,6 +191,7 @@ const definitionHash = (def) => {
         name: def.name,
         access: !!structure.access,
         read: (structure.access && structure.access.read) || null,
+        publicSearch: !!structure.publicSearch,
         pickerField: structure.pickerField || null,
         searchFields: structure.searchFields || null,
         searchIndex: structure.searchIndex === undefined ? true : structure.searchIndex,
