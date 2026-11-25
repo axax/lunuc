@@ -268,7 +268,12 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
         {$limit: candidateLimit},
         {$project: {...projection, score: 1}}
     ]).toArray())
-    if (timings) timings.textHits = candidates.length
+    if (timings) {
+        timings.textHits = candidates.length
+        // for diagnosis: the query of the text step and the file of this module
+        timings.textQuery = {search: q, language: textLanguage(language), filter: JSON.parse(JSON.stringify(filter))}
+        timings.module = import.meta.url
+    }
 
     // 2. not enough hits: substring search (parts of words, article numbers, names)
     let corrections = null
