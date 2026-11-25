@@ -275,8 +275,11 @@ Hook.on('beforeTypeLoaded', async ({type, db, context, match, data, otherOptions
                     const accessMatch = await Util.getAccessFilter(db, context, struct.access.read)
                     if (accessMatch.createdBy) {
                         match.createdBy = accessMatch.createdBy
+                    } else if (Object.keys(accessMatch).length > 0) {
+                        // e.g. roleGroup without the role: {$or: [own entries, own group]} - has to be added as a
+                        // condition, otherwise a user restriction that extends createdBy / ownerGroup would open the type
+                        match.$and = [...(match.$and || []), accessMatch]
                     } else if (struct.access.read.force) {
-
                         delete match.createdBy
                     }
 

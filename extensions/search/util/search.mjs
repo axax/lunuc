@@ -4,8 +4,10 @@ import {CAPABILITY_MANAGE_OTHER_USERS} from '../../../util/capabilities.mjs'
 import {createMatchForCurrentUser, filterReadableIds} from '../../../api/util/dbquery.mjs'
 import {getGenericTypeDefinitionWithStructure} from '../../genericdata/util/index.mjs'
 import ClientUtil from '../../../client/util/index.mjs'
+import Hook from '../../../util/hook.cjs'
 import {SEARCH_COLLECTION, getIndexedTypes, DEFAULT_LANGUAGE, ANY_LANGUAGE, textLanguage} from './config.mjs'
 import {MAX_WORD_LENGTH} from './extract.mjs'
+import {findCorrections} from './fuzzy.mjs'
 
 const MAX_LIMIT = 50
 const SNIPPET_LENGTH = 180
@@ -29,13 +31,53 @@ const getViewer = async (db, context) => {
     }
 }
 
-// rough pre-filter in the index (the final check is done on the documents themselves)
-const viewerMatch = (viewer) => viewer.canSeeAll ? {} : {
-    $or: [
-        {createdBy: {$in: viewer.ids}},
-        {ownerGroup: {$in: viewer.groups}},
-        {readRoles: {$in: viewer.roles}}
-    ]
+// values of a field in a match (top level, $in and inside $or / $and)
+const collectMatchValues = (match, key, values = []) => {
+    if (!match || typeof match !== 'object') return values
+    const value = match[key]
+    if (value !== undefined) {
+        if (value && value.$in) values.push(...value.$in)
+        else if (value && typeof value === 'object' && !(value instanceof ObjectId) && !Array.isArray(value)) {
+            // other operators: not usable for the pre-filter
+        } else values.push(...(Array.isArray(value) ? value : [value]))
+    }
+    ;[...(match.$or || []), ...(match.$and || [])].forEach(sub => collectMatchValues(sub, key, values))
+    return values
+}
+
+// whether a match still filters on this field (top level or inside $or / $and)
+const hasMatchKey = (match, key) => !!match && typeof match === 'object' &&
+    (match[key] !== undefined || [...(match.$or || []), ...(match.$and || [])].some(sub => hasMatchKey(sub, key)))
+
+/**
+ * Rough pre-filter in the index (the final check is done on the documents themselves).
+ * User restrictions (hook enhanceTypeMatch, extension userrestriction) can extend what a user sees:
+ * more users / groups (ownerGroup, createdBy) or no user relation at all ($remove) - the pre-filter
+ * has to include these entries, otherwise they would never reach the final check.
+ */
+export const viewerMatch = (viewer, context, types) => {
+    if (viewer.canSeeAll) return {}
+    const createdBy = [...viewer.ids], ownerGroup = [...viewer.groups], unrestrictedTypes = []
+    for (const type of types) {
+        const probe = {createdBy: {$in: [...viewer.ids]}, ownerGroup: {$in: [...viewer.groups]}}
+        Hook.call('enhanceTypeMatch', {type, context, match: probe})
+        const probeCreatedBy = collectMatchValues(probe, 'createdBy'), probeOwnerGroup = collectMatchValues(probe, 'ownerGroup')
+        if (!hasMatchKey(probe, 'createdBy') && !hasMatchKey(probe, 'ownerGroup')) {
+            // no user relation left: all entries of the type are candidates
+            unrestrictedTypes.push(type)
+        }
+        createdBy.push(...probeCreatedBy)
+        ownerGroup.push(...probeOwnerGroup)
+    }
+    const unique = (list) => [...new Map(list.map(v => [String(v), v])).values()]
+    return {
+        $or: [
+            {createdBy: {$in: unique(createdBy)}},
+            {ownerGroup: {$in: unique(ownerGroup)}},
+            {readRoles: {$in: viewer.roles}},
+            ...(unrestrictedTypes.length > 0 ? [{type: {$in: unrestrictedTypes}}] : [])
+        ]
+    }
 }
 
 // same splitting as toWords in extract.mjs
@@ -101,29 +143,36 @@ const checkAccess = async (db, context, viewer, candidates) => {
                     ? publicSearch.fields
                     : [...pickerFields, ...(structure.projectFields || [])]
             }
+            // same order as GenericResolver.entities: base match, user restrictions (enhanceTypeMatch),
+            // then the read rights of the type (genericdata hook beforeTypeLoaded). The rights of the type
+            // come last on purpose: a restriction that extends createdBy must not open types like contact
+            // forms that are only readable for certain roles (there createdBy is set back to the own ids)
             let match = {}
             if (!viewer.canSeeAll) {
                 match = await getGenericDataMatch()
                 if (!match) return
-                match = {...match}
-                const read = structure.access.read
-                if (read) {
-                    const accessMatch = await Util.getAccessFilter(db, context, read)
-                    if (accessMatch.createdBy) {
-                        match.createdBy = accessMatch.createdBy
-                    } else if (read.force) {
-                        delete match.createdBy
-                    }
+            }
+            match = {...match}
+            Hook.call('enhanceTypeMatch', {type: 'GenericData', context, match})
+            const read = structure.access.read
+            if (read) {
+                const accessMatch = await Util.getAccessFilter(db, context, read)
+                if (accessMatch.createdBy) {
+                    match.createdBy = accessMatch.createdBy
+                } else if (Object.keys(accessMatch).length > 0) {
+                    // e.g. roleGroup without the role: {$or: [own entries, own group]} (same as genericdata beforeTypeLoaded)
+                    match.$and = [...(match.$and || []), accessMatch]
+                } else if (read.force) {
+                    delete match.createdBy
                 }
             }
             const docs = await db.collection('GenericData')
                 .find({$and: [{_id: {$in: refs}}, {definition: def._id}, match]}, {projection: {_id: 1}}).toArray()
             readable = new Set(docs.map(d => d._id.toString()))
         } else {
-            if (viewer.canSeeAll) {
-                readable = new Set(refs.map(id => id.toString()))
-            } else {
-                readable = await filterReadableIds({db, context, typeName: type, ids: refs})
+            // filterReadableIds: rights of the type and user restrictions (without restrictions no query for admins)
+            readable = await filterReadableIds({db, context, typeName: type, ids: refs})
+            if (!viewer.canSeeAll) {
                 // public CmsPages
                 list.filter(c => (c.readRoles || []).some(r => viewer.roles.includes(r))).forEach(c => readable.add(c.ref.toString()))
             }
@@ -147,11 +196,13 @@ const adminUrl = (hit) => {
  *  lang      language of the query (default: DEFAULT_LANGUAGE), entries without language are always included
  *  types     subset of the indexed types (types with searchIndex in build.json)
  *  genericTypes  only these GenericData types (names)
+ *  fuzzy     default true: if there are not enough hits, misspelled terms are corrected to similar words
  *
- * Returns {total, results: [{type, genericType, _id, title, field, snippet, score, lang, url, adminUrl}]}
+ * Returns {total, results: [{type, genericType, _id, title, field, snippet, score, lang, url, adminUrl}], corrections}
+ * corrections (only if used): {term: [similar words that were searched as well]}
  * total = number of readable hits found (at most the candidates that were checked)
  */
-export const search = async (db, context, {query, lang, types, genericTypes, limit = 10, offset = 0} = {}) => {
+export const search = async (db, context, {query, lang, types, genericTypes, limit = 10, offset = 0, fuzzy = true} = {}) => {
     const q = String(query || '').trim()
     if (q.length < 2) {
         return {total: 0, results: []}
@@ -162,13 +213,13 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
     const viewer = await getViewer(db, context)
     const collection = db.collection(SEARCH_COLLECTION)
 
-    const filter = {
-        lang: {$in: [language, ANY_LANGUAGE]},
-        ...viewerMatch(viewer)
-    }
     const indexedTypes = getIndexedTypes()
     const typeList = (Array.isArray(types) && types.length > 0 ? types : indexedTypes).filter(t => indexedTypes.includes(t))
-    filter.type = {$in: typeList}
+    const filter = {
+        lang: {$in: [language, ANY_LANGUAGE]},
+        type: {$in: typeList},
+        ...viewerMatch(viewer, context, typeList)
+    }
     if (Array.isArray(genericTypes) && genericTypes.length > 0) {
         filter.$and = [{$or: [{type: {$ne: 'GenericData'}}, {genericType: {$in: genericTypes}}]}]
     }
@@ -186,6 +237,7 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
     ]).toArray()
 
     // 2. not enough hits: substring search (parts of words, article numbers, names)
+    let corrections = null
     if (candidates.length < offset + limit) {
         const regex = new RegExp(ClientUtil.escapeRegex(q), 'i')
         const substringMatch = {$or: [{title: regex}, {text: regex}]}
@@ -209,6 +261,25 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
             } catch (e) {
                 // e.g. index not created yet: 2b finds these hits as well
                 console.warn('search: prefix search failed', e.message)
+            }
+        }
+        // 2c. still not enough: fuzzy - misspelled terms are replaced by similar words of the vocabulary,
+        //     every term has to match (itself as beginning of a word or one of its corrections)
+        const allTerms = [...new Set(searchTerms(q).map(t => t.substring(0, MAX_WORD_LENGTH)))]
+        if (fuzzy && candidates.length < offset + limit && allTerms.length > 0) {
+            try {
+                const found = await findCorrections(db, allTerms)
+                if (Object.keys(found).length > 0) {
+                    corrections = found
+                    const termMatches = allTerms.map(t => ({
+                        words: {$in: [new RegExp('^' + ClientUtil.escapeRegex(t)), ...(found[t] || [])]}
+                    }))
+                    addCandidates(await collection.find({$and: [filter, ...termMatches]}, {projection})
+                        .limit(candidateLimit).toArray())
+                }
+            } catch (e) {
+                // e.g. vocabulary not built yet
+                console.warn('search: fuzzy search failed', e.message)
             }
         }
         // 2b. still not enough: the rest (the term in the middle of a word), cannot use an index -> time limit
@@ -236,7 +307,7 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
 
     // 3. final check on the documents with the normal rights
     const allowed = await checkAccess(db, context, viewer, unique)
-    const terms = searchTerms(q)
+    const terms = [...searchTerms(q), ...(corrections ? Object.values(corrections).flat() : [])]
     const readable = unique.filter(c => allowed.has(c.type + ':' + c.ref))
 
     const page = readable.slice(offset, offset + limit)
@@ -265,5 +336,5 @@ export const search = async (db, context, {query, lang, types, genericTypes, lim
             adminUrl: adminUrl(c)
         }
     })
-    return {total: readable.length, results}
+    return {total: readable.length, results, ...(corrections ? {corrections} : {})}
 }

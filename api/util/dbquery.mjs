@@ -4,6 +4,7 @@ import {getType} from '../../util/types.mjs'
 import Util from './index.mjs'
 import {CAPABILITY_MANAGE_SAME_GROUP, CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
 import Cache from '../../util/cache.mjs'
+import Hook from '../../util/hook.cjs'
 
 // How long subQuery results are cached (in milliseconds)
 const SUBQUERY_CACHE_TTL_MS = 10000
@@ -497,12 +498,16 @@ export const filterReadableIds = async ({db, context, typeName, collectionName, 
     if (!ids || ids.length === 0) {
         return new Set()
     }
-    if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
-        return new Set(ids.map(id => id.toString()))
-    }
-    const match = await createMatchForCurrentUser({typeName, db, context})
+    const canSeeAll = await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+    let match = canSeeAll ? {} : await createMatchForCurrentUser({typeName, db, context})
     if (!match) {
         return new Set()
+    }
+    // user restrictions (extension userrestriction) - like GenericResolver, also for users who see everything
+    match = {...match}
+    Hook.call('enhanceTypeMatch', {type: typeName, context, match})
+    if (Object.keys(match).length === 0) {
+        return new Set(ids.map(id => id.toString()))
     }
     const docs = await db.collection(collectionName || typeName)
         .find({$and: [{_id: {$in: ids}}, match]}, {projection: {_id: 1}}).toArray()

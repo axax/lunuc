@@ -44,7 +44,8 @@ const hasGroupMatch = (group1, group2) => {
 Hook.on('enhanceTypeMatch', async ({type, context, match}) => {
     if(userRestrictions[type]){
         for(const rule of userRestrictions[type]){
-            if(rule.filter && (rule.user.indexOf(context.id)>=0 || hasGroupMatch(rule.userGroup, context.group))){
+            // rules may have only users or only groups
+            if(rule.filter && ((rule.user || []).indexOf(context.id)>=0 || hasGroupMatch(rule.userGroup, context.group))){
                 if(rule.mode=='extend'){
                     Object.keys(rule.filter).forEach(key=>{
                         if(rule.filter[key].$remove || rule.filter[key]['#remove']){

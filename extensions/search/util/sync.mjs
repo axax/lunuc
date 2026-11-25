@@ -4,6 +4,7 @@ import {getType} from '../../../util/types.mjs'
 import {getGenericTypeDefinitionWithStructure} from '../../genericdata/util/index.mjs'
 import {SEARCH_COLLECTION, isIndexedType, getIndexedTypes, coreTypeConfig, getSettings} from './config.mjs'
 import {buildEntries} from './extract.mjs'
+import {addWords, syncVocabulary} from './fuzzy.mjs'
 
 const toObjectId = (id) => {
     if (!id) return null
@@ -48,10 +49,13 @@ const genericDataConfig = (definition) => {
 
 // only the fields the index needs are loaded (CmsPage e.g. without template, script and style)
 const BASE_FIELDS = ['_id', 'createdBy', 'ownerGroup', 'modifiedAt']
-const documentProjection = (type, settings) => {
+const documentProjection = (type, settings, genericConf) => {
     let paths
     if (type === 'GenericData') {
-        paths = [...BASE_FIELDS, 'definition', 'data']
+        // with the config of the definition only the indexed fields of data, otherwise all of data
+        paths = [...BASE_FIELDS, 'definition', ...(genericConf
+            ? [...genericConf.titleFields, ...genericConf.fieldNames].map(f => 'data.' + f)
+            : ['data'])]
     } else {
         const conf = coreTypeConfig(type)
         if (!conf) return undefined
@@ -69,11 +73,12 @@ const documentProjection = (type, settings) => {
 
 /**
  * (Re)builds the entries of the given documents of one type, removes the entries of documents
- * that are no longer searchable. Entries whose content has not changed (same hash) are kept,
- * only their indexedAt is updated - rewriting them would rewrite the text index for every word.
+ * that are no longer searchable. Entries whose content has not changed (same hash) are not touched
+ * at all - rewriting them would rewrite the text index for every word (indexedAt = last written).
+ * New words go into the vocabulary of the fuzzy search, allWords (optional Set) collects the words of all entries.
  * Returns {count: entries of the documents, written: entries inserted}
  */
-const indexDocuments = async (db, type, docs, settings, now) => {
+const indexDocuments = async (db, type, docs, settings, now, allWords) => {
     const collection = db.collection(SEARCH_COLLECTION)
     const entriesToWrite = []
     const refs = []
@@ -136,11 +141,12 @@ const indexDocuments = async (db, type, docs, settings, now) => {
     }
     // everything else of these documents: changed entries, languages that are gone, documents that are no longer searchable
     await collection.deleteMany({type, ref: {$in: refs}, _id: {$nin: keep}})
-    if (keep.length > 0) {
-        await collection.updateMany({_id: {$in: keep}}, {$set: {indexedAt: now}})
-    }
     if (toInsert.length > 0) {
         await collection.insertMany(toInsert, {ordered: false})
+        await addWords(db, toInsert.flatMap(e => e.words || []))
+    }
+    if (allWords) {
+        entriesToWrite.forEach(e => (e.words || []).forEach(w => allWords.add(w)))
     }
     return {count: entriesToWrite.length, written: toInsert.length}
 }
@@ -212,42 +218,93 @@ export const reindexDefinition = async (db, definitionId, {force = false} = {}) 
  * Builds the index for all (or only recently modified) documents.
  *  - types: subset of the indexed types (default: all types with searchIndex)
  *  - since: only documents with modifiedAt >= since (incremental run)
- *  - removeStale: full run only - removes entries whose document no longer exists
+ *  - match: additional filter on the documents (e.g. {definition: id} for GenericData)
+ *  - removeStale: full run only - removes entries whose document no longer exists or is no longer indexed
  */
 export const rebuild = async (db, {types = getIndexedTypes(), since, match = {}, removeStale = true, batchSize = 200, log = () => {}} = {}) => {
     const settings = await getSettings(db)
     const start = Date.now()
+    const isFullRun = removeStale && !since && Object.keys(match).length === 0
+    // full run over all types: afterwards the vocabulary of the fuzzy search contains exactly the indexed words
+    const allIndexedTypes = getIndexedTypes()
+    const allWords = isFullRun && allIndexedTypes.every(t => types.includes(t)) ? new Set() : null
     let total = 0
     for (const type of types) {
         if (!isIndexedType(type)) continue
-        const query = {...match}
-        if (since) query.modifiedAt = {$gte: since}
-        const cursor = db.collection(type).find(query, {projection: documentProjection(type, settings)})
-        let batch = [], count = 0, written = 0
-        const indexBatch = async () => {
-            const result = await indexDocuments(db, type, batch, settings, start)
-            count += result.count
-            written += result.written
-            batch = []
-        }
-        for await (const doc of cursor) {
-            batch.push(doc)
-            if (batch.length >= batchSize) {
+        // ids of the indexed documents of a full run, everything else in the index is stale
+        const seen = isFullRun ? new Set() : null
+        let count = 0, written = 0
+
+        const indexQuery = async (query, projection) => {
+            if (since) query.modifiedAt = {$gte: since}
+            const cursor = db.collection(type).find(query, {projection})
+            let batch = []
+            const indexBatch = async () => {
+                const result = await indexDocuments(db, type, batch, settings, start, allWords)
+                count += result.count
+                written += result.written
+                batch = []
+            }
+            for await (const doc of cursor) {
+                if (seen) seen.add(doc._id.toString())
+                batch.push(doc)
+                if (batch.length >= batchSize) {
+                    await indexBatch()
+                }
+            }
+            if (batch.length > 0) {
                 await indexBatch()
             }
         }
-        if (batch.length > 0) {
-            await indexBatch()
+
+        if (type === 'GenericData') {
+            // per definition: only the indexed fields of data are loaded, not indexed types are skipped
+            const definitionIds = match.definition
+                ? toObjectIds(match.definition)
+                : (await db.collection('GenericDataDefinition').find({}, {projection: {_id: 1}}).toArray()).map(d => d._id)
+            for (const definitionId of definitionIds) {
+                if (!definitionId) continue
+                const def = await getGenericTypeDefinitionWithStructure(db, {id: definitionId.toString()})
+                const conf = genericDataConfig(def)
+                if (!conf) continue
+                await indexQuery({...match, definition: toObjectId(definitionId)}, documentProjection(type, settings, conf))
+            }
+        } else {
+            await indexQuery({...match}, documentProjection(type, settings))
         }
-        if (removeStale && !since && Object.keys(match).length === 0) {
-            // entries not touched by this run belong to documents that no longer exist
-            const removed = await db.collection(SEARCH_COLLECTION).deleteMany({type, indexedAt: {$lt: start}})
-            log(`${type}: ${removed.deletedCount} stale entries removed`)
+
+        if (seen) {
+            const removed = await removeStaleEntries(db, type, seen)
+            log(`${type}: ${removed} stale entries removed`)
         }
         log(`${type}: ${count} entries (${written} new or changed)`)
         total += count
     }
+    if (allWords) {
+        const vocabulary = await syncVocabulary(db, allWords)
+        log(`vocabulary: ${vocabulary.total} words (${vocabulary.added} added, ${vocabulary.removed} removed)`)
+    }
     return total
+}
+
+// removes the entries of a type whose document was not indexed by the full run (deleted or no longer indexed)
+const removeStaleEntries = async (db, type, seen) => {
+    const collection = db.collection(SEARCH_COLLECTION)
+    const cursor = collection.find({type}, {projection: {_id: 1, ref: 1}})
+    let stale = [], removed = 0
+    const removeBatch = async () => {
+        const result = await collection.deleteMany({_id: {$in: stale}})
+        removed += result.deletedCount
+        stale = []
+    }
+    for await (const entry of cursor) {
+        if (!entry.ref || !seen.has(entry.ref.toString())) {
+            stale.push(entry._id)
+            if (stale.length >= 1000) await removeBatch()
+        }
+    }
+    if (stale.length > 0) await removeBatch()
+    return removed
 }
 
 // ─── queue: changes are collected and written together, saving a document never waits for the index ───

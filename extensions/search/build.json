@@ -18,6 +18,7 @@
         {"name": "language", "label": "Text search language", "hideColumnInTypes": true},
         {"name": "title", "label": "Title"},
         {"name": "text", "label": "Indexed text", "hideColumnInTypes": true},
+        {"name": "words", "label": "Words", "multi": true, "alwaysLoad": false, "hideColumnInTypes": true},
         {"name": "parts", "label": "Fields", "type": "Object", "uitype": "json", "alwaysLoad": false, "hideColumnInTypes": true},
         {"name": "ownerGroup", "label": "Owner group", "type": "UserGroup", "multi": true, "fields": ["name"], "hideColumnInTypes": true},
         {"name": "readRoles", "label": "Readable for roles", "multi": true, "hideColumnInTypes": true},
@@ -36,7 +37,29 @@
         },
         {"fields": {"type": 1, "ref": 1}},
         {"fields": {"definition": 1}},
-        {"fields": {"type": 1, "indexedAt": 1}}
+        {"fields": {"type": 1, "indexedAt": 1}},
+        {"fields": {"words": 1}, "options": {"name": "search_words"}}
+      ]
+    },
+    {
+      "name": "SearchWord",
+      "noUserRelation": true,
+      "access": {
+        "read": "manage_other_users",
+        "create": "manage_other_users",
+        "update": "manage_other_users",
+        "delete": "manage_other_users"
+      },
+      "fields": [
+        {"name": "word", "label": "Word"},
+        {"name": "phon", "label": "Phonetic code"},
+        {"name": "len", "label": "Length", "type": "Float"},
+        {"name": "grams", "label": "Trigrams", "multi": true, "hideColumnInTypes": true}
+      ],
+      "indexes": [
+        {"fields": {"word": 1}, "options": {"unique": true}},
+        {"fields": {"grams": 1, "len": 1}},
+        {"fields": {"phon": 1, "len": 1}}
       ]
     }
   ]
