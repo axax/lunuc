@@ -40,15 +40,21 @@ const IGNORE_COLLECTIONS = ['system.profile', 'OAuthCode', 'OAuthClient', 'Newsl
     'Product', 'CronJobExecution', 'ProductCategory', 'KeyValueGlobal', 'FtpUser',
     'UserGroup', 'UserRestriction', 'UserSetting', 'SmsLog', 'MailAccountMessage',
     'MailAccount', 'MailAccounts', 'MailAccountFolder', 'DnsHostGroup', 'ProxyUser',
-    'WebAuthnCredential', 'ChatMessage', MEDIA_REFERENCE_COLLECTION]
+    'WebAuthnCredential', 'ChatMessage', MEDIA_REFERENCE_COLLECTION,
+    // the search index contains every media (it is built from them), that is not a usage
+    'SearchIndex']
 
 // versioned collections (CmsPage_xxx) and system collections are not searched
 const isSearchedCollection = name => !!name && name.indexOf('-') < 0 && name.indexOf('_') < 0 &&
     !name.startsWith('system.') && !IGNORE_COLLECTIONS.includes(name)
 
-// references that are only ui state (e.g. the last selection in a type list), not a usage
-const IGNORED_REFERENCES = [{location: 'KeyValue', name: 'TypesContainerSettings'}]
-const isRealReference = entry => !IGNORED_REFERENCES.some(r => r.location === entry.location && r.name === entry.name)
+// KeyValue keys that are only ui state (e.g. the last selection in a type list), not a usage.
+// Documents of these keys are not indexed at all.
+const IGNORED_KEYVALUE_KEYS = new Set(['TypesContainerSettings'])
+const isIgnoredDoc = (collectionName, doc) => collectionName === 'KeyValue' && IGNORED_KEYVALUE_KEYS.has(doc.key)
+// entries written before a collection/key was ignored (removed by the next rebuild)
+const isRealReference = entry => !IGNORE_COLLECTIONS.includes(entry.location) &&
+    !(entry.location === 'KeyValue' && IGNORED_KEYVALUE_KEYS.has(entry.name))
 
 // ---- GenericData: human readable name + link info derived from the GenericDataDefinition ----
 
@@ -169,6 +175,7 @@ const extractIds = (obj, results = new Set()) => {
 
 // the reference entries of one document (one per id it contains)
 const referencesOfDoc = (collectionName, doc) => {
+    if (isIgnoredDoc(collectionName, doc)) return []
     const docId = doc._id.toString()
     const ids = extractIds(doc)
     ids.delete(docId)
@@ -347,6 +354,7 @@ const loadReferences = async (db, ids) => {
     ).toArray()
     const byId = {}
     for (const {mediaId, docId, ...rest} of refs) {
+        if (!isRealReference(rest)) continue
         (byId[mediaId] || (byId[mediaId] = [])).push({...rest, _id: docId})
     }
     return byId
@@ -358,7 +366,7 @@ export const findMediaUsages = async (db, ids) => {
     const refs = await loadReferences(db, ids)
     const usages = {}
     for (const id of ids) {
-        const entries = (refs[String(id).toLowerCase()] || []).filter(isRealReference)
+        const entries = refs[String(id).toLowerCase()] || []
         if (entries.length) {
             usages[id] = entries
         }
