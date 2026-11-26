@@ -771,7 +771,7 @@ const GenericResolver = {
 
         if (Hook.hooks['typeBeforeDelete'] && Hook.hooks['typeBeforeDelete'].length) {
             for (let i = 0; i < Hook.hooks['typeBeforeDelete'].length; ++i) {
-                await Hook.hooks['typeBeforeDelete'][i].callback({db, type: typeName, data})
+                await Hook.hooks['typeBeforeDelete'][i].callback({db, type: typeName, data, context, options})
             }
         }
 
@@ -820,7 +820,7 @@ const GenericResolver = {
             throw new Error('Error deleting entry. You might not have premissions to manage other users')
         }
     },
-    deleteEnities: async (db, context, typeName, {_version, ...data}) => {
+    deleteEnities: async (db, context, typeName, {_version, ...data}, options) => {
 
         Util.checkIfUserIsLoggedIn(context)
 
@@ -831,6 +831,16 @@ const GenericResolver = {
 
         if(!await Util.userHasAccessRights(db,context,{typeName, access:'delete'})){
             throw new Error('Benutzer hat keine Berechtigung zum Löschen')
+        }
+
+        // same checks as for a single delete (e.g. a used media must not be deleted) - an error
+        // aborts the whole bulk delete before anything is deleted
+        if (Hook.hooks['typeBeforeDelete'] && Hook.hooks['typeBeforeDelete'].length) {
+            for (const id of data._id) {
+                for (let i = 0; i < Hook.hooks['typeBeforeDelete'].length; ++i) {
+                    await Hook.hooks['typeBeforeDelete'][i].callback({db, type: typeName, data: {...data, _id: id}, context, options, ids: data._id})
+                }
+            }
         }
 
         const collectionName = await buildCollectionName(db, context, typeName, _version)

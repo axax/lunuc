@@ -1983,6 +1983,11 @@ class TypesContainer extends React.Component {
 
                     }
 
+                    if (errors?.length) {
+                        // extensions can react to a failed delete (e.g. media: delete a used media anyway)
+                        Hook.call('TypeDeleteError', {type, ids, errors, callback}, this)
+                    }
+
                     if(callback){
                         callback({ids,data,errors})
                     }

@@ -382,8 +382,9 @@ export const finalFetch = ({type = RequestType.query, cacheKey, id, timeout, que
                             if (response.errors) {
                                 const rejectData = {...response, loading: false, networkStatus: NetworkStatus.ready}
                                 rejectData.error = response.errors[0]
-                                // a conflict while saving a cms page is handled by the editor itself (dialog)
-                                if (rejectData.error.key !== 'cms_page_conflict') {
+                                // handled by the caller itself with a dialog: a conflict while saving a cms page,
+                                // a used media that an admin can delete anyway
+                                if (rejectData.error.key !== 'cms_page_conflict' && rejectData.error.key !== 'media_in_use_confirm') {
                                     if (!silent) _app_.dispatcher.addError({
                                         key: 'graphql_error',
                                         msg: rejectData.error.message

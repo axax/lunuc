@@ -2,7 +2,8 @@ import Util from '../../../api/util/index.mjs'
 import {
     CAPABILITY_ACCESS_ADMIN_PAGE,
     CAPABILITY_ADMIN_OPTIONS,
-    CAPABILITY_MANAGE_TYPES
+    CAPABILITY_MANAGE_TYPES,
+    CAPABILITY_MANAGE_OTHER_USERS
 } from '../../../util/capabilities.mjs'
 import config from '../../../gensrc/config.mjs'
 import path from 'path'
@@ -11,8 +12,9 @@ import {fileURLToPath} from 'url'
 import {ObjectId} from 'mongodb'
 import {sendMail} from '../../../api/util/mail.mjs'
 import {removeMediaScreenshots, removeMediaVariants, syncAllPrivateMediaFiles} from '../util/index.mjs'
-import {checkRefForMedias, getRefMap} from './mediaRefMap.mjs'
+import {checkRefForMedias, getMediaRefMap} from './mediaRefMap.mjs'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
+import {pubsub} from '../../../api/subscription.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -44,25 +46,8 @@ export default db => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_ACCESS_ADMIN_PAGE)
             const startTime = Date.now()
 
-            const allCollections = await db.listCollections().toArray()
-            const ignoreCollections = ['system.profile','OAuthCode','OAuthClient','NewsletterMailing', 'MediaConversion', 'UserTracking',
-                'TelegramCommand', 'GenericDataDefinition', 'History', 'Comment', 'Bot',
-                'BotConversation', 'Media', 'UserRole', 'NewsletterSubscriber', 'CrmAddress',
-                'Log', 'Word', 'Post', 'MailClient', 'MailTracking', 'NewsletterList',
-                'PreProcessor', 'MediaGroup', 'NewsletterSent', 'Rating', 'StaticFile', 'Chat',
-                'MailClientArchive', 'WordCategory', 'DnsHost', 'NewsletterTracking', 'TelegramBot',
-                'Product', 'CronJobExecution', 'ProductCategory', 'KeyValueGlobal', 'FtpUser',
-                'UserGroup', 'UserRestriction', 'UserSetting', 'SmsLog', 'MailAccountMessage',
-                'MailAccount', 'MailAccounts', 'MailAccountFolder', 'DnsHostGroup', 'ProxyUser',
-                'WebAuthnCredential', 'ChatMessage'
-            ]
-
-            const collectionsToSearchIn = allCollections
-                .map(c => c.name)
-                .filter(name => name.indexOf('-') < 0 && name.indexOf('_') < 0 && !ignoreCollections.includes(name))
-
             // Cache laden oder neu aufbauen
-            let refMap = await getRefMap(db, collectionsToSearchIn)
+            let refMap = await getMediaRefMap(db)
 
             if (!ids) {
                 const mediaIds = await db.collection('Media').find(match, {'_id': 1})
@@ -134,6 +119,13 @@ export default db => ({
         }
     },
     Mutation: {
+        // admins only: deletes media even if they are still used (the normal delete refuses that)
+        forceDeleteMedia: async ({_id}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+            const result = await GenericResolver.deleteEnities(db, context, 'Media', {_id}, {ignoreUsage: true})
+            pubsub.publish('subscribeMedia', {userId: context.id, subscribeMedia: {action: 'delete', removedIds: _id}}, db, context)
+            return result
+        },
         // copies a folder incl. all subfolders as new MediaGroups, the media files are not linked to the copy
         copyMediaGroupStructure: async ({_id, name}, req) => {
             const {context} = req

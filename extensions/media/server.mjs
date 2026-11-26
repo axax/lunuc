@@ -10,7 +10,7 @@ import config from '../../gensrc/config.mjs'
 import React from 'react'
 import {ObjectId} from 'mongodb'
 import Util from '../../api/util/index.mjs'
-import { CAPABILITY_RUN_COMMAND} from '../../util/capabilities.mjs'
+import {CAPABILITY_RUN_COMMAND, CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
 //import {uploadImageToStorage}  from './googleupload.mjs'
 import {createMediaEntry, removeMediaScreenshots, removeMediaVariants, syncMediaFileVisibility, isMediaPrivate} from './util/index.mjs'
 import { fileURLToPath } from 'url'
@@ -23,6 +23,8 @@ import {
     CAPABILITY_MEDIA_REFERENCES
 } from './constants/index.mjs'
 import GenericResolver from "../../api/resolver/generic/genericResolver.mjs";
+import {findMediaUsages, getMediaRefMap} from './resolver/mediaRefMap.mjs'
+import {ApiError} from '../../api/error.mjs'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const {UPLOAD_DIR, UPLOAD_URL} = config
@@ -82,6 +84,35 @@ const syncVisibility = async ({result}) => {
 }
 Hook.on('typeCreated_Media', syncVisibility)
 Hook.on('typeUpdated_Media', syncVisibility)
+
+// a media that is still used (CmsPage, GenericData, settings ...) can't be deleted - the usages
+// have to be removed first. An admin can delete it anyway with the mutation forceDeleteMedia
+// (options.ignoreUsage), server code with options.skipCheck.
+// Bulk delete: called once per id with all ids in "ids" -> checked once for all, at the first id
+Hook.on('typeBeforeDelete', async ({db, type, data, context, options, ids}) => {
+    if (type !== 'Media' || options?.skipCheck || options?.ignoreUsage || (ids && String(ids[0]) !== String(data._id))) {
+        return
+    }
+    const usages = await findMediaUsages(db, ids || [data._id])
+    const usedIds = Object.keys(usages)
+    if (usedIds.length) {
+        const names = await db.collection('Media').find({_id: {$in: usedIds.map(id => new ObjectId(id))}}, {projection: {name: 1}}).toArray()
+        const nameOf = id => names.find(m => String(m._id) === id)?.name || id
+        const list = usedIds.slice(0, 5).map(id => `${nameOf(id)} (${usages[id].slice(0, 3).map(u => u.location + (u.name ? ' ' + u.name : '')).join(', ')}${usages[id].length > 3 ? ' ...' : ''})`).join('; ') + (usedIds.length > 5 ? ' ...' : '')
+        // admins can delete it anyway: own key -> no general error message in the ui, only the confirm dialog
+        const canForce = context && await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+        throw new ApiError(_t('media.delete.used.error', context?.lang, {count: usedIds.length, list}),
+            canForce ? 'media_in_use_confirm' : 'media_in_use', {ids: usedIds, count: usedIds.length, list})
+    }
+})
+
+// build the reference map in the background after the start, so the first delete doesn't wait for it
+// (not in dev mode: there the api restarts often)
+Hook.on('appready', ({db}) => {
+    if (!config.DEV_MODE) {
+        setTimeout(() => getMediaRefMap(db).catch(e => console.error('media ref map warm-up', e)), 60000)
+    }
+})
 
 Hook.on('typeBeforeDelete', async ({db, type, data}) => {
     if(type==='MediaGroup') {

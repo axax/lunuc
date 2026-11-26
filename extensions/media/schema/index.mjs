@@ -25,6 +25,8 @@ export default `
     type Mutation {
         # copies a folder with all its subfolders (new groups). Media files are NOT linked to the copy
         copyMediaGroupStructure(_id: ID!, name: String): MediaGroupCopyResult
+        # admins only: deletes media even if they are still used somewhere
+        forceDeleteMedia(_id: [ID]!): [MediaStatus]
     }
 
     type Query {

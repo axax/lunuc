@@ -339,7 +339,40 @@ export default () => {
     })
 
 
+    // a used media can't be deleted - an admin gets the choice to delete it anyway
+    Hook.on('TypeDeleteError', function ({type, ids, errors, callback}) {
+        // only for admins the server sends this key (and the ui shows no general error message)
+        const error = errors.find(e => e.key === 'media_in_use_confirm')
+        if (type === 'Media' && error) {
+            this.setState({
+                confirmDialog: {
+                    open: true,
+                    action: 'forceDeleteMedia',
+                    type: 'Media',
+                    title: _t('Media.forceDeleteTitle'),
+                    text: <>{error.data ? _t('Media.forceDeleteUsed', error.data) : error.message}<br/><br/><strong>{_t('Media.forceDeleteText')}</strong></>,
+                    payload: ids,
+                    forceDeleteCallback: callback
+                }
+            })
+        }
+    })
+
     Hook.on('TypeContainerConfirmDialog', function ({type, confirmDialog, action}) {
+        if (type === 'Media' && action.key === 'yes' && confirmDialog.action === 'forceDeleteMedia') {
+            const ids = confirmDialog.payload
+            client.mutate({
+                mutation: 'mutation forceDeleteMedia($_id:[ID]!){forceDeleteMedia(_id:$_id){_id status}}',
+                variables: {_id: ids}
+            }).then(() => {
+                if (confirmDialog.forceDeleteCallback) {
+                    // e.g. the explorer views remove the items
+                    confirmDialog.forceDeleteCallback({ids, data: {}, errors: undefined})
+                }
+                this.getData(this.pageParams, false)
+            }).catch(() => {})
+            return
+        }
         if (type === 'Media' && action.key==='yes' && confirmDialog.action==='deleteOnlyFile') {
             client.query({
                 query: `query deleteOnlyMediaFiles($_id:[ID]){deleteOnlyMediaFiles(_id: $_id){_id status}}`,

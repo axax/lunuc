@@ -16,8 +16,25 @@ const ID_REGEX_PATTERN = /(?<![a-f0-9])[a-f0-9]{24}(?![a-f0-9])/gi
 // resolves a human readable name per collection
 const PRETTY_NAME_RESOLVERS = {
     CmsPage: doc => doc.slug,
-    User: doc => doc.username
+    User: doc => doc.username,
+    KeyValue: doc => doc.key
 }
+
+// collections that are never searched for references (big or irrelevant)
+const IGNORE_COLLECTIONS = ['system.profile', 'OAuthCode', 'OAuthClient', 'NewsletterMailing', 'MediaConversion', 'UserTracking',
+    'TelegramCommand', 'GenericDataDefinition', 'History', 'Comment', 'Bot',
+    'BotConversation', 'Media', 'UserRole', 'NewsletterSubscriber', 'CrmAddress',
+    'Log', 'Word', 'Post', 'MailClient', 'MailTracking', 'NewsletterList',
+    'PreProcessor', 'MediaGroup', 'NewsletterSent', 'Rating', 'StaticFile', 'Chat',
+    'MailClientArchive', 'WordCategory', 'DnsHost', 'NewsletterTracking', 'TelegramBot',
+    'Product', 'CronJobExecution', 'ProductCategory', 'KeyValueGlobal', 'FtpUser',
+    'UserGroup', 'UserRestriction', 'UserSetting', 'SmsLog', 'MailAccountMessage',
+    'MailAccount', 'MailAccounts', 'MailAccountFolder', 'DnsHostGroup', 'ProxyUser',
+    'WebAuthnCredential', 'ChatMessage']
+
+// references that are only ui state (e.g. the last selection in a type list), not a usage
+const IGNORED_REFERENCES = [{location: 'KeyValue', name: 'TypesContainerSettings'}]
+const isRealReference = entry => !IGNORED_REFERENCES.some(r => r.location === entry.location && r.name === entry.name)
 
 // ---- GenericData: human readable name + link info derived from the GenericDataDefinition ----
 
@@ -117,7 +134,7 @@ const getPrettyName = (collectionName, doc, definitionInfo) => {
     return typeof name === 'string' ? name : undefined
 }
 
-Hook.on(['typeUpdated', 'typeCreated', 'typeDeleted'], async ({data, type, db}, name) => {
+Hook.on(['typeUpdated', 'typeCreated', 'typeDeleted'], async ({data, result, deletedDocuments, ids, type, db}, name) => {
     if (type === 'GenericDataDefinition') {
         // definition changed (name/title/fields) -> reload lazily
         definitionCache.clear()
@@ -131,7 +148,16 @@ Hook.on(['typeUpdated', 'typeCreated', 'typeDeleted'], async ({data, type, db}, 
     }
 
     const collectionName = type
-    const payload = data
+
+    if (collectionName && !refMap.collectionsToSearchIn.includes(collectionName)) {
+        // collection is not part of the ref map -> ignore (before: e.g. every Media delete dropped the cache)
+        return
+    }
+
+    // created: the result has the _id (data is the input), deleted: only ids/deletedDocuments are passed
+    const payload = name === 'typeCreated' ? (result || data)
+        : name === 'typeDeleted' ? (deletedDocuments || (ids && [].concat(ids).map(id => ({_id: id}))) || data)
+            : data
 
     if (!collectionName || !payload) {
         // not enough info for an incremental update -> invalidate cache as fallback
@@ -140,17 +166,12 @@ Hook.on(['typeUpdated', 'typeCreated', 'typeDeleted'], async ({data, type, db}, 
         return
     }
 
-    if (!refMap.collectionsToSearchIn.includes(collectionName)) {
-        // collection is not part of the ref map -> ignore
-        return
-    }
-
     const docs = Array.isArray(payload) ? payload : [payload]
 
     // collect all refIds affected by this change (old and new references)
     const affectedRefIds = new Set()
 
-    for (const doc of docs) {
+    for (let doc of docs) {
         const docId = doc && doc._id ? doc._id.toString() : (typeof doc === 'string' ? doc : null)
         if (!docId) {
             console.log('Ref map: document without _id, invalidating cache', name)
@@ -168,6 +189,14 @@ Hook.on(['typeUpdated', 'typeCreated', 'typeDeleted'], async ({data, type, db}, 
         }
 
         if (name === 'typeCreated' || name === 'typeUpdated') {
+            let fullDoc = doc
+            if (name === 'typeUpdated' && db && typeof doc === 'object') {
+                // an update only contains the changed fields - the references of all other fields
+                // would be lost (media then counted as unused although they are still used)
+                fullDoc = await db.collection(collectionName).findOne({_id: new ObjectId(docId)})
+                if (!fullDoc) continue
+            }
+            doc = fullDoc
             if (typeof doc === 'object') {
                 await ensureDefinition(db, collectionName, doc)
                 addDocToRefMap(refMap, collectionName, doc)
@@ -214,6 +243,41 @@ export const checkRefForMedias = (ids, refMap, db) => {
         db.collection('Media').updateOne({_id: new ObjectId(_id)}, {$set})
     }
     return checkedItems;
+}
+
+// the ref map over all collections that can contain media references
+// (cached; while it is built, all callers wait for the same build instead of scanning again)
+let refMapBuilding = null
+export const getMediaRefMap = async (db) => {
+    const refMap = Cache.get(REF_MAP_CACHE_KEY)
+    if (refMap) {
+        return refMap
+    }
+    if (!refMapBuilding) {
+        refMapBuilding = (async () => {
+            const allCollections = await db.listCollections().toArray()
+            const collectionsToSearchIn = allCollections
+                .map(c => c.name)
+                .filter(name => name.indexOf('-') < 0 && name.indexOf('_') < 0 && !IGNORE_COLLECTIONS.includes(name))
+            return buildRefMap(db, collectionsToSearchIn)
+        })().finally(() => {
+            refMapBuilding = null
+        })
+    }
+    return refMapBuilding
+}
+
+// real usages of the given media ids: {id: [{location, _id, name}]} - only ids that are used
+export const findMediaUsages = async (db, ids) => {
+    const refMap = await getMediaRefMap(db)
+    const usages = {}
+    for (const id of ids) {
+        const entries = (refMap[String(id).toLowerCase()] || []).filter(isRealReference)
+        if (entries.length) {
+            usages[id] = entries
+        }
+    }
+    return usages
 }
 
 export const getRefMap = async (db, collectionsToSearchIn) => {

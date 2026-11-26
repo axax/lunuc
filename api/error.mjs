@@ -88,7 +88,7 @@ export function formatAndLogError(db, req, error) {
 
 	// expected cases, not logged: a missing page, a concurrent change in the cms editor (handled by a dialog)
 	// and introspection attempts (blocked by NoSchemaIntrospectionCustomRule, mostly scanners)
-	if (error.message !== "Cms page doesn't exist" && o.key !== 'cms_page_conflict' &&
+	if (error.message !== "Cms page doesn't exist" && o.key !== 'cms_page_conflict' && o.key !== 'media_in_use' && o.key !== 'media_in_use_confirm' &&
 		!(typeof error.message === 'string' && error.message.startsWith('GraphQL introspection has been disabled'))) {
 		// Erweitere den errorContext um Request-Informationen
 		Hook.call('graphqlError', {
