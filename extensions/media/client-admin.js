@@ -13,6 +13,7 @@ import {CAPABILITY_MANAGE_OTHER_USERS, CAPABILITY_ADMIN_OPTIONS} from '../../uti
 import {formatBytes} from '../../client/util/format.mjs'
 import {MediaEditorWrapper} from './components/MediaEditorWrapper.js'
 import {showPendingMediaReplaceHint} from './components/mediaReplaceHint'
+import MediaTrash from './components/MediaTrash'
 import {MediaUploader} from './components/MediaUploader'
 import GenericForm from '../../client/components/GenericForm'
 import Box from '@mui/material/Box'
@@ -178,12 +179,13 @@ export default () => {
                                 ids.push(item._id)
                             })
                             client.mutate({
-                                mutation: `mutation createBackup($type:String!,$options:String){createBackup(type:$type,options:$options){name size}}`,
+                                mutation: `mutation createBackup($type:String!,$options:String){createBackup(type:$type,options:$options){name size pending}}`,
                                 variables: {type: 'media', options: JSON.stringify({ids})}
                             }).then(response => {
                                 const backup = response?.data?.createBackup
                                 if (backup) {
-                                    this.setState({simpleDialog: {children: `${backup.name} (${backup.size})`}})
+                                    // the zip is written in the background - it shows up in the backups when it is done
+                                    this.setState({simpleDialog: {children: backup.pending ? `${backup.name}: ${_t('Media.dumpPending')}` : `${backup.name} (${backup.size})`}})
                                 }
                             }).catch(error => {
                                 this.setState({simpleDialog: {children: error.message}})
@@ -200,6 +202,18 @@ export default () => {
                             }).then(response => {
                                 if (response.data && response.data.cleanUpMedia) {
                                     this.setState({simpleDialog: {children: response.data.cleanUpMedia.status}})
+                                }
+                            })
+                        }
+                    },
+                    {
+                        icon: 'delete',
+                        name: _t('Media.trash'), onClick: () => {
+                            this.setState({
+                                simpleDialog: {
+                                    title: _t('Media.trash'), fullWidth: true, maxWidth: 'md',
+                                    actions: [{key: 'ok', label: _t('core.ok')}],
+                                    children: <MediaTrash onRestored={() => this.getData(this.pageParams, false)}/>
                                 }
                             })
                         }

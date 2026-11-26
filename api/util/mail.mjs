@@ -4,6 +4,39 @@ import nodemailer from 'nodemailer'
 import {replacePlaceholders} from '../../util/placeholders.mjs'
 import nodemailerDirectTransport from 'nodemailer-direct-transport'
 import {isString} from '../../client/util/json.mjs'
+import {CAPABILITY_ADMIN_OPTIONS} from '../../util/capabilities.mjs'
+
+// nodemailer reads `path` (local file or url) and `href` of attachments itself. Public forms pass
+// attachments that come from the browser -> without a check anybody could get server files
+// (e.g. /etc/...) or internal urls mailed to them. Allowed for everybody: content and data: uris.
+const isDataUri = (value) => isString(value) && /^data:/i.test(value.trim())
+const isUnsafeSource = (part) => !!part && typeof part === 'object' &&
+    ((part.path !== undefined && !isDataUri(part.path)) || part.href !== undefined)
+
+/**
+ * removes attachments with a file path / url, unless the caller is trusted (server code that built
+ * the paths itself: trustedAttachments=true) or the user has admin_options
+ */
+export const sanitizeAttachments = async (db, context, attachments, trusted) => {
+    if (!attachments) {
+        return attachments
+    }
+    const list = Array.isArray(attachments) ? attachments : [attachments]
+    // performance: capability only checked if there is something to check
+    if (trusted || !list.some(isUnsafeSource)) {
+        return list
+    }
+    if (context && context.id && await Util.userHasCapability(db, context, CAPABILITY_ADMIN_OPTIONS)) {
+        return list
+    }
+    return list.filter(attachment => {
+        if (isUnsafeSource(attachment)) {
+            console.warn('sendMail: attachment with path/href removed (not allowed for this user)', attachment && attachment.filename)
+            return false
+        }
+        return true
+    })
+}
 
 
 
@@ -14,7 +47,7 @@ import {isString} from '../../client/util/json.mjs'
  it uses the mail settings from the global key value store
  */
 
-export const sendMail = async (db, context, {settings, recipient, cc, from, fromName, replyTo, subject, body, html, text, slug, headerList, headers, attachments, req}) => {
+export const sendMail = async (db, context, {settings, recipient, cc, from, fromName, replyTo, subject, body, html, text, slug, headerList, headers, attachments, trustedAttachments, req}) => {
 
     // recipient (and cc) can be a single address or a list separated by comma / semicolon
     const toAddressList = (value) => (Array.isArray(value) ? value : String(value || '').split(/[,;]/))
@@ -24,6 +57,11 @@ export const sendMail = async (db, context, {settings, recipient, cc, from, from
     if (recipients.length === 0 || !recipients.every(address => Util.validateEmail(address))) {
         return {error: `Recipient ${recipient} is not valid`}
     }
+
+    attachments = await sanitizeAttachments(db, context, attachments, trustedAttachments)
+    // html/text can also be {path}/{href} objects in nodemailer -> only strings from here on
+    if (html && !isString(html)) html = undefined
+    if (text && !isString(text)) text = undefined
 
     const ccRecipients = toAddressList(cc)
     if (!ccRecipients.every(address => Util.validateEmail(address))) {
@@ -110,6 +148,10 @@ ${finalHtml}
         replyToFinal = mailSettings.replyTo
     }
 
+    // body/template may result in an object ({path} would be read by nodemailer) -> strings only
+    if (finalHtml && !isString(finalHtml)) {
+        finalHtml = ''
+    }
     let finalText = isString(text)?text.trim():''
     if(!finalText){
         finalText = finalHtml.replace(/<(script|style)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>|<[^>]+>/gi, '').trim()

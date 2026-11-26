@@ -6,6 +6,7 @@ import {ZipArchive} from 'archiver'
 import {ObjectId} from 'mongodb'
 import {getServerDb} from '../../api/database.mjs'
 import {getDynamicConfig} from '../../util/config.mjs'
+import {mediaFilePath} from '../../util/mediaFile.mjs'
 
 const config = getDynamicConfig()
 
@@ -63,7 +64,13 @@ export const zipAndSendMedias = (res, decoded, req) => {
             const medias = await db.collection('Media').find({ _id: { $in: decoded.mediaIds.map(id=>new ObjectId(id)) } }).toArray()
             // Add files to the archive (can be from disk, buffers, or strings)
             for (const media of medias) {
-                archive.file(path.join(ABS_UPLOAD_DIR, media._id.toString()), {name: media.name})
+                // "<id>" or "private<id>" - a missing file would abort the whole zip
+                const filePath = await mediaFilePath(ABS_UPLOAD_DIR, media)
+                if (filePath) {
+                    archive.file(filePath, {name: media.name})
+                } else {
+                    console.warn(`token link zip: file of media ${media._id} not found`)
+                }
             }
 
             // Handle errors

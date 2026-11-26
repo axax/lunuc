@@ -1,13 +1,23 @@
-import Cache from '../../../util/cache.mjs'
 import Hook from '../../../util/hook.cjs'
 import {ObjectId} from 'mongodb'
 
+/*
+ Where is a media used? The collection MediaReference (type in ../build.json) has one entry per media
+ and referencing document: {mediaId, location (collection), docId, name, meta, title}.
 
-const REF_MAP_CACHE_KEY = 'allCollectionRefMap'
-const REF_MAP_TTL = 1000 * 60 * 60 * 24 // 1 day
+ - built once by scanning all relevant collections (in the background, into a temp collection that
+   replaces the old one at the end), rebuilt when older than REBUILD_AFTER
+ - kept up to date incrementally with every create/update/delete through the generic resolver
+ - indexed, survives restarts and is shared by all processes (before: an in-memory map per process,
+   rebuilt by a full scan after every restart)
+ Media.references.count/locations is updated for the media whose references changed.
+ */
 
-// keys in the map that are not reference ids
-const META_KEYS = ['collectionsToSearchIn', 'docIndex']
+export const MEDIA_REFERENCE_COLLECTION = 'MediaReference'
+const BUILD_COLLECTION = 'MediaReference_build'
+const BUILT_AT_KEY = 'MediaReferenceBuiltAt'
+const REBUILD_AFTER = 1000 * 60 * 60 * 24 // 1 day: catches changes made directly in the db
+const BATCH_SIZE = 1000
 
 // matches 24-char hex ids, also when embedded in longer strings (e.g. urls, html, json),
 // but not as a substring of a longer hex sequence (e.g. md5/sha hashes)
@@ -30,7 +40,11 @@ const IGNORE_COLLECTIONS = ['system.profile', 'OAuthCode', 'OAuthClient', 'Newsl
     'Product', 'CronJobExecution', 'ProductCategory', 'KeyValueGlobal', 'FtpUser',
     'UserGroup', 'UserRestriction', 'UserSetting', 'SmsLog', 'MailAccountMessage',
     'MailAccount', 'MailAccounts', 'MailAccountFolder', 'DnsHostGroup', 'ProxyUser',
-    'WebAuthnCredential', 'ChatMessage']
+    'WebAuthnCredential', 'ChatMessage', MEDIA_REFERENCE_COLLECTION]
+
+// versioned collections (CmsPage_xxx) and system collections are not searched
+const isSearchedCollection = name => !!name && name.indexOf('-') < 0 && name.indexOf('_') < 0 &&
+    !name.startsWith('system.') && !IGNORE_COLLECTIONS.includes(name)
 
 // references that are only ui state (e.g. the last selection in a type list), not a usage
 const IGNORED_REFERENCES = [{location: 'KeyValue', name: 'TypesContainerSettings'}]
@@ -134,164 +148,7 @@ const getPrettyName = (collectionName, doc, definitionInfo) => {
     return typeof name === 'string' ? name : undefined
 }
 
-Hook.on(['typeUpdated', 'typeCreated', 'typeDeleted'], async ({data, result, deletedDocuments, ids, type, db}, name) => {
-    if (type === 'GenericDataDefinition') {
-        // definition changed (name/title/fields) -> reload lazily
-        definitionCache.clear()
-        return
-    }
-
-    const refMap = Cache.get(REF_MAP_CACHE_KEY)
-    if (!refMap || !refMap.collectionsToSearchIn) {
-        // no cache -> nothing to update
-        return
-    }
-
-    const collectionName = type
-
-    if (collectionName && !refMap.collectionsToSearchIn.includes(collectionName)) {
-        // collection is not part of the ref map -> ignore (before: e.g. every Media delete dropped the cache)
-        return
-    }
-
-    // created: the result has the _id (data is the input), deleted: only ids/deletedDocuments are passed
-    const payload = name === 'typeCreated' ? (result || data)
-        : name === 'typeDeleted' ? (deletedDocuments || (ids && [].concat(ids).map(id => ({_id: id}))) || data)
-            : data
-
-    if (!collectionName || !payload) {
-        // not enough info for an incremental update -> invalidate cache as fallback
-        console.log('Ref map: insufficient hook data, invalidating cache', name)
-        Cache.remove(REF_MAP_CACHE_KEY)
-        return
-    }
-
-    const docs = Array.isArray(payload) ? payload : [payload]
-
-    // collect all refIds affected by this change (old and new references)
-    const affectedRefIds = new Set()
-
-    for (let doc of docs) {
-        const docId = doc && doc._id ? doc._id.toString() : (typeof doc === 'string' ? doc : null)
-        if (!docId) {
-            console.log('Ref map: document without _id, invalidating cache', name)
-            Cache.remove(REF_MAP_CACHE_KEY)
-            return
-        }
-
-        if (name === 'typeUpdated' || name === 'typeDeleted') {
-            // old references before removal
-            const oldRefIds = refMap.docIndex[`${collectionName}:${docId}`]
-            if (oldRefIds) {
-                oldRefIds.forEach(id => affectedRefIds.add(id))
-            }
-            removeDocFromRefMap(refMap, collectionName, docId)
-        }
-
-        if (name === 'typeCreated' || name === 'typeUpdated') {
-            let fullDoc = doc
-            if (name === 'typeUpdated' && db && typeof doc === 'object') {
-                // an update only contains the changed fields - the references of all other fields
-                // would be lost (media then counted as unused although they are still used)
-                fullDoc = await db.collection(collectionName).findOne({_id: new ObjectId(docId)})
-                if (!fullDoc) continue
-            }
-            doc = fullDoc
-            if (typeof doc === 'object') {
-                await ensureDefinition(db, collectionName, doc)
-                addDocToRefMap(refMap, collectionName, doc)
-                // new references after adding
-                const newRefIds = refMap.docIndex[`${collectionName}:${docId}`]
-                if (newRefIds) {
-                    newRefIds.forEach(id => affectedRefIds.add(id))
-                }
-            } else {
-                // only got an id but no document data -> can't extract refs
-                console.log('Ref map: no document data for update, invalidating cache', name)
-                Cache.remove(REF_MAP_CACHE_KEY)
-                return
-            }
-        }
-    }
-
-    // refresh cache entry (also bumps TTL)
-    Cache.set(REF_MAP_CACHE_KEY, refMap, REF_MAP_TTL)
-    console.log(`Ref map updated incrementally (${name}, ${collectionName}, ${docs.length} doc(s))`)
-
-    // update reference info on affected media documents
-    if (db && affectedRefIds.size > 0) {
-        checkRefForMedias([...affectedRefIds], refMap, db)
-        console.log(`Ref map: reference info updated for ${affectedRefIds.size} affected id(s)`)
-    }
-})
-
-
-export const checkRefForMedias = (ids, refMap, db) => {
-    const checkedItems = {}
-
-    for (const _id of ids) {
-        const collectionsWithRef = refMap[_id] || []
-
-        const $set = {
-            references: {
-                count: collectionsWithRef.length,
-                locations: collectionsWithRef,
-                lastChecked: new Date().getTime()
-            }
-        }
-        checkedItems[_id] = $set
-        db.collection('Media').updateOne({_id: new ObjectId(_id)}, {$set})
-    }
-    return checkedItems;
-}
-
-// the ref map over all collections that can contain media references
-// (cached; while it is built, all callers wait for the same build instead of scanning again)
-let refMapBuilding = null
-export const getMediaRefMap = async (db) => {
-    const refMap = Cache.get(REF_MAP_CACHE_KEY)
-    if (refMap) {
-        return refMap
-    }
-    if (!refMapBuilding) {
-        refMapBuilding = (async () => {
-            const allCollections = await db.listCollections().toArray()
-            const collectionsToSearchIn = allCollections
-                .map(c => c.name)
-                .filter(name => name.indexOf('-') < 0 && name.indexOf('_') < 0 && !IGNORE_COLLECTIONS.includes(name))
-            return buildRefMap(db, collectionsToSearchIn)
-        })().finally(() => {
-            refMapBuilding = null
-        })
-    }
-    return refMapBuilding
-}
-
-// real usages of the given media ids: {id: [{location, _id, name}]} - only ids that are used
-export const findMediaUsages = async (db, ids) => {
-    const refMap = await getMediaRefMap(db)
-    const usages = {}
-    for (const id of ids) {
-        const entries = (refMap[String(id).toLowerCase()] || []).filter(isRealReference)
-        if (entries.length) {
-            usages[id] = entries
-        }
-    }
-    return usages
-}
-
-export const getRefMap = async (db, collectionsToSearchIn) => {
-
-    // load from cache or rebuild
-    let refMap = Cache.get(REF_MAP_CACHE_KEY)
-    if (!refMap) {
-        refMap = await buildRefMap(db, collectionsToSearchIn)
-    }
-
-    return refMap
-}
-
-
+// all ids in a document (strings and ObjectIds, recursively)
 const extractIds = (obj, results = new Set()) => {
     if (!obj || typeof obj !== 'object') return results
     for (const val of Object.values(obj)) {
@@ -310,72 +167,218 @@ const extractIds = (obj, results = new Set()) => {
     return results
 }
 
-// adds all references of a single document to the map and the reverse index
-const addDocToRefMap = (refMap, collectionName, doc) => {
+// the reference entries of one document (one per id it contains)
+const referencesOfDoc = (collectionName, doc) => {
     const docId = doc._id.toString()
-    const foundIds = extractIds(doc)
-    foundIds.delete(docId)
+    const ids = extractIds(doc)
+    ids.delete(docId)
+    if (!ids.size) return []
 
     const definitionInfo = collectionName === 'GenericData' && doc.definition
         ? definitionCache.get(doc.definition.toString())
         : undefined
-    const prettyName = getPrettyName(collectionName, doc, definitionInfo)
-
-    // reverse index: which refIds does this document point to
-    refMap.docIndex[`${collectionName}:${docId}`] = [...foundIds]
-
-    for (const refId of foundIds) {
-        if (!refMap[refId]) refMap[refId] = []
-        if (!refMap[refId].find(e => e.location === collectionName && e._id === docId)) {
-            const entry = {location: collectionName, _id: docId}
-            if (prettyName) {
-                entry.name = prettyName
-            }
-            if (definitionInfo) {
-                // needed to build the link to the right GenericData list in the admin
-                entry.meta = definitionInfo.name
-                entry.title = definitionInfo.title
-            }
-            refMap[refId].push(entry)
-        }
+    const base = {location: collectionName, docId}
+    const name = getPrettyName(collectionName, doc, definitionInfo)
+    if (name) base.name = name
+    if (definitionInfo) {
+        // needed to build the link to the right GenericData list in the admin
+        base.meta = definitionInfo.name
+        base.title = definitionInfo.title
     }
+    return [...ids].map(mediaId => ({mediaId, ...base}))
 }
 
-// removes all entries of a single document using the reverse index
-const removeDocFromRefMap = (refMap, collectionName, docId) => {
-    const indexKey = `${collectionName}:${docId}`
-    const refIds = refMap.docIndex[indexKey]
-    if (!refIds) return
 
-    for (const refId of refIds) {
-        const entries = refMap[refId]
-        if (!entries) continue
-        const filtered = entries.filter(e => !(e.location === collectionName && e._id === docId))
-        if (filtered.length > 0) {
-            refMap[refId] = filtered
-        } else {
-            delete refMap[refId]
-        }
-    }
-    delete refMap.docIndex[indexKey]
+// ─── build ────────────────────────────────────────────────────────────────────
+
+let building = null       // promise of the running build
+let pendingChanges = null // documents changed while a build runs: applied again after it
+
+const getBuiltAt = async (db) => {
+    const entry = await db.collection('KeyValueGlobal').findOne({key: BUILT_AT_KEY}, {projection: {value: 1}})
+    return entry ? entry.value : 0
 }
 
-const buildRefMap = async (db, collectionsToSearchIn) => {
-    console.log('Building ref map cache...')
-    const startTime = new Date().getTime()
-    const map = {docIndex: {}}
-
+const buildReferences = async (db) => {
+    const startTime = Date.now()
+    console.log('MediaReference: building...')
+    pendingChanges = new Map()
     await loadAllDefinitions(db)
 
-    for (const name of collectionsToSearchIn) {
-        console.log(`Scanning ${name}...`)
-        const fullCursor = db.collection(name).find({})
-        for await (const doc of fullCursor) {
-            addDocToRefMap(map, name, doc)
+    const target = db.collection(BUILD_COLLECTION)
+    await target.drop().catch(() => {})
+
+    const collections = (await db.listCollections({}, {nameOnly: true}).toArray()).map(c => c.name).filter(isSearchedCollection)
+    let batch = [], count = 0
+    for (const name of collections) {
+        for await (const doc of db.collection(name).find({})) {
+            for (const ref of referencesOfDoc(name, doc)) {
+                batch.push(ref)
+                if (batch.length >= BATCH_SIZE) {
+                    await target.insertMany(batch, {ordered: false})
+                    count += batch.length
+                    batch = []
+                }
+            }
         }
     }
-    map.collectionsToSearchIn = collectionsToSearchIn
-    Cache.set(REF_MAP_CACHE_KEY, map, REF_MAP_TTL)
-    console.log(`Ref map built in ${new Date().getTime() - startTime}ms, ${Object.keys(map).length - META_KEYS.length} unique IDs indexed`)
-    return map
+    if (batch.length) {
+        await target.insertMany(batch, {ordered: false})
+        count += batch.length
+    }
+    // indexes before the switch, so queries are fast right away (also declared in build.json)
+    await target.createIndex({mediaId: 1})
+    await target.createIndex({location: 1, docId: 1})
+
+    if (count) {
+        await target.rename(MEDIA_REFERENCE_COLLECTION, {dropTarget: true})
+    } else {
+        await target.drop().catch(() => {})
+        await db.collection(MEDIA_REFERENCE_COLLECTION).deleteMany({})
+    }
+    await db.collection('KeyValueGlobal').updateOne({key: BUILT_AT_KEY}, {$set: {value: Date.now()}}, {upsert: true})
+
+    // changes during the build went into the old collection: apply them to the new one
+    const changes = pendingChanges
+    pendingChanges = null
+    for (const {collectionName, docId} of changes.values()) {
+        await updateReferencesOfDoc(db, collectionName, docId)
+    }
+    console.log(`MediaReference: ${count} references of ${collections.length} collections built in ${Date.now() - startTime}ms`)
+}
+
+// makes sure the references exist: the first build is awaited, an outdated one is rebuilt in the
+// background (the existing references are used meanwhile). One build at a time per process.
+export const ensureMediaReferences = async (db, {force} = {}) => {
+    if (building) {
+        if (force || !(await getBuiltAt(db))) await building
+        return
+    }
+    const builtAt = await getBuiltAt(db)
+    if (!force && builtAt && Date.now() - builtAt < REBUILD_AFTER) {
+        return
+    }
+    building = buildReferences(db).catch(e => {
+        console.error('MediaReference: build failed', e)
+        pendingChanges = null
+    }).finally(() => {
+        building = null
+    })
+    if (force || !builtAt) {
+        await building
+    }
+}
+
+
+// ─── incremental updates ──────────────────────────────────────────────────────
+
+// recalculates the entries of one document (null doc = deleted), returns the affected media ids
+const updateReferencesOfDoc = async (db, collectionName, docId, deleted) => {
+    const collection = db.collection(MEDIA_REFERENCE_COLLECTION)
+    const old = await collection.find({location: collectionName, docId}, {projection: {mediaId: 1, name: 1, meta: 1, title: 1}}).toArray()
+    const doc = deleted ? null : await db.collection(collectionName).findOne({_id: ObjectId.isValid(docId) ? new ObjectId(docId) : docId})
+    if (doc) {
+        await ensureDefinition(db, collectionName, doc)
+    }
+    const refs = doc ? referencesOfDoc(collectionName, doc) : []
+
+    const oldIds = new Set(old.map(r => r.mediaId)), newIds = new Set(refs.map(r => r.mediaId))
+    const unchanged = oldIds.size === newIds.size && [...oldIds].every(id => newIds.has(id))
+    // nothing changed (same ids, same name): no write - the usual case for an update
+    if (unchanged && (!refs.length || old.every(r => r.name === refs[0].name && r.meta === refs[0].meta && r.title === refs[0].title))) {
+        return []
+    }
+    // replace the entries of the document (also when only the name of the document changed)
+    await collection.deleteMany({location: collectionName, docId})
+    if (refs.length) {
+        await collection.insertMany(refs, {ordered: false})
+    }
+    return unchanged ? [] : [...new Set([...oldIds, ...newIds])].filter(id => !oldIds.has(id) || !newIds.has(id))
+}
+
+Hook.on(['typeUpdated', 'typeCreated', 'typeDeleted'], async ({data, result, deletedDocuments, ids, type, db}, name) => {
+    if (type === 'GenericDataDefinition') {
+        // definition changed (name/title/fields) -> reload lazily
+        definitionCache.clear()
+        return
+    }
+    if (!db || !isSearchedCollection(type)) {
+        return
+    }
+    try {
+        // ids of the changed documents
+        let docIds
+        if (name === 'typeDeleted') {
+            docIds = deletedDocuments ? deletedDocuments.map(d => d._id.toString()) : [].concat(ids || [])
+        } else {
+            const doc = name === 'typeCreated' ? (result || data) : data
+            docIds = doc && doc._id ? [doc._id.toString()] : []
+        }
+        if (!docIds.length) return
+
+        if (pendingChanges) {
+            // a build is running: remember it, it is applied again when the build is done
+            docIds.forEach(docId => pendingChanges.set(type + ':' + docId, {collectionName: type, docId}))
+        }
+        if (!(await getBuiltAt(db))) {
+            // not built yet: the build will find it
+            return
+        }
+        const affected = new Set()
+        for (const docId of docIds) {
+            (await updateReferencesOfDoc(db, type, docId, name === 'typeDeleted')).forEach(id => affected.add(id))
+        }
+        if (affected.size) {
+            await updateMediaReferenceCounts(db, [...affected])
+        }
+    } catch (e) {
+        console.error('MediaReference: update failed', type, name, e.message)
+    }
+})
+
+
+// ─── queries ──────────────────────────────────────────────────────────────────
+
+// all references of the given media ids: {id: [{location, _id, name, meta, title}]}
+const loadReferences = async (db, ids) => {
+    const refs = await db.collection(MEDIA_REFERENCE_COLLECTION).find(
+        {mediaId: {$in: ids.map(id => String(id).toLowerCase())}},
+        {projection: {_id: 0, mediaId: 1, location: 1, docId: 1, name: 1, meta: 1, title: 1}}
+    ).toArray()
+    const byId = {}
+    for (const {mediaId, docId, ...rest} of refs) {
+        (byId[mediaId] || (byId[mediaId] = [])).push({...rest, _id: docId})
+    }
+    return byId
+}
+
+// real usages of the given media ids: {id: [{location, _id, name}]} - only ids that are used
+export const findMediaUsages = async (db, ids) => {
+    await ensureMediaReferences(db)
+    const refs = await loadReferences(db, ids)
+    const usages = {}
+    for (const id of ids) {
+        const entries = (refs[String(id).toLowerCase()] || []).filter(isRealReference)
+        if (entries.length) {
+            usages[id] = entries
+        }
+    }
+    return usages
+}
+
+// writes references.count/locations/lastChecked into the Media entries, returns {id: {references}}
+export const updateMediaReferenceCounts = async (db, ids) => {
+    const refs = await loadReferences(db, ids)
+    const checkedItems = {}
+    const now = Date.now()
+    const operations = ids.filter(id => ObjectId.isValid(id)).map(id => {
+        const locations = refs[String(id).toLowerCase()] || []
+        const $set = {references: {count: locations.length, locations, lastChecked: now}}
+        checkedItems[id] = $set
+        return {updateOne: {filter: {_id: new ObjectId(id)}, update: {$set}}}
+    })
+    if (operations.length) {
+        await db.collection('Media').bulkWrite(operations, {ordered: false})
+    }
+    return checkedItems
 }

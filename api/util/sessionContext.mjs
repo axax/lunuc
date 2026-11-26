@@ -5,6 +5,7 @@ import {
     AUTH_SCHEME, CLIENT_ID_HEADER,
     CONTENT_LANGUAGE_HEADER, SECRET_KEY,
     SESSION_HEADER,
+    TRACK_USER_AGENT_HEADER,
     USE_COOKIES
 } from '../constants/index.mjs'
 import {parseCookies} from './parseCookies.mjs'
@@ -12,7 +13,7 @@ import {decodeToken} from './jwt.mjs'
 import crypto from 'crypto'
 import config from '../../gensrc/config.mjs'
 import jwt from 'jsonwebtoken'
-import {getHostFromHeaders} from '../../util/host.mjs'
+import {getHostFromHeaders, clientAddress} from '../../util/host.mjs'
 import {getBestMatchingHostRule} from '../../util/hostrules.mjs'
 
 const {DEFAULT_LANGUAGE} = config
@@ -139,5 +140,15 @@ export const contextByRequest = (req, res) => {
     // add the requested language to the context
     context.lang = lang || DEFAULT_LANGUAGE
     context.clientId = req.headers[CLIENT_ID_HEADER]
+    // who made the request (e.g. for the History) - not enumerable: it is not copied into
+    // tokens, cache keys or logs that spread or serialize the context
+    Object.defineProperty(context, 'requestInfo', {
+        value: {
+            ip: clientAddress(req),
+            userAgent: req.headers[TRACK_USER_AGENT_HEADER] || req.headers['user-agent']
+        },
+        enumerable: false,
+        configurable: true
+    })
     return context
 }

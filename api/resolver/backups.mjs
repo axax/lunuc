@@ -6,8 +6,8 @@ import {execFile} from 'child_process'
 
 // suffix for backups that are still being written
 const PARTIAL_SUFFIX = '.part'
-import os from 'os'
 import zipper from 'zip-local'
+import {ZipArchive} from 'archiver'
 import {MONGO_URL} from '../database.mjs'
 const {BACKUP_DIR, BACKUP_URL, UPLOAD_DIR, HOSTRULES_ABSPATH} = config
 
@@ -178,9 +178,11 @@ export const createDbBackup = (options = {}) => {
 }
 
 // mediaIds: only the originals of these media (public "<id>" and private "private<id>"),
-// otherwise all originals
+// otherwise all originals (< 200MB). Generated variants ("@") and hidden folders (trash) are not included.
+// Written in the background as a stream directly from the upload dir into the zip (before: everything was
+// copied into a temp dir and zipped synchronously, which blocked the api for the whole time).
+// Like the db backup it is written to a ".part" file first and listed as pending until it is done.
 export const createMediaBackup = (mediaIds) => {
-    // make sure upload dir exists
     const backup_dir = getBackupDir('media')
     if (!Util.ensureDirectoryExistence(backup_dir, true)) {
         throw new Error(`Backup folder coud not be created -> ${backup_dir}`)
@@ -188,51 +190,57 @@ export const createMediaBackup = (mediaIds) => {
 
     const date = Date.now(),
         name = 'backup.media.' + date + '.gz',
-        fullName = path.join(backup_dir, name)
-
-
-    const media_dir = ABS_UPLOAD_DIR
-
-    const files = fs.readdirSync(media_dir)
-    if (files.length === 0) {
-        throw new Error(`No files in folder -> ${media_dir}`)
-    }
+        fullName = path.join(backup_dir, name),
+        partName = fullName + PARTIAL_SUFFIX
 
     // a set: one lookup per file instead of a search in the list
     const filesToBackup = mediaIds ? new Set(mediaIds.flatMap(id => [String(id), 'private' + id])) : null
 
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lunuc'))
-    files.forEach((file) => {
-        if (file.indexOf('@') === -1) {
-            if (filesToBackup) {
-                if (filesToBackup.has(file)) {
-                    fs.copyFileSync(media_dir + '/' + file, tmpDir + '/' + file)
-                }
-            } else {
-                const stat = fs.lstatSync(media_dir + '/' + file)
+    const writeZip = async () => {
+        const output = fs.createWriteStream(partName)
+        // media are mostly compressed already (jpg, png, mp4): a low level saves a lot of cpu
+        const archive = new ZipArchive({zlib: {level: 3}})
+        const done = new Promise((resolve, reject) => {
+            output.on('close', resolve)
+            output.on('error', reject)
+            archive.on('error', reject)
+        })
+        archive.pipe(output)
 
-
-                if (!stat.isDirectory() && stat.size < 200000000) {
-                    // only include files small then 200MBs
-                    fs.copyFileSync(media_dir + '/' + file, tmpDir + '/' + file)
-                }
+        let count = 0
+        // opendir streams the entries (no array with all file names of a big upload dir)
+        for await (const entry of await fs.promises.opendir(ABS_UPLOAD_DIR)) {
+            const file = entry.name
+            if (!entry.isFile() || file.indexOf('@') >= 0 || file.startsWith('.')) {
+                continue
             }
+            if (filesToBackup) {
+                if (!filesToBackup.has(file)) continue
+            } else if ((await fs.promises.stat(path.join(ABS_UPLOAD_DIR, file))).size >= 200000000) {
+                // only include files smaller than 200MB
+                continue
+            }
+            archive.file(path.join(ABS_UPLOAD_DIR, file), {name: file})
+            count++
         }
+        if (!count) {
+            // close the open .part file (it is removed in the catch below)
+            archive.abort()
+            output.destroy()
+            throw new Error(`No files in folder -> ${ABS_UPLOAD_DIR}`)
+        }
+        await archive.finalize()
+        await done
+        await fs.promises.rename(partName, fullName)
+        console.log(`createMediaBackup finished: ${fullName} (${count} files)`)
+    }
+
+    writeZip().catch(e => {
+        console.error('createMediaBackup failed', e.message)
+        fs.unlink(partName, () => {})
     })
 
-
-    // zip media dir
-    zipper.sync.zip(tmpDir).compress().save(fullName)
-
-    //remove temp files
-    const tempFiles = fs.readdirSync(tmpDir)
-    tempFiles.forEach((file) => {
-        fs.unlinkSync(path.join(tmpDir, file))
-    })
-    fs.rmdirSync(tmpDir)
-
-    return {fullName, name, date}
-
+    return {fullName, name, date, pending: true}
 }
 
 

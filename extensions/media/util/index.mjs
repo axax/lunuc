@@ -11,6 +11,7 @@ import http from 'http'
 import config from '../../../gensrc/config.mjs'
 import sharp from 'sharp'
 import exif from 'exif-reader'
+import {isMediaPrivate} from '../../../util/mediaFile.mjs'
 
 export const removeInvalidProperties = function (obj) {
     for (const i in obj) {
@@ -266,8 +267,8 @@ export function removeMediaScreenshots({ids} = {}) {
     return deleteFiles(collectFiles(screenShotDir, {ids}))
 }
 
-// private can come as boolean or (multipart upload) as string
-export const isMediaPrivate = (value) => value === true || value === 'true'
+// isMediaPrivate: shared with the web server (util/mediaFile.mjs)
+export {isMediaPrivate}
 
 const existsAsync = (file) => fs.promises.access(file).then(() => true, () => false)
 
@@ -348,4 +349,89 @@ export async function syncAllPrivateMediaFiles(db, {ids} = {}) {
         console.log(`[syncAllPrivateMediaFiles] ${moved} private media files moved`)
     }
     return moved
+}
+
+
+// ─── trash ────────────────────────────────────────────────────────────────────
+// A deleted media keeps its original file for MEDIA_TRASH_DAYS in uploads/.trash (same file name,
+// "<id>" or "private<id>"), so it can be restored together with the entry from the History.
+// The trash is never served (server/util/file.mjs blocks paths starting with a dot).
+export const MEDIA_TRASH_DIR = '.trash'
+export const MEDIA_TRASH_DAYS = 30
+
+const uploadDirPath = () => path.join(path.resolve(), config.UPLOAD_DIR)
+const trashDirPath = () => path.join(uploadDirPath(), MEDIA_TRASH_DIR)
+
+// moves the originals of the given media into the trash, generated variants are removed
+// (they are generated again on demand after a restore)
+export async function moveMediaFilesToTrash(ids) {
+    if (!ids || !ids.length) {
+        return
+    }
+    const uploadDir = uploadDirPath(), trashDir = trashDirPath()
+    await fs.promises.mkdir(trashDir, {recursive: true})
+    const now = new Date()
+    await Promise.all(ids.flatMap(id => [String(id), 'private' + id]).map(async name => {
+        const target = path.join(trashDir, name)
+        try {
+            await fs.promises.rename(path.join(uploadDir, name), target)
+            // the age in the trash counts from now (rename keeps the old modification time)
+            await fs.promises.utimes(target, now, now)
+            removeGeneratedFiles(uploadDir, name)
+        } catch (e) {
+            if (e.code !== 'ENOENT') {
+                console.error('moveMediaFilesToTrash', name, e.message)
+            }
+        }
+    }))
+}
+
+// moves the original of a media back from the trash (under the name matching its private flag)
+// returns true if a file was restored
+export async function restoreMediaFileFromTrash(id, isPrivate) {
+    const uploadDir = uploadDirPath(), trashDir = trashDirPath()
+    const target = path.join(uploadDir, (isMediaPrivate(isPrivate) ? 'private' : '') + id)
+    for (const name of [String(id), 'private' + id]) {
+        try {
+            await fs.promises.rename(path.join(trashDir, name), target)
+            return true
+        } catch (e) {
+            if (e.code !== 'ENOENT') {
+                throw e
+            }
+        }
+    }
+    return false
+}
+
+// does the trash still contain the file of a media
+export async function mediaFileInTrash(id) {
+    const trashDir = trashDirPath()
+    return await existsAsync(path.join(trashDir, String(id))) || await existsAsync(path.join(trashDir, 'private' + id))
+}
+
+// deletes files that are longer than MEDIA_TRASH_DAYS in the trash, returns the number of deleted files
+export async function purgeMediaTrash(days = MEDIA_TRASH_DAYS) {
+    const trashDir = trashDirPath()
+    let files
+    try {
+        files = await fs.promises.readdir(trashDir)
+    } catch (e) {
+        return 0
+    }
+    const olderThan = Date.now() - days * 24 * 60 * 60 * 1000
+    let removed = 0
+    for (const file of files) {
+        const filePath = path.join(trashDir, file)
+        try {
+            const stat = await fs.promises.stat(filePath)
+            if (stat.isFile() && stat.mtimeMs < olderThan) {
+                await fs.promises.unlink(filePath)
+                removed++
+            }
+        } catch (e) {
+            console.error('purgeMediaTrash', file, e.message)
+        }
+    }
+    return removed
 }

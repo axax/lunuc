@@ -336,6 +336,46 @@
           "uitype": "editor"
         }
       ]
+    },
+    {
+      "name": "MediaReference",
+      "description": "Where a media is used: one entry per media and referencing document. Maintained automatically (extensions/media/resolver/mediaRefMap.mjs), not by hand",
+      "noUserRelation": true,
+      "backupEssential": false,
+      "history": false,
+      "subscription": false,
+      "browser": false,
+      "access": {"read": "manage_other_users", "create": "manage_other_users", "update": "manage_other_users"},
+      "fields": [
+        {
+          "name": "mediaId",
+          "index": 1
+        },
+        {
+          "name": "location",
+          "compoundIndex": [{
+            "unique": false,
+            "fields": {
+              "location": 1,
+              "docId": 1
+            }
+          }]
+        },
+        {
+          "name": "docId"
+        },
+        {
+          "name": "name"
+        },
+        {
+          "name": "meta",
+          "hideColumnInTypesByDefault": true
+        },
+        {
+          "name": "title",
+          "hideColumnInTypesByDefault": true
+        }
+      ]
     }
   ]
 }

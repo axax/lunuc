@@ -4,6 +4,21 @@ import Hook from '../../util/hook.cjs'
 import {deepMergeToFirst} from '../../util/deepMerge.mjs'
 import Util from '../../api/util/index.mjs'
 import {getType} from '../../util/types.mjs'
+import {ObjectId} from 'mongodb'
+import crypto from 'crypto'
+
+// who did it: ip, browser, session (distinguishes people that share a login) and a batch id
+// (all entries of one operation, e.g. a bulk delete, have the same one)
+const requestMeta = (context) => {
+    const info = context?.requestInfo || {}
+    return {
+        ip: info.ip,
+        userAgent: info.userAgent,
+        // only a hash: enough to tell sessions apart, the session id itself is not stored
+        session: context?.session ? crypto.createHash('sha256').update(context.session).digest('hex').substring(0, 12) : undefined,
+        batchId: new ObjectId().toString()
+    }
+}
 
 // types that are written by the system itself (logs, executions, tracking)
 // a type can also opt out with "history": false in its build.json
@@ -38,7 +53,7 @@ Hook.on('schema', ({schemas}) => {
 Hook.on('typeUpdated', async ({db, data, type, context}) => {
 
     if (isHistoryEnabled(type)) {
-        const meta = {keys: Object.keys(data)}
+        const meta = {keys: Object.keys(data), ...requestMeta(context)}
 
         const historyEntry = {
             type,
@@ -60,10 +75,11 @@ Hook.on('typeDeleted', async ({db, type, deletedDocuments, context, ids}) => {
 
     if (isHistoryEnabled(type) && deletedDocuments && deletedDocuments.length > 0) {
         const createdBy = await Util.userOrAnonymousId(db, context)
+        const meta = requestMeta(context)
         const historyEntries = []
         for (const data of deletedDocuments) {
             const historyEntry = {
-                meta: {},
+                meta: {...meta},
                 type,
                 action: 'delete',
                 data: data,
@@ -94,6 +110,9 @@ Hook.on('index', ({db}) => {
     // create indexes
     const collection = db.collection('History')
     collection.createIndex({'data._id': 1})
+    // cleanup of old updates (System: Cleanup general DB) and the media trash (deletes newest first)
+    collection.createIndex({action: 1, _id: 1})
+    collection.createIndex({type: 1, action: 1, _id: -1})
 
 
 })

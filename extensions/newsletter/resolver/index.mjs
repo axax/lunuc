@@ -7,6 +7,7 @@ import config from '../../../gensrc/config.mjs'
 import Hook from '../../../util/hook.cjs'
 import {CAPABILITY_SEND_NEWSLETTER} from '../constants/index.mjs'
 import path from 'path'
+import {mediaFilePath} from '../../../util/mediaFile.mjs'
 import genResolver from '../gensrc/resolver.mjs'
 import {replaceRelativeUrls} from '../../../api/util/toAbsoluteUrls.mjs'
 import {analyzeSubscriberFile, importSubscribers, removeSubscribersFromLists} from '../util/subscriberImport.mjs'
@@ -213,11 +214,15 @@ export default db => ({
                             console.log(`sendNewsletter: attaching ${mailingData.attachment[subLang].length} attachment(s) for language ${subLang}`)
                             for(const id of mailingData.attachment[subLang]){
                                 const media = await db.collection('Media').findOne({_id: id})
-                                if(media){
+                                // "<id>" or "private<id>" (private media)
+                                const filePath = media && await mediaFilePath(upload_dir, media)
+                                if(filePath){
                                     finalAttachments.push({
-                                        path: path.join(upload_dir, './' + media._id),
+                                        path: filePath,
                                         filename: media.name
                                     })
+                                } else if (media) {
+                                    console.warn(`sendNewsletter: file of attachment ${media._id} not found`)
                                 }
                             }
                         }
@@ -278,6 +283,8 @@ export default db => ({
                         recipient: sub.email,
                         subject: finalSubject,
                         attachments: finalAttachments,
+                        // paths are built here from Media files
+                        trustedAttachments: true,
                         body,
                         text: finalText,
                         headerList: listHeader,

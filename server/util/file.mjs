@@ -1291,18 +1291,18 @@ export const UPLOAD_CACHE_CONTROL = `public, max-age=${UPLOAD_MAX_AGE}` +
 // always wait for that check before it shows its copy
 const PRIVATE_UPLOAD_CACHE_CONTROL = 'public, max-age=60, must-revalidate'
 
-// asks the hook UploadedFileIsPrivate (media extension) - only for missing files, before they are
-// loaded from another server
-const isPrivateMedia = async (name) => {
-    const hooks = Hook.hooks['UploadedFileIsPrivate']
+// may a missing file be loaded from another server? Asks the hook UploadedFileFetchAllowed (media
+// extension: not for a private or a deleted media) - only for missing files
+const isFetchAllowed = async (name) => {
+    const hooks = Hook.hooks['UploadedFileFetchAllowed']
     if (hooks) {
         for (let i = 0; i < hooks.length; ++i) {
-            if (await hooks[i].callback({name})) {
-                return true
+            if (!await hooks[i].callback({name})) {
+                return false
             }
         }
     }
-    return false
+    return true
 }
 
 // a file generated from a media original: "<id>@300x...", "<id>-videoframe...", "<id>.br" ...
@@ -1329,8 +1329,9 @@ export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
         return
     }
 
-    // private uploads are only accessible via the hook check below
-    if (baseFilename.startsWith(path.join(ABS_UPLOAD_DIR, 'private'))) {
+    // private uploads are only accessible via the hook check below,
+    // hidden files and folders (e.g. the trash of deleted media ".trash") are never served
+    if (baseFilename.startsWith(path.join(ABS_UPLOAD_DIR, 'private')) || path.relative(ABS_UPLOAD_DIR, baseFilename).split(path.sep).some(part => part.startsWith('.'))) {
         sendError(res, 404)
         return
     }
@@ -1383,8 +1384,9 @@ export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
 
     if (!fileStat && !privateFileExists && (!parsedUrl || parsedUrl.query.remoteserver !== 'false') &&
         // a private media whose file is missing is only loaded for users with access (isPrivateUpload)
-        // and then stored under the private name - never under the public one
-        (isPrivateUpload || !await isPrivateMedia(urlWithoutUploadDir))) {
+        // and then stored under the private name - never under the public one. A deleted media is not
+        // loaded again (its file is in the trash, the backups still have it)
+        (isPrivateUpload || await isFetchAllowed(urlWithoutUploadDir))) {
         if (await getFileFromOtherServer(modUri, filename, res, req, {name: urlWithoutUploadDir, isPrivate: isPrivateUpload})) {
             return
         }

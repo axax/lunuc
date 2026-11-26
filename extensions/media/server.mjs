@@ -12,7 +12,7 @@ import {ObjectId} from 'mongodb'
 import Util from '../../api/util/index.mjs'
 import {CAPABILITY_RUN_COMMAND, CAPABILITY_MANAGE_OTHER_USERS} from '../../util/capabilities.mjs'
 //import {uploadImageToStorage}  from './googleupload.mjs'
-import {createMediaEntry, removeMediaScreenshots, removeMediaVariants, syncMediaFileVisibility, isMediaPrivate} from './util/index.mjs'
+import {createMediaEntry, removeMediaScreenshots, removeMediaVariants, syncMediaFileVisibility, isMediaPrivate, moveMediaFilesToTrash} from './util/index.mjs'
 import { fileURLToPath } from 'url'
 import {_t, registerTrs} from '../../util/i18nServer.mjs'
 
@@ -23,7 +23,7 @@ import {
     CAPABILITY_MEDIA_REFERENCES
 } from './constants/index.mjs'
 import GenericResolver from "../../api/resolver/generic/genericResolver.mjs";
-import {findMediaUsages, getMediaRefMap} from './resolver/mediaRefMap.mjs'
+import {findMediaUsages, ensureMediaReferences} from './resolver/mediaRefMap.mjs'
 import {ApiError} from '../../api/error.mjs'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -50,23 +50,12 @@ Hook.on('createUserRoles', ({userRoles}) => {
     })
 })
 
-// Hook when an entry of the type Media was deleted
-Hook.on('typeDeleted_Media', ({ids}) => {
-    // delete files
-    for(const id of ids) {
-        const fileName = path.join(__dirname, '../../' + UPLOAD_DIR + '/' + id)
-        const fileNamePrivate = path.join(__dirname, '../../' + UPLOAD_DIR + '/private' + id)
-
-        if (fs.existsSync(fileNamePrivate)) {
-            console.log('delete file ' + fileNamePrivate)
-            fs.unlinkSync(fileNamePrivate)
-        }
-
-        if (fs.existsSync(fileName)) {
-            console.log('delete file ' + fileName)
-            fs.unlinkSync(fileName)
-        }
-    }
+// Hook when an entry of the type Media was deleted: the files go to the trash (restorable for
+// MEDIA_TRASH_DAYS). Only the really deleted entries - the requested ids can contain entries
+// the user wasn't allowed to delete
+Hook.on('typeDeleted_Media', ({ids, deletedDocuments}) => {
+    const deletedIds = deletedDocuments ? deletedDocuments.map(d => d._id.toString()) : ids
+    moveMediaFilesToTrash(deletedIds).catch(e => console.error('moveMediaFilesToTrash', e))
 })
 
 // the file must follow the private flag (rename to private<id> / back). Only when the field is
@@ -106,12 +95,10 @@ Hook.on('typeBeforeDelete', async ({db, type, data, context, options, ids}) => {
     }
 })
 
-// build the reference map in the background after the start, so the first delete doesn't wait for it
-// (not in dev mode: there the api restarts often)
+// builds the references (MediaReference) in the background after the start if they are missing or
+// outdated, so the first delete doesn't wait for it. Usually only a check: they are stored in the db
 Hook.on('appready', ({db}) => {
-    if (!config.DEV_MODE) {
-        setTimeout(() => getMediaRefMap(db).catch(e => console.error('media ref map warm-up', e)), 60000)
-    }
+    setTimeout(() => ensureMediaReferences(db).catch(e => console.error('MediaReference warm-up', e)), 60000)
 })
 
 Hook.on('typeBeforeDelete', async ({db, type, data}) => {

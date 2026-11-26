@@ -20,7 +20,9 @@ export default db => ({
                             subject: mail.subject,
                             html: mail.html,
                             text: mail.text,
-                            attachments: mail.attachments})
+                            attachments: mail.attachments,
+                            // stored after sendMail -> already checked when it was sent first
+                            trustedAttachments: true})
 
                     response += mailResponse.response
                 }

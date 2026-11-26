@@ -11,8 +11,8 @@ import fs from 'fs'
 import {fileURLToPath} from 'url'
 import {ObjectId} from 'mongodb'
 import {sendMail} from '../../../api/util/mail.mjs'
-import {removeMediaScreenshots, removeMediaVariants, syncAllPrivateMediaFiles} from '../util/index.mjs'
-import {checkRefForMedias, getMediaRefMap} from './mediaRefMap.mjs'
+import {removeMediaScreenshots, removeMediaVariants, syncAllPrivateMediaFiles, mediaFileInTrash, restoreMediaFileFromTrash} from '../util/index.mjs'
+import {ensureMediaReferences, updateMediaReferenceCounts} from './mediaRefMap.mjs'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 import {pubsub} from '../../../api/subscription.mjs'
 
@@ -22,6 +22,47 @@ const {UPLOAD_DIR} = config
 
 export default db => ({
     Query: {
+        // deleted media that don't exist anymore, newest delete first (one page of History entries)
+        deletedMedia: async ({limit = 50, offset = 0, search}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+            limit = Math.min(Math.max(limit, 1), 200)
+
+            const match = {type: 'Media', action: 'delete'}
+            if (search) {
+                match['data.name'] = {$regex: search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i'}
+            }
+            // one more than needed to know if there is a next page
+            const entries = await db.collection('History').find(match, {
+                projection: {'data._id': 1, 'data.name': 1, 'data.mimeType': 1, 'data.size': 1, createdBy: 1}
+            }).sort({_id: -1}).skip(offset).limit(limit + 1).toArray()
+
+            const hasMore = entries.length > limit
+            entries.length = Math.min(entries.length, limit)
+
+            const ids = [...new Set(entries.map(e => String(e.data._id)))]
+            const existing = new Set((await db.collection('Media').find({_id: {$in: ids.map(id => new ObjectId(id))}},
+                {projection: {_id: 1}}).toArray()).map(m => String(m._id)))
+            const users = new Map((await db.collection('User').find({_id: {$in: [...new Set(entries.map(e => String(e.createdBy)))].filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id))}},
+                {projection: {username: 1}}).toArray()).map(u => [String(u._id), u.username]))
+
+            const seen = new Set()
+            const results = []
+            for (const e of entries) {
+                const id = String(e.data._id)
+                if (existing.has(id) || seen.has(id)) continue
+                seen.add(id)
+                results.push({
+                    _id: id,
+                    name: e.data.name,
+                    mimeType: e.data.mimeType,
+                    size: e.data.size,
+                    deletedAt: e._id.getTimestamp().getTime(),
+                    deletedBy: users.get(String(e.createdBy)) || String(e.createdBy),
+                    inTrash: await mediaFileInTrash(id)
+                })
+            }
+            return {results, hasMore}
+        },
         cleanUpMedia: async ({ids}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
@@ -46,15 +87,15 @@ export default db => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_ACCESS_ADMIN_PAGE)
             const startTime = Date.now()
 
-            // Cache laden oder neu aufbauen
-            let refMap = await getMediaRefMap(db)
+            // first call: builds the references (MediaReference), afterwards they are kept up to date
+            await ensureMediaReferences(db)
 
             if (!ids) {
-                const mediaIds = await db.collection('Media').find(match, {'_id': 1})
-                    .sort({'references.lastChecked': 1}).limit(limit || 10).toArray()
+                const mediaIds = await db.collection('Media').find(match, {projection: {_id: 1}})
+                    .sort({'references.lastChecked': 1}).limit(parseInt(limit) || 10).toArray()
                 ids = mediaIds.map(f => f._id.toString())
             }
-            const checkedItems = checkRefForMedias(ids, refMap, db)
+            const checkedItems = await updateMediaReferenceCounts(db, ids)
 
             console.log(`findReferencesForMedia ended after ${new Date().getTime() - startTime}ms`)
             return {status: `{"items":${JSON.stringify(checkedItems)}}`}
@@ -124,6 +165,36 @@ export default db => ({
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
             const result = await GenericResolver.deleteEnities(db, context, 'Media', {_id}, {ignoreUsage: true})
             pubsub.publish('subscribeMedia', {userId: context.id, subscribeMedia: {action: 'delete', removedIds: _id}}, db, context)
+            return result
+        },
+        // restores deleted media: the entry from the last delete in the History, the file from the trash
+        restoreMedia: async ({_id}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)
+            const result = []
+            for (const id of _id) {
+                if (!ObjectId.isValid(id)) {
+                    result.push({_id: id, status: 'invalid'})
+                    continue
+                }
+                if (await db.collection('Media').countDocuments({_id: new ObjectId(id)}, {limit: 1})) {
+                    result.push({_id: id, status: 'exists'})
+                    continue
+                }
+                const entry = await db.collection('History').find({type: 'Media', action: 'delete', 'data._id': new ObjectId(id)})
+                    .sort({_id: -1}).limit(1).next()
+                if (!entry) {
+                    result.push({_id: id, status: 'not_found'})
+                    continue
+                }
+                await db.collection('Media').insertOne({...entry.data, modifiedAt: Date.now()})
+                const fileRestored = await restoreMediaFileFromTrash(id, entry.data.private)
+                result.push({_id: id, status: fileRestored ? 'restored' : 'restored_without_file'})
+            }
+            const restoredIds = result.filter(r => r.status.startsWith('restored')).map(r => r._id)
+            if (restoredIds.length) {
+                pubsub.publish('subscribeMedia', {userId: context.id, subscribeMedia: {action: 'create', data: restoredIds.map(id => ({_id: id}))}}, db, context)
+                console.log(`restoreMedia: ${restoredIds.length} media restored by ${context.username}`)
+            }
             return result
         },
         // copies a folder incl. all subfolders as new MediaGroups, the media files are not linked to the copy

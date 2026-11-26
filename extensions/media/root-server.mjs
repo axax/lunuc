@@ -12,20 +12,20 @@ import os from 'os'
     // TODO: tracking
 })*/
 
-// only for missing files (before they are loaded from another server): is it a private media?
-Hook.on('UploadedFileIsPrivate', async ({name}) => {
-    if (!ObjectId.isValid(name) || name.length !== 24) {
-        return false
+// only for missing files (before they are loaded from another server): only an existing, public media
+// may be loaded - not a private one (stored under the public name) and not a deleted one (it would be
+// restored by every request). Other files (no media id) are allowed.
+Hook.on('UploadedFileFetchAllowed', async ({name}) => {
+    if (!/^[0-9a-f]{24}$/.test(name)) {
+        return true
     }
     const dbConnection = await getServerDb()
     if (!dbConnection.db) {
         // unknown: better not load it
-        return true
+        return false
     }
-    return await dbConnection.db.collection('Media').countDocuments({
-        _id: new ObjectId(name),
-        private: {$in: [true, 'true']}
-    }, {limit: 1}) > 0
+    const media = await dbConnection.db.collection('Media').findOne({_id: new ObjectId(name)}, {projection: {private: 1}})
+    return !!media && media.private !== true && media.private !== 'true'
 })
 
 // a missing upload was restored from the backup server -> entry in the log
