@@ -7,6 +7,7 @@ import zlib from 'zlib'
 import {extendHeaderWithRange, isMimeTypeStreamable} from './index.mjs'
 import {clientAddress} from '../../util/host.mjs'
 import http from 'http'
+import https from 'https'
 import {PassThrough} from 'stream'
 import {transcodeAndStreamVideo, transcodeVideoOptions} from './transcodeVideo.mjs'
 import {getGatewayIp} from '../../util/gatewayIp.mjs'
@@ -222,9 +223,10 @@ const ABS_UPLOAD_DIR = path.join(ROOT_DIR, UPLOAD_DIR)
 
 const LUNUC_SERVER_NODES = process.env.LUNUC_SERVER_NODES || ''
 // Fallback server for uploads that don't exist locally.
-// Format: http://host/basepath (filename part gets appended)
-const LUNUC_BACKUP_SERVER_URL = process.env.LUNUC_BACKUP_SERVER_URL /* ||
-    'http://100.97.178.113/lunucserver/vmi2319914.contaboserver.net/webroot/uploads/'*/
+// Fallback for uploads that are missing here: url of the upload folder of a backup server,
+// the file name is appended - e.g. http://100.97.178.113/lunucserver/vmi2319914.contaboserver.net/webroot/uploads
+// A file found there is stored here again and logged (hook UploadedFileFromBackupServer)
+const LUNUC_BACKUP_SERVER_URL = (process.env.LUNUC_BACKUP_SERVER_URL || '').replace(/\/+$/, '')
 
 const API_PORT = (process.env.API_PORT || process.env.LUNUC_API_PORT || 3000)
 
@@ -248,7 +250,7 @@ export const statSafe = async (file) => {
 
 const downloadUrl = (url, timeoutMs = REMOTE_FILE_TIMEOUT_MS) => {
     return new Promise((resolve) => {
-        const request = http.get(url, {timeout: timeoutMs})
+        const request = (url.startsWith('https:') ? https : http).get(url, {timeout: timeoutMs})
         request.on('response', (response) => {
             resolve(response)
         })
@@ -316,7 +318,8 @@ const drainUnusedResponse = (response) => {
     }
 }
 
-export const getFileFromOtherServer = async (urlPath, filename, baseResponse, req) => {
+// name: file name inside the upload dir, isPrivate: stored as private<name> (only for users with access)
+export const getFileFromOtherServer = async (urlPath, filename, baseResponse, req, {name, isPrivate} = {}) => {
 
     const remoteAdr = clientAddress(req),
         gatewayIp = await getGatewayIp()
@@ -337,16 +340,20 @@ export const getFileFromOtherServer = async (urlPath, filename, baseResponse, re
         }
     }
 
-    // backup server
-    if (LUNUC_BACKUP_SERVER_URL) {
-        const backupUrl = LUNUC_BACKUP_SERVER_URL + filename.substring(13)
-        console.log('load from backup server - ' + backupUrl)
-        const response = await downloadUrl(backupUrl)
-        if (!response.error && response.statusCode == 200) {
-            streamAndPersist(response, baseResponse, filename, req)
-            return true
+    // backup server - a private file may be stored there under the private or the public name
+    if (LUNUC_BACKUP_SERVER_URL && name) {
+        const names = isPrivate ? ['private' + name, name] : [name]
+        for (const remoteName of names) {
+            const backupUrl = LUNUC_BACKUP_SERVER_URL + '/' + remoteName.split('/').map(encodeURIComponent).join('/')
+            console.log('load from backup server - ' + backupUrl)
+            const response = await downloadUrl(backupUrl)
+            if (!response.error && response.statusCode == 200) {
+                streamAndPersist(response, baseResponse, filename, req)
+                Hook.call('UploadedFileFromBackupServer', {name, url: backupUrl, filename, isPrivate: !!isPrivate})
+                return true
+            }
+            drainUnusedResponse(response)
         }
-        drainUnusedResponse(response)
     }
 
     return false
@@ -1284,6 +1291,20 @@ export const UPLOAD_CACHE_CONTROL = `public, max-age=${UPLOAD_MAX_AGE}` +
 // always wait for that check before it shows its copy
 const PRIVATE_UPLOAD_CACHE_CONTROL = 'public, max-age=60, must-revalidate'
 
+// asks the hook UploadedFileIsPrivate (media extension) - only for missing files, before they are
+// loaded from another server
+const isPrivateMedia = async (name) => {
+    const hooks = Hook.hooks['UploadedFileIsPrivate']
+    if (hooks) {
+        for (let i = 0; i < hooks.length; ++i) {
+            if (await hooks[i].callback({name})) {
+                return true
+            }
+        }
+    }
+    return false
+}
+
 // a file generated from a media original: "<id>@300x...", "<id>-videoframe...", "<id>.br" ...
 const GENERATED_UPLOAD_FILE = /^([0-9a-f]{24})[^/]/
 
@@ -1360,8 +1381,11 @@ export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
     }
 
 
-    if (!fileStat && !privateFileExists && (!parsedUrl || parsedUrl.query.remoteserver !== 'false')) {
-        if (await getFileFromOtherServer(modUri, baseFilename, res, req)) {
+    if (!fileStat && !privateFileExists && (!parsedUrl || parsedUrl.query.remoteserver !== 'false') &&
+        // a private media whose file is missing is only loaded for users with access (isPrivateUpload)
+        // and then stored under the private name - never under the public one
+        (isPrivateUpload || !await isPrivateMedia(urlWithoutUploadDir))) {
+        if (await getFileFromOtherServer(modUri, filename, res, req, {name: urlWithoutUploadDir, isPrivate: isPrivateUpload})) {
             return
         }
     }
