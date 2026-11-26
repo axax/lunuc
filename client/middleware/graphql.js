@@ -857,9 +857,30 @@ export const graphql = (query, operationOptions = {}) => {
                     variables = options.variables,
                     skip = operationOptions.skip ? (typeof operationOptions.skip === 'function' ? operationOptions.skip(finalProps, prevData, this.prevRespone.lang) : operationOptions.skip) : false
 
-                return <Query skip={skip} query={finalQuery} variables={variables}
+                // optional smaller query when data is already there (operationOptions.partial, see withCms.js): the
+                // result is merged with the previous data; merge returns null if it does not fit -> full query
+                const partial = operationOptions.partial
+                const partialQuery = partial && prevData && !skip && !(refetchOptions && refetchOptions.extendData) &&
+                    partial.query(finalProps, this.prevRespone, variables, this.noPartial)
+
+                return <Query skip={skip} query={partialQuery || finalQuery} variables={variables}
                               hiddenVariables={options.hiddenVariables}
                               fetchPolicy={options.fetchPolicy}>{(res) => {
+
+                    if (partialQuery && res.data) {
+                        // merged once per result (res.data stays the same object as long as nothing changed)
+                        if (this.mergedSrc !== res.data) {
+                            this.mergedSrc = res.data
+                            this.merged = partial.merge(this.prevRespone.data, res.data)
+                        }
+                        if (!this.merged) {
+                            // does not fit (e.g. the page was changed): the previous data stays while the full query
+                            // for these variables runs
+                            this.noPartial = JSON.stringify(variables)
+                            Promise.resolve().then(() => this.forceUpdate())
+                        }
+                        res = {...res, data: this.merged, loading: !this.merged}
+                    }
 
                     let data = res.data
                     if (!data && (res.loading || skip)) {
@@ -883,12 +904,13 @@ export const graphql = (query, operationOptions = {}) => {
                         // keep the lang of the retained data as well: otherwise skip() would see
                         // the NEW lang together with the OLD data and could skip the reload
                         this.prevRespone = keepPrevData
-                            ? {...res, data: prevData, lang: this.prevRespone.lang}
-                            : res
+                            ? {...res, data: prevData, lang: this.prevRespone.lang, variables: this.prevRespone.variables}
+                            : (partial ? {...res, variables} : res)
                     }
                     const props = operationOptions.props({
                         data: {
                             variables, ...data,
+                            ...(partialQuery && {partialQuery}),
                             loading: res.loading,
                             networkStatus: res.networkStatus,
                             fetchMore: res.fetchMore,

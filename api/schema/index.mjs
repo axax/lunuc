@@ -9,8 +9,9 @@ import {userSchemaRaw} from './user.mjs'
 import {userGroupSchemaRaw} from './userGroup.mjs'
 import {notificationSchemaRaw} from './notification.mjs'
 import {systemSchemaRaw} from './system.mjs'
+import {filesSchemaRaw} from './files.mjs'
 
-const schemas = [gensrcSchemaRaw,commonSchemaRaw,keyvalueSchemaRaw,userGroupSchemaRaw,userSchemaRaw,notificationSchemaRaw,systemSchemaRaw]
+const schemas = [gensrcSchemaRaw,commonSchemaRaw,keyvalueSchemaRaw,userGroupSchemaRaw,userSchemaRaw,notificationSchemaRaw,systemSchemaRaw,filesSchemaRaw]
 
 Hook.call('schema', {schemas})
 

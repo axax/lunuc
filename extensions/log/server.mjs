@@ -366,7 +366,8 @@ Hook.on('invalidLogin', async ({context, db, username, ip, domain}) => {
         location: 'login',
         type: 'invalidLogin',
         message: `invalid login attempt from ${username} with ip ${ip}`,
-        meta: {username, ip, domain}
+        // never log the domain value itself - users often type their password into the domain field
+        meta: {username, ip, hasDomain: !!domain}
     })
 })
 

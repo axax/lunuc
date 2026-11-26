@@ -107,7 +107,8 @@ import {
     ArticleIcon,
     ContentCutIcon,
     LayersIcon,
-    AutoAwesomeIcon
+    AutoAwesomeIcon,
+    CleaningServicesIcon
 } from 'gensrc/ui/admin/icons'
 import SourceIcon from '@mui/icons-material/Source'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
@@ -223,6 +224,7 @@ const iconComponents = {
     palette: PaletteIcon,
     layers: LayersIcon,
     autoAwesome:AutoAwesomeIcon,
+    cleaning:CleaningServicesIcon,
     approval: ApprovalIcon
 }
 

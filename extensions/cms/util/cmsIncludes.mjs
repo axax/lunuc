@@ -24,7 +24,7 @@ export const MAX_INCLUDES = 30
 // the fields the client requests for an embedded component (CMS_PAGE_QUERY in cmsView.mjs)
 const INCLUDE_FIELDS = ['slug', 'realSlug', 'urlSensitiv', 'author', 'keyword', 'description', 'template', 'script',
     'resources', 'resolvedData', 'style', 'html', 'meta', 'subscriptions', 'publicEdit', 'disableRendering', 'ssrStyle',
-    'uniqueStyle', 'alwaysLoadAssets', 'parseResolvedData', 'fetchPolicy', 'includes']
+    'uniqueStyle', 'alwaysLoadAssets', 'parseResolvedData', 'fetchPolicy', 'includes', 'modifiedAt']
 const LOCALIZED_FIELDS = ['keyword', 'description']
 
 const SPEC_CACHE = new Map()

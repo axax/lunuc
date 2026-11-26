@@ -265,3 +265,87 @@ export function removeMediaScreenshots({ids} = {}) {
 
     return deleteFiles(collectFiles(screenShotDir, {ids}))
 }
+
+// private can come as boolean or (multipart upload) as string
+export const isMediaPrivate = (value) => value === true || value === 'true'
+
+const existsAsync = (file) => fs.promises.access(file).then(() => true, () => false)
+
+// Generated files (image variants "<prefix>@...", video frames "<prefix>-...", compressed copies
+// "<prefix>.br/.gz") of renamed originals are removed in one batch: one readdir of the upload dir
+// for all media changed within a second (e.g. a bulk edit of many media), the originals are kept
+const GENERATED_FILE = /^((?:private)?[0-9a-f]{24})./
+const generatedFilesToRemove = new Set()
+let removeGeneratedFilesTimeout
+
+function removeGeneratedFiles(uploadDir, prefix) {
+    generatedFilesToRemove.add(prefix)
+    clearTimeout(removeGeneratedFilesTimeout)
+    removeGeneratedFilesTimeout = setTimeout(async () => {
+        const prefixes = new Set(generatedFilesToRemove)
+        generatedFilesToRemove.clear()
+        try {
+            const files = await fs.promises.readdir(uploadDir)
+            await Promise.all(files.map(file => {
+                const match = GENERATED_FILE.exec(file)
+                if (match && prefixes.has(match[1])) {
+                    console.log('[removeGeneratedFiles] delete file ' + file)
+                    // may already be removed by removeMediaVariants
+                    return fs.promises.unlink(path.join(uploadDir, file)).catch(() => {})
+                }
+            }))
+        } catch (e) {
+            console.error('removeGeneratedFiles', e)
+        }
+    }, 1000)
+}
+
+// Makes sure the file of a media matches its private flag:
+// private  -> the original lives as "private<id>" and is only served after the access check,
+//             generated public copies are removed
+// public   -> the original lives as "<id>"
+export async function syncMediaFileVisibility(id, isPrivate) {
+    if (!id || !ObjectId.isValid(id)) {
+        return
+    }
+    id = id.toString()
+
+    const uploadDir = path.join(path.resolve(), config.UPLOAD_DIR)
+    const publicFile = path.join(uploadDir, id)
+    const privateFile = path.join(uploadDir, 'private' + id)
+
+    if (isMediaPrivate(isPrivate)) {
+        if (await existsAsync(publicFile)) {
+            // a public file always wins over an older private one (e.g. a replaced file)
+            await fs.promises.rename(publicFile, privateFile)
+            removeGeneratedFiles(uploadDir, id)
+        }
+    } else if (await existsAsync(privateFile) && !await existsAsync(publicFile)) {
+        await fs.promises.rename(privateFile, publicFile)
+        removeGeneratedFiles(uploadDir, 'private' + id)
+    }
+}
+
+
+// private media whose original is still stored under the public name (before the fix an update
+// without the field "private" moved it back) are moved to private<id> - part of the media cleanup.
+// One query for the ids and one stat per private media, returns the number of moved files
+export async function syncAllPrivateMediaFiles(db, {ids} = {}) {
+    const uploadDir = path.join(path.resolve(), config.UPLOAD_DIR)
+    const match = {private: {$in: [true, 'true']}}
+    if (ids) {
+        match._id = {$in: ids.filter(id => ObjectId.isValid(id)).map(id => new ObjectId(id))}
+    }
+    const privateIds = await db.collection('Media').distinct('_id', match)
+    let moved = 0
+    for (const id of privateIds) {
+        if (await existsAsync(path.join(uploadDir, id.toString()))) {
+            await syncMediaFileVisibility(id, true)
+            moved++
+        }
+    }
+    if (moved) {
+        console.log(`[syncAllPrivateMediaFiles] ${moved} private media files moved`)
+    }
+    return moved
+}

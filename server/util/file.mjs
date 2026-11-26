@@ -1284,6 +1284,9 @@ export const UPLOAD_CACHE_CONTROL = `public, max-age=${UPLOAD_MAX_AGE}` +
 // always wait for that check before it shows its copy
 const PRIVATE_UPLOAD_CACHE_CONTROL = 'public, max-age=60, must-revalidate'
 
+// a file generated from a media original: "<id>@300x...", "<id>-videoframe...", "<id>.br" ...
+const GENERATED_UPLOAD_FILE = /^([0-9a-f]{24})[^/]/
+
 export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
 
     // remove pretty url part
@@ -1311,7 +1314,15 @@ export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
         return
     }
 
-    let filename = baseFilename, isPrivateUpload = false
+    // generated files of a private media (e.g. left over from the time it was public) are never
+    // served directly - the extra stat is only needed for these rarely requested names
+    const generated = GENERATED_UPLOAD_FILE.exec(urlWithoutUploadDir)
+    if (generated && await statSafe(path.join(ABS_UPLOAD_DIR, 'private' + generated[1]))) {
+        sendError(res, 404)
+        return
+    }
+
+    let filename = baseFilename, isPrivateUpload = false, privateFileExists = false
 
     // the stats are read once and handed on (before: up to three stat calls for the same file)
     let fileStat = await statSafe(filename)
@@ -1341,10 +1352,15 @@ export const resolveUploadedFile = async (req, res, uri, parsedUrl) => {
                 }
             }
         }
+        if (!isPrivateUpload) {
+            // no access: a private file must not be loaded from another server either
+            // (it would be served and stored here under the public name)
+            privateFileExists = !!await statSafe(path.join(ABS_UPLOAD_DIR, 'private' + urlWithoutUploadDir))
+        }
     }
 
 
-    if (!fileStat && (!parsedUrl || parsedUrl.query.remoteserver !== 'false')) {
+    if (!fileStat && !privateFileExists && (!parsedUrl || parsedUrl.query.remoteserver !== 'false')) {
         if (await getFileFromOtherServer(modUri, baseFilename, res, req)) {
             return
         }

@@ -13,6 +13,10 @@ import {validateContextUser} from '../../api/util/userSession.mjs'
 
 Hook.on('UploadedFilePrivateAccess', async ({name,context}) => {
 
+    // only a media id can be a private upload (new ObjectId would throw otherwise)
+    if (!ObjectId.isValid(name) || name.length !== 24) {
+        return false
+    }
     const dbConnection = await getServerDb()
     if(dbConnection.db){
         // blocked / deleted user or password changed since the token was issued

@@ -1,6 +1,6 @@
 import React from 'react'
 import {
-    getGqlVariables, getCmsPageQuery, isEditMode, urlSensitivMap,
+    getGqlVariables, getCmsPageQuery, isEditMode, urlSensitivMap, CMS_PAGE_QUERY_PARTIAL
 } from '../util/cmsView.mjs'
 import {lazy} from 'client/components/Async'
 import compose from '../../../util/compose'
@@ -94,6 +94,31 @@ const writeCmsIncludesToCache = (cmsPage) => {
     })
 }
 
+/*
+ An embedded component with urlSensitiv reloads on every url change, with the same template, script, style and
+ resources. When it is already loaded with the same variables (except the url query), not in the editor, it requests
+ only the data (CMS_PAGE_QUERY_PARTIAL) and keeps template, script, style and resources of the loaded page.
+ Used by graphql() in client/middleware/graphql.js (operationOptions.partial).
+ */
+const withoutQuery = variables => JSON.stringify({...variables, query: 0})
+const cmsPartial = {
+    // only for an embedded urlSensitiv component outside the editor (local mode is skipped in graphql())
+    query: (props, prev, variables, noPartialFor) => {
+        const cmsPage = prev.data.cmsPage
+        return props.dynamic && !props.forceInlineEditor && !variables.editmode && !variables.inEditor &&
+            cmsPage && cmsPage.modifiedAt && cmsPage.slug === props.slug && /^(full|true)$/.test(cmsPage.urlSensitiv) &&
+            prev.lang === _app_.lang && prev.variables && noPartialFor !== JSON.stringify(variables) &&
+            withoutQuery(variables) === withoutQuery(prev.variables) ? CMS_PAGE_QUERY_PARTIAL : null
+    },
+    // null: does not fit (page changed in the meantime) -> full query
+    merge: (prevData, data) => {
+        const prevPage = prevData.cmsPage, cmsPage = data.cmsPage
+        // the partial result has no template, script, style, resources: these stay from the loaded page
+        return !cmsPage ? data : prevPage && prevPage.slug === cmsPage.slug && prevPage.modifiedAt === cmsPage.modifiedAt ?
+            {...data, cmsPage: {...prevPage, ...cmsPage}} : null
+    }
+}
+
 // enhance cmsview with editor functionalities if in edit mode
 export default function (WrappedComponent) {
 
@@ -136,7 +161,7 @@ export default function (WrappedComponent) {
             }
             try {
                 return client.readQuery({
-                    query: getCmsPageQuery(this.props),
+                    query: this.props.cmsPagePartialQuery || getCmsPageQuery(this.props),
                     variables: this.props.cmsPageVariables
                 })
             } catch (e) {
@@ -161,7 +186,7 @@ export default function (WrappedComponent) {
                 return
             }
             client.writeQuery({
-                query: getCmsPageQuery(this.props),
+                query: this.props.cmsPagePartialQuery || getCmsPageQuery(this.props),
                 variables: this.props.cmsPageVariables,
                 data: storeData
             })
@@ -381,6 +406,7 @@ export default function (WrappedComponent) {
             // keep the current page visible while the same page reloads with new url params
             // (e.g. ?s=... on every keystroke), even if a previous request got canceled
             keepPrevData: (props, prevData) => !!(prevData && prevData.cmsPage && prevData.cmsPage.slug === props.slug),
+            partial: cmsPartial,
             options(ownProps) {
                 let hiddenVariables
                 if (!ownProps.dynamic) {
@@ -404,9 +430,10 @@ export default function (WrappedComponent) {
                                 (['full','client',true,undefined].indexOf(urlSensitivMap[ownProps.slug])>=0?'cache-and-network':'cache-first'))) // cache-first
                 }
             },
-            props: ({data: {loading, cmsPage, variables, fetchMore, refetch, networkStatus}, ownProps}) => {
+            props: ({data: {loading, cmsPage, variables, fetchMore, refetch, networkStatus, partialQuery}, ownProps}) => {
                 const result = {
                     cmsPageVariables: variables,
+                    cmsPagePartialQuery: partialQuery,
                     loading,
                     fetchMore,
                     refetch,

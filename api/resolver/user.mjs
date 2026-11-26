@@ -32,6 +32,9 @@ import {getBestMatchingHostRule} from '../../util/hostrules.mjs'
 import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
 import {applyUserMetaWhitelist, getUserMetaWhitelist} from '../util/userMetaWhitelist.mjs'
 
+// leading/trailing spaces (mobile keyboards, copy & paste) never belong to a username
+const normalizeUsername = (username) => typeof username === 'string' ? username.trim() : username
+
 /*
  The reset link in the password mail must point to one of our own hosts.
  Otherwise anybody could trigger a reset mail for another user with a link to a
@@ -70,8 +73,11 @@ export const createUser = async ({username, role, junior, group, setting, passwo
     }
     const errors = []
 
+    // stored trimmed - login and password reset trim the entered username as well
+    username = normalizeUsername(username) || ''
+
     // Validate Username
-    if (username.trim() === '') {
+    if (username === '') {
         errors.push({key: 'usernameError', message: 'Username is missing'})
     }
 
@@ -382,6 +388,9 @@ export const userResolver = (db) => ({
         },
         login: async ({username, password, domain, meta}, req) => {
             const {context} = req
+            // leading/trailing spaces never belong to a username or domain
+            username = normalizeUsername(username)
+            domain = domain ? String(domain).trim() : domain
             const ip = clientAddress(req)
             // per IP (IPv6 per /64) and per username - the second key catches guessing
             // that rotates the source IP (see loginBlocker.mjs)
@@ -435,6 +444,7 @@ export const userResolver = (db) => ({
         forgotPassword: async ({username, url, subject, fromEmail, fromName, domain, template}, req) => {
 
             const {context} = req
+            username = normalizeUsername(username)
             const userCollection = db.collection('User')
 
             // prevent mail bombing - the response is the same as usual, so it tells nothing about the user
@@ -446,10 +456,12 @@ export const userResolver = (db) => ({
 
             const resetToken = crypto.randomBytes(16).toString("hex")
 
-            const findMatch = {$or: [{'email': username}, {'username': username}]}
-
-            if (domain) {
-                findMatch.domain = domain
+            // same domain rules as the login (auth.createToken) - otherwise the reset could pick
+            // an account with the same name on another domain
+            domain = domain ? String(domain).trim() : domain
+            const findMatch = {
+                domain: domain ? {$in: [domain, '$ALL']} : {$in: [null, '', '$ALL']},
+                $or: [{'email': username}, {'username': username}]
             }
 
             url = sanitizeResetUrl(url, req)
@@ -478,7 +490,8 @@ export const userResolver = (db) => ({
                     location: 'forgotPassword',
                     type: 'invalidUser',
                     message: `User ${username} does not exist`,
-                    meta: {username, ip, domain}
+                    // never log the domain value itself - users often type their password into the domain field
+                    meta: {username, ip, hasDomain: !!domain}
                 })
             }
             return {status: 'ok'}
@@ -496,17 +509,15 @@ export const userResolver = (db) => ({
                 // ends all existing logins of this user
                 $inc: {tokenVersion: 1}
             })
-            if (user) {
-                Util.clearUserCache(user._id)
+            if (!user) {
+                // token unknown, already used or older than one hour
+                throw new ApiError(_t('core.user.new.password.invalid.token', context.lang), 'core.user.new.password.invalid.token')
             }
 
+            Util.clearUserCache(user._id)
             Hook.call('newPassword', {context, db, user})
 
-            if (user) {
-                return {status: 'ok'}
-            } else {
-                throw new ApiError('Something went wrong. Please try again!', 'general.error')
-            }
+            return {status: 'ok'}
         },
         confirmEmail: async ({token}, {context}) => {
 
@@ -690,6 +701,7 @@ export const userResolver = (db) => ({
             if (email) {
                 email = email.trim()
             }
+            username = normalizeUsername(username)
 
             const user = {}
             const errors = []
@@ -924,6 +936,13 @@ export const userResolver = (db) => ({
             }
 
             const userCollection = db.collection('User')
+            if (user.username !== undefined) {
+                user.username = normalizeUsername(user.username)
+                if (!user.username) {
+                    // never store an empty username
+                    delete user.username
+                }
+            }
 
             // TODO add domain check
             let existingUser = (await userCollection.findOne({$or: [{'username': user.username}, {'email': user.email}]}))

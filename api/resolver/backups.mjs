@@ -79,7 +79,8 @@ export const createBackup = (type, options) => {
     if (type === 'db') {
         result = createDbBackup(options)
     } else if (type === 'media') {
-        result = createMediaBackup()
+        // options.ids: only these media (e.g. the current results in the media list)
+        result = createMediaBackup(options && Array.isArray(options.ids) ? options.ids : undefined)
     } else if (type === 'hostrule') {
         result = createHostruleBackup()
     } else {
@@ -176,7 +177,9 @@ export const createDbBackup = (options = {}) => {
     return {fullName, name, date, pending: true}
 }
 
-export const createMediaBackup = (filesToBackup) => {
+// mediaIds: only the originals of these media (public "<id>" and private "private<id>"),
+// otherwise all originals
+export const createMediaBackup = (mediaIds) => {
     // make sure upload dir exists
     const backup_dir = getBackupDir('media')
     if (!Util.ensureDirectoryExistence(backup_dir, true)) {
@@ -195,11 +198,14 @@ export const createMediaBackup = (filesToBackup) => {
         throw new Error(`No files in folder -> ${media_dir}`)
     }
 
+    // a set: one lookup per file instead of a search in the list
+    const filesToBackup = mediaIds ? new Set(mediaIds.flatMap(id => [String(id), 'private' + id])) : null
+
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lunuc'))
     files.forEach((file) => {
         if (file.indexOf('@') === -1) {
             if (filesToBackup) {
-                if (filesToBackup.indexOf(file) >= 0) {
+                if (filesToBackup.has(file)) {
                     fs.copyFileSync(media_dir + '/' + file, tmpDir + '/' + file)
                 }
             } else {

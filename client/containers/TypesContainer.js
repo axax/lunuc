@@ -275,6 +275,7 @@ class TypesContainer extends React.Component {
             {recent.map(t => <Chip key={t}
                                    size="small"
                                    label={t}
+                                   sx={{m: 0}}
                                    color={t === currentType ? 'primary' : 'default'}
                                    variant={t === currentType ? 'filled' : 'outlined'}
                                    onClick={t === currentType ? undefined : () => {
@@ -1014,6 +1015,7 @@ class TypesContainer extends React.Component {
                         <Col md={6}>
                             <SimpleSelect
                                 value={type}
+                                sx={{m: 0}}
                                 onChange={this.handleTypeChange}
                                 searchable
                                 items={this.typesToSelect}
@@ -1099,7 +1101,7 @@ class TypesContainer extends React.Component {
                 </Row>
                 <Typography color="text.disabled" component="div" key="searchHint"
                             variant="caption"
-                            sx={{display: 'flex', alignItems: 'center', gap: 1, minHeight: '22px', mb:2, mt:0.5 }}>
+                            sx={{display: 'flex', alignItems: 'center', gap: 1, minHeight: '22px', mb:2, mt:1.5 }}>
                     {!fixType && this.renderRecentTypes(type)}
                     {this.searchHint()}
                 </Typography>

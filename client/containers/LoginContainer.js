@@ -97,9 +97,11 @@ class LoginContainer extends React.Component {
 
         client.query({
             fetchPolicy: 'no-cache',
-            query: 'query forgotPassword($username:String!){forgotPassword(username:$username){status}}',
+            query: 'query forgotPassword($username:String!,$domain:String){forgotPassword(username:$username,domain:$domain){status}}',
             variables: {
-                username: this.state.username
+                username: this.state.username,
+                // same domain as for the login - preset from ?domain= or the host rule (defaultDomain)
+                domain: this.state.domain
             }
         }).then(response => {
             this.setState({loading: false, })
@@ -108,7 +110,7 @@ class LoginContainer extends React.Component {
                 if (!response.data.forgotPassword.error) {
                     this.setState({forgotPasswordSent: true})
                 } else {
-                    this.setState({error: response.data.newPassword.error})
+                    this.setState({error: response.data.forgotPassword.error})
                 }
             }
         }).catch((response) => {
@@ -275,6 +277,15 @@ class LoginContainer extends React.Component {
                                    type="text"
                                    name="username" required/>
 
+                        {(!_app_.login || !_app_.login.hideDomain) ?
+                            <TextField label={_t('Login.domain')}
+                                       disabled={!!loading}
+                                       fullWidth
+                                       value={domain}
+                                       onChange={this.handleInputChange}
+                                       type="text"
+                                       name="domain"/> : ''}
+
                         <div style={{display:'flex',justifyContent: 'space-between'}}>
 
                             <SimpleButton onClick={()=>{
@@ -341,7 +352,6 @@ class LoginContainer extends React.Component {
                                error={!!error}
                                disabled={!!loading}
                                fullWidth
-                               autoFocus
                                value={domain}
                                onChange={this.handleInputChange}
                                type="text"

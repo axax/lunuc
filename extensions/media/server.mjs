@@ -12,7 +12,7 @@ import {ObjectId} from 'mongodb'
 import Util from '../../api/util/index.mjs'
 import { CAPABILITY_RUN_COMMAND} from '../../util/capabilities.mjs'
 //import {uploadImageToStorage}  from './googleupload.mjs'
-import {createMediaEntry, removeMediaScreenshots, removeMediaVariants} from './util/index.mjs'
+import {createMediaEntry, removeMediaScreenshots, removeMediaVariants, syncMediaFileVisibility, isMediaPrivate} from './util/index.mjs'
 import { fileURLToPath } from 'url'
 import {_t, registerTrs} from '../../util/i18nServer.mjs'
 
@@ -67,9 +67,21 @@ Hook.on('typeDeleted_Media', ({ids}) => {
     }
 })
 
-Hook.on('typeUpdated_Media', ({result}) => {
-    addFilePrefix(result)
-})
+// the file must follow the private flag (rename to private<id> / back). Only when the field is
+// part of the create/update: no db query and no file access for all other updates - files that
+// don't match the flag from earlier are fixed by the media cleanup (syncAllPrivateMediaFiles)
+const syncVisibility = async ({result}) => {
+    if (!result || result.private === undefined) {
+        return
+    }
+    try {
+        await syncMediaFileVisibility(result._id, result.private)
+    } catch (e) {
+        console.error('syncMediaFileVisibility', result._id, e)
+    }
+}
+Hook.on('typeCreated_Media', syncVisibility)
+Hook.on('typeUpdated_Media', syncVisibility)
 
 Hook.on('typeBeforeDelete', async ({db, type, data}) => {
     if(type==='MediaGroup') {
@@ -128,20 +140,6 @@ Hook.on('typeBeforeCreate', async ({db, type, data}) => {
     await assertNoFolderCycle(db, data._id, toObjectIds(data.group))
 })
 
-const addFilePrefix = (result) => {
-    const fileName = path.join(__dirname, '../../' + UPLOAD_DIR + '/' + result._id)
-    const fileNamePrivate = path.join(__dirname, '../../' + UPLOAD_DIR + '/private' + result._id)
-
-    try {
-        if (result.private && fs.existsSync(fileName)) {
-            fs.renameSync(fileName, fileNamePrivate)
-        } else if(fs.existsSync(fileNamePrivate)){
-            fs.renameSync(fileNamePrivate, fileName)
-        }
-    }catch (e) {
-        console.log(e)
-    }
-}
 
 
 // add some extra data to the table
@@ -159,7 +157,7 @@ const addFilePrefix = (result) => {
 
 // Hook when db is ready
 Hook.on('FileUpload', async ({db, req, context, file, data, response}) => {
-    let replaceMode = false
+    let replaceMode = false, isPrivate = isMediaPrivate(data.private)
 
     if(data._id){
         // replacing an existing file needs a login - for visitors without login the
@@ -170,11 +168,14 @@ Hook.on('FileUpload', async ({db, req, context, file, data, response}) => {
         if( !ObjectId.isValid(data._id)) {
             throw new Error('Invalid _id')
         }
-        const medias = await GenericResolver.entities(db, req, 'Media', ['_id'], {limit:1, filter:`_id=${data._id}`})
+        const medias = await GenericResolver.entities(db, req, 'Media', ['_id', 'private'], {limit:1, filter:`_id=${data._id}`})
         if(medias.results.length===0){
             throw new Error('Media not found')
         }else{
             replaceMode = true
+            if (data.private === undefined) {
+                isPrivate = isMediaPrivate(medias.results[0].private)
+            }
         }
     }
 
@@ -221,6 +222,10 @@ Hook.on('FileUpload', async ({db, req, context, file, data, response}) => {
 
         }else{
             upload_dir = path.join(__dirname, '../../' + UPLOAD_DIR)
+            if (isPrivate) {
+                // a private file is never stored under the public name, not even for a moment
+                finalName = 'private' + finalName
+            }
         }
 
         if(!upload_dir || !fs.existsSync(upload_dir)){

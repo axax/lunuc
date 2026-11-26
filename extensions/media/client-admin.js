@@ -171,25 +171,27 @@ export default () => {
             if (userCanManageOtherUser) {
                 actions.unshift(
                     {
-                        icon:'cloudUpload',
+                        icon:'folderZip',
                         name: 'Create Media dump (current results)', onClick: () => {
                             const ids = []
                             this.state.data.results.forEach(item => {
                                 ids.push(item._id)
                             })
                             client.mutate({
-                                mutation: `mutation createMediaDump($type:String,$ids:[ID]){createMediaDump(type:$type,ids:$ids){name createdAt size}}`,
-                                variables: {ids},
-                                update: (store, {data: {createMediaDump}}) => {
-                                    if (createMediaDump) {
-                                        this.setState({simpleDialog: {children: createMediaDump.name}})
-                                    }
+                                mutation: `mutation createBackup($type:String!,$options:String){createBackup(type:$type,options:$options){name size}}`,
+                                variables: {type: 'media', options: JSON.stringify({ids})}
+                            }).then(response => {
+                                const backup = response?.data?.createBackup
+                                if (backup) {
+                                    this.setState({simpleDialog: {children: `${backup.name} (${backup.size})`}})
                                 }
+                            }).catch(error => {
+                                this.setState({simpleDialog: {children: error.message}})
                             })
                         }
                     },
                     {
-                        icon:'cleanUp',
+                        icon:'cleaning',
                         name: _t('Media.cleanupMedia'), onClick: () => {
                             client.query({
                                 fetchPolicy: 'network-only',

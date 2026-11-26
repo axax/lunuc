@@ -10,7 +10,7 @@ import fs from 'fs'
 import {fileURLToPath} from 'url'
 import {ObjectId} from 'mongodb'
 import {sendMail} from '../../../api/util/mail.mjs'
-import {removeMediaScreenshots, removeMediaVariants} from '../util/index.mjs'
+import {removeMediaScreenshots, removeMediaVariants, syncAllPrivateMediaFiles} from '../util/index.mjs'
 import {checkRefForMedias, getRefMap} from './mediaRefMap.mjs'
 import GenericResolver from '../../../api/resolver/generic/genericResolver.mjs'
 
@@ -23,17 +23,20 @@ export default db => ({
         cleanUpMedia: async ({ids}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_MANAGE_TYPES)
 
+            // first: private media still stored under the public name are moved to private<id>
+            const privateMoved = await syncAllPrivateMediaFiles(db, {ids})
             const variantsRemoved = await removeMediaVariants(db, {ids})
             const screenshotsRemoved = removeMediaScreenshots({ids})
 
             const totalRemoved = variantsRemoved.length + screenshotsRemoved.length
 
             return {
-                status: totalRemoved === 0
+                status: (totalRemoved === 0
                     ? 'no files removed'
                     : `${totalRemoved} ${totalRemoved > 1 ? 'files' : 'file'} removed ` +
                     `(${variantsRemoved.length} variant${variantsRemoved.length !== 1 ? 's' : ''}, ` +
-                    `${screenshotsRemoved.length} screenshot${screenshotsRemoved.length !== 1 ? 's' : ''})`
+                    `${screenshotsRemoved.length} screenshot${screenshotsRemoved.length !== 1 ? 's' : ''})`) +
+                    (privateMoved ? `, ${privateMoved} private media made private again` : '')
             }
         },
         findReferencesForMedia: async ({limit, ids, match={}}, {context}) => {

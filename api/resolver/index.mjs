@@ -4,6 +4,7 @@ import {userGroupResolver} from './userGroup.mjs'
 import {notificationResolver} from './notification.mjs'
 import {keyvalueResolver} from './keyvalue.mjs'
 import {systemResolver} from './system.mjs'
+import {filesResolver} from './files.mjs'
 
 import Hook from '../../util/hook.cjs'
 import {deepMerge} from '../../util/deepMerge.mjs'
@@ -18,7 +19,8 @@ export const resolver = (db) => {
         userResolver(db),
         notificationResolver(db),
         keyvalueResolver(db),
-        systemResolver(db)
+        systemResolver(db),
+        filesResolver(db)
     )
 
     Hook.call('resolver', {db, resolvers})
