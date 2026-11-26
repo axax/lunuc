@@ -19,14 +19,20 @@ import styled from '@emotion/styled'
 import {getIconByKey} from './icon'
 import {_t} from 'util/i18n.mjs'
 
+// gap instead of negative margins: with many values the chips wrap and the rows must not overlap
 const StyledChips = styled.div`
     display: flex;
     flex-wrap: wrap;
+    gap: 4px;
+    padding: 2px 0;
 `
 const StyledChip = styled(Chip)({
     height: 'auto',
-    padding: '2px',
-    margin: '-2px 2px'
+    maxWidth: '100%',
+    '& .MuiChip-label': {
+        paddingTop: '3px',
+        paddingBottom: '3px'
+    }
 })
 
 const StyledSearchBox = styled.div`
