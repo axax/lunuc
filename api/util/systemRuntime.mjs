@@ -76,8 +76,10 @@ const fetchMongoReleases = force => fetchCached(MONGODB_INDEX_URL, data => {
             continue
         }
         const series = seriesOf(version)
-        // before 8.0 the x.1 - x.3 releases were rapid releases for atlas only, there are no apt packages
-        if (majorOf(series) < 8 && !series.endsWith('.0')) {
+        // self-managed (apt) only gets some minor releases, the others are atlas only:
+        // before 8.0 none, 8.x all, since 9.0 only the annual "feature update" release x.5
+        const major = majorOf(series), minor = parseInt(series.split('.')[1])
+        if (minor !== 0 && (major < 8 || (major >= 9 && minor !== 5))) {
             continue
         }
         const latest = bySeries.get(series)
