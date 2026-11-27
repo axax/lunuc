@@ -32,6 +32,7 @@ import {MONGO_URL} from '../database.mjs'
 import {isTemporarilyBlocked} from '../../server/util/requestBlocker.mjs'
 import {clientAddress} from "../../util/host.mjs";
 import {getSystemUpdateInfo, getSystemUpdateStatus, startSystemUpdate} from '../util/systemUpdate.mjs'
+import {getSystemRuntimeInfo, startNodeUpdate, startMongoUpdate, setMongoFeatureCompatibility} from '../util/systemRuntime.mjs'
 import {startPtySession, writePtySession, resizePtySession, killPtySession, getPtySession} from '../util/ptyShell.mjs'
 
 const SKIP_CAPABILITY_CHECK = ['ls -l', 'pwd', 'ls', 'ping lunuc.com']
@@ -720,6 +721,11 @@ export const systemResolver = (db) => ({
         systemUpdateStatus: async ({}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
             return getSystemUpdateStatus()
+        },
+        // node / mongodb versions, see api/util/systemRuntime.mjs
+        systemRuntimeInfo: async ({fetch}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            return getSystemRuntimeInfo({db, fetch: !!fetch})
         }
     },
     Mutation: {
@@ -751,6 +757,18 @@ export const systemResolver = (db) => ({
         startSystemUpdate: async ({restart, force}, {context}) => {
             await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
             return startSystemUpdate({restart: restart || 'all', force: !!force})
+        },
+        startNodeUpdate: async ({version}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            return startNodeUpdate({version})
+        },
+        startMongoUpdate: async ({series, backup}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            return startMongoUpdate({db, series, backup: !!backup})
+        },
+        setMongoFeatureCompatibility: async ({version}, {context}) => {
+            await Util.checkIfUserHasCapability(db, context, CAPABILITY_RUN_COMMAND)
+            return setMongoFeatureCompatibility({db, version})
         },
         importTypeFiles: async ({type, data, dryRun, createMissing}, {context}) => {
             return importTypeFiles({db, context, type, data, dryRun, createMissing})

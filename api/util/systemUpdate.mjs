@@ -10,6 +10,9 @@
  * (systemd-run --unit=lunuc-update). The fixed unit name also guarantees that only one update runs at a time.
  * Without systemd (docker, dev machine) start.sh is spawned as detached process.
  *
+ * launchTask is also used for the node / mongodb update (api/util/systemRuntime.mjs): same unit, log and
+ * status file, so there is always only one of them running and the admin ui shows all of them the same way.
+ *
  * Root / sudo is detected automatically:
  * - api runs as root          -> systemd-run directly
  * - api runs as other user    -> sudo -n systemd-run (needs passwordless sudo for systemd-run)
@@ -22,9 +25,14 @@ import config from '../../gensrc/config.mjs'
 
 // same as everywhere else (api/util/index.mjs, server/server.mjs): the services run in the project root
 const ROOT_DIR = path.resolve()
-const START_SCRIPT = path.join(ROOT_DIR, 'shell', 'start.sh')
-// local_tmp is gitignored; start.sh writes status.json into the same folder
-const UPDATE_DIR = path.join(ROOT_DIR, 'local_tmp', 'update')
+// local_tmp is gitignored; the scripts write status.json into the same folder (shell/lib/update-common.sh)
+export const UPDATE_DIR = path.join(ROOT_DIR, 'local_tmp', 'update')
+// sh / bash instead of executing the file directly -> the executable bit does not matter
+const TASK_SCRIPTS = {
+    update: {file: path.join(ROOT_DIR, 'shell', 'start.sh'), shell: '/bin/sh'},
+    node: {file: path.join(ROOT_DIR, 'shell', 'update-node.sh'), shell: '/bin/bash'},
+    mongodb: {file: path.join(ROOT_DIR, 'shell', 'update-mongodb.sh'), shell: '/bin/bash'}
+}
 const LOG_FILE = path.join(UPDATE_DIR, 'update.log')
 const STATUS_FILE = path.join(UPDATE_DIR, 'status.json')
 const UNIT_NAME = 'lunuc-update'
@@ -35,7 +43,7 @@ const MAX_LOG_BYTES = 64 * 1024
 
 let lastFetch = {time: 0, error: null}
 
-const exec = (cmd, args, {timeout = 30000, cwd = ROOT_DIR} = {}) => new Promise((resolve, reject) => {
+export const exec = (cmd, args, {timeout = 30000, cwd = ROOT_DIR} = {}) => new Promise((resolve, reject) => {
     execFile(cmd, args, {cwd, timeout, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024}, (error, stdout, stderr) => {
         if (error) {
             error.message = (stderr && stderr.trim()) || error.message
@@ -51,14 +59,14 @@ const succeeds = (cmd, args, options) => exec(cmd, args, options).then(() => tru
 // safe.directory: git refuses to work in a repo owned by another user ("dubious ownership"), e.g. api runs as root
 const git = (...args) => exec('git', ['-c', `safe.directory=${ROOT_DIR}`, ...args], {timeout: 60000})
 
-const isRoot = () => typeof process.getuid === 'function' && process.getuid() === 0
+export const isRoot = () => typeof process.getuid === 'function' && process.getuid() === 0
 
 const hasSystemd = async () => fs.existsSync('/run/systemd/system') && await succeeds('systemd-run', ['--version'])
 
 const canSudo = () => succeeds('sudo', ['-n', 'true'], {timeout: 5000})
 
-/** how this process is able to launch the update */
-const getLauncher = async () => {
+/** how this process is able to launch the update (script: one of TASK_SCRIPTS) */
+export const getLauncher = async (script = TASK_SCRIPTS.update) => {
     const root = isRoot()
     const systemd = await hasSystemd()
     const sudo = !root && await canSudo()
@@ -76,9 +84,9 @@ const getLauncher = async () => {
         // no systemd: no cgroup that kills us on restart, a detached process is good enough
         method = 'detached'
     }
-    if (!fs.existsSync(START_SCRIPT)) {
+    if (!fs.existsSync(script.file)) {
         method = null
-        reason = `${START_SCRIPT} not found`
+        reason = `${script.file} not found`
     }
     return {method, reason, root, sudo, systemd}
 }
@@ -185,7 +193,7 @@ const isProcessAlive = pid => {
     }
 }
 
-const isUpdateRunning = async (status) => {
+export const isUpdateRunning = async (status) => {
     if (await hasSystemd()) {
         try {
             const state = await exec('systemctl', ['is-active', UNIT_NAME], {timeout: 5000})
@@ -201,6 +209,7 @@ export const getSystemUpdateStatus = async () => {
     const status = readStatusFile() || {}
     return {
         running: await isUpdateRunning(status),
+        task: status.task || 'update',
         state: status.state || null,
         restart: status.restart || null,
         force: !!status.force,
@@ -215,14 +224,20 @@ export const getSystemUpdateStatus = async () => {
 
 const shellQuote = str => `'${String(str).replace(/'/g, `'\\''`)}'`
 
-export const startSystemUpdate = async ({restart = 'all', force = false}) => {
-    if (RESTART_OPTIONS.indexOf(restart) < 0) {
-        throw new Error(`Invalid restart option "${restart}"`)
+/**
+ * Runs a script of TASK_SCRIPTS in its own systemd unit (see top of the file).
+ * args must be validated by the caller, they are shell quoted anyway.
+ * beforeLaunch: e.g. write a file the script needs, only called when the task can really start
+ */
+export const launchTask = async (task, args = [], {beforeLaunch} = {}) => {
+    const script = TASK_SCRIPTS[task]
+    if (!script) {
+        throw new Error(`Invalid task "${task}"`)
     }
     if (await isUpdateRunning(readStatusFile())) {
         throw new Error('An update is already running')
     }
-    const launcher = await getLauncher()
+    const launcher = await getLauncher(script)
     if (!launcher.method) {
         throw new Error(launcher.reason || 'Update not possible on this system')
     }
@@ -233,15 +248,17 @@ export const startSystemUpdate = async ({restart = 'all', force = false}) => {
         fs.rmSync(LOG_FILE, {force: true})
     } catch (e) {
     }
+    if (beforeLaunch) {
+        beforeLaunch()
+    }
 
-    // sh instead of executing the file directly -> the executable bit of start.sh does not matter
-    const command = `exec /bin/sh ${shellQuote(START_SCRIPT)} -r ${restart}${force ? ' -f' : ''} > ${shellQuote(LOG_FILE)} 2>&1`
+    const command = `exec ${script.shell} ${shellQuote(script.file)}${args.map(arg => ' ' + shellQuote(arg)).join('')} > ${shellQuote(LOG_FILE)} 2>&1`
 
     if (launcher.method === 'detached') {
         const child = spawn('/bin/sh', ['-c', command], {cwd: ROOT_DIR, detached: true, stdio: 'ignore', env: process.env})
         child.unref()
     } else {
-        const args = [
+        const systemdArgs = [
             `--unit=${UNIT_NAME}`,
             '--collect',
             '--quiet',
@@ -252,16 +269,23 @@ export const startSystemUpdate = async ({restart = 'all', force = false}) => {
             '/bin/sh', '-c', command
         ]
         if (launcher.method === 'sudo systemd-run') {
-            await exec('sudo', ['-n', 'systemd-run', ...args], {timeout: 15000})
+            await exec('sudo', ['-n', 'systemd-run', ...systemdArgs], {timeout: 15000})
         } else {
-            await exec('systemd-run', args, {timeout: 15000})
+            await exec('systemd-run', systemdArgs, {timeout: 15000})
         }
     }
 
-    console.log(`System update started (${launcher.method}, restart=${restart}, force=${!!force})`)
+    console.log(`System task ${task} started (${launcher.method}): ${args.join(' ')}`)
 
-    // give start.sh a moment to write its status
+    // give the script a moment to write its status
     await new Promise(resolve => setTimeout(resolve, 500))
     const status = await getSystemUpdateStatus()
     return {...status, running: true}
+}
+
+export const startSystemUpdate = async ({restart = 'all', force = false}) => {
+    if (RESTART_OPTIONS.indexOf(restart) < 0) {
+        throw new Error(`Invalid restart option "${restart}"`)
+    }
+    return launchTask('update', ['-r', restart, ...(force ? ['-f'] : [])])
 }

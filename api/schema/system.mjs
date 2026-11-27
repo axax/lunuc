@@ -159,8 +159,58 @@ export const systemSchemaRaw = `
         cannotUpdateReason: String
     }
 
+    type NodeRelease{
+        major: Int
+        version: String
+        date: String
+        lts: String
+        security: Boolean
+    }
+
+    type NodeServiceVersion{
+        name: String
+        version: String
+    }
+
+    type NodeRuntimeInfo{
+        version: String
+        execPath: String
+        nvmDir: String
+        installed: [String]
+        services: [NodeServiceVersion]
+        releases: [NodeRelease]
+        latest: String
+        latestLts: String
+        latestPatch: String
+        fetchError: String
+        cannotUpdateReason: String
+    }
+
+    type MongoRuntimeInfo{
+        version: String
+        packageVersion: String
+        featureCompatibilityVersion: String
+        series: String
+        local: Boolean
+        serviceActive: Boolean
+        latest: String
+        latestPatch: String
+        nextSeries: String
+        nextVersion: String
+        error: String
+        fetchError: String
+        cannotUpdateReason: String
+    }
+
+    type SystemRuntimeInfo{
+        node: NodeRuntimeInfo
+        mongodb: MongoRuntimeInfo
+        checkedAt: Float
+    }
+
     type SystemUpdateStatus{
         running: Boolean
+        task: String
         state: String
         restart: String
         force: Boolean
@@ -176,6 +226,7 @@ export const systemSchemaRaw = `
         systemInfo: SystemInfoResult
         systemUpdateInfo(fetch: Boolean): SystemUpdateInfo
         systemUpdateStatus: SystemUpdateStatus
+        systemRuntimeInfo(fetch: Boolean): SystemRuntimeInfo
         searchInCollections(search: String!): SearchInCollectionsResult
         brokenReferences(type: String!, field: String): BrokenReferencesResult
     	run(command: String!, scope: String, id: String, sync: Boolean, timeout: Int): RunResult
@@ -202,6 +253,9 @@ export const systemSchemaRaw = `
     	ptyWrite(id: String!, data: String!): RunResult
     	ptyResize(id: String!, cols: Int!, rows: Int!): RunResult
     	startSystemUpdate(restart: String, force: Boolean): SystemUpdateStatus
+    	startNodeUpdate(version: String!): SystemUpdateStatus
+    	startMongoUpdate(series: String!, backup: Boolean): SystemUpdateStatus
+    	setMongoFeatureCompatibility(version: String!): GenericResult
     	dropDbIndexes(name: String!, indexes: [String]!): GenericResult   	
     	createBackup(type: String!, options: String): Backup    	
     	removeBackup(type: String!, name: String!): RemoveBackupResult   

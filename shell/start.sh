@@ -14,74 +14,45 @@
 #   sh /opt/lunuc/shell/start.sh -r all    (works even without the executable bit)
 #
 # Aborts on the first error, the services are then NOT restarted (the old build keeps running).
-# Writes local_tmp/update/status.json, shown in /admin/system -> Update.
+# Writes local_tmp/update/status.json, shown in /admin/system -> Update (see shell/lib/update-common.sh).
 
 set -e
 
-restart=none
-force=false
+RESTART=none
+FORCE=false
 while getopts r:f flag
 do
     case "${flag}" in
-        r) restart=${OPTARG};;
-        f) force=true;;
+        r) RESTART=${OPTARG};;
+        f) FORCE=true;;
         *) echo "usage: $0 [-r all|api|client|none] [-f]"; exit 2;;
     esac
 done
 
-case "$restart" in
+case "$RESTART" in
     all|api|client|none) ;;
-    *) echo "invalid restart option: $restart (all|api|client|none)"; exit 2;;
+    *) echo "invalid restart option: $RESTART (all|api|client|none)"; exit 2;;
 esac
 
 cd "$(dirname "$0")"
 cd ..
 ROOT_DIR=$(pwd)
 
-# --- sudo detection: root needs no sudo, interactive users may be asked for a password,
-#     non-interactive runs (admin ui, cron) must not hang on a password prompt
-if [ "$(id -u)" -eq 0 ]; then
-    SUDO=""
-elif [ -t 0 ]; then
-    SUDO="sudo"
-else
-    SUDO="sudo -n"
-fi
+TASK=update
+FAIL_MESSAGE="services were not restarted"
+. "$ROOT_DIR/shell/lib/update-common.sh"
 
 # git refuses repos owned by another user ("dubious ownership"), e.g. when run as root
 GIT="git -c safe.directory=$ROOT_DIR"
 
-STATUS_DIR="$ROOT_DIR/local_tmp/update"
-STATUS_FILE="$STATUS_DIR/status.json"
-STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 FROM=$($GIT rev-parse --short HEAD 2>/dev/null || echo "")
 TO=""
 
-# never let the status file break the update (e.g. no write permission)
-write_status() {
-    {
-        mkdir -p "$STATUS_DIR" &&
-        printf '{"state":"%s","exitCode":%s,"restart":"%s","force":%s,"from":"%s","to":"%s","startedAt":"%s","finishedAt":"%s","pid":%s}\n' \
-            "$1" "${2:-null}" "$restart" "$force" "$FROM" "$TO" "$STARTED_AT" "${3:-}" "$$" > "$STATUS_FILE.tmp" &&
-        mv -f "$STATUS_FILE.tmp" "$STATUS_FILE"
-    } 2>/dev/null || true
-}
-
-on_exit() {
-    code=$?
-    if [ $code -ne 0 ]; then
-        echo ""
-        echo "UPDATE FAILED (exit code $code) - services were not restarted"
-        write_status failed $code "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    fi
-}
-trap on_exit EXIT
-
 write_status running
 
-echo "=== $(date) update lunuc in $ROOT_DIR as $(id -un), restart: $restart, force: $force"
+echo "=== $(date) update lunuc in $ROOT_DIR as $(id -un), restart: $RESTART, force: $FORCE"
 
-if [ "$force" = true ]; then
+if [ "$FORCE" = true ]; then
     echo "=== git fetch + reset --hard (force)"
     $GIT fetch
     if [ -n "$($GIT status --porcelain --untracked-files=no)" ]; then
@@ -107,19 +78,19 @@ echo "=== npm run build"
 npm run build
 
 # status before the restart: if this script runs inside lunuc-api it gets killed by the restart
-write_status restarting 0 "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+write_status restarting 0 "$(now_utc)"
 
-echo "=== restart $restart"
+echo "=== restart $RESTART"
 
-if [ "$restart" = "all" ] || [ "$restart" = "client" ]
+if [ "$RESTART" = "all" ] || [ "$RESTART" = "client" ]
 then
     $SUDO systemctl restart lunuc-client
 fi
 
-if [ "$restart" = "all" ] || [ "$restart" = "api" ]
+if [ "$RESTART" = "all" ] || [ "$RESTART" = "api" ]
 then
     $SUDO systemctl restart lunuc-api
 fi
 
-write_status success 0 "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+write_status success 0 "$(now_utc)"
 echo "=== update finished"

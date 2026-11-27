@@ -22,3 +22,13 @@ export const StyledSystemTable = styled('table')(({theme}) => ({
     // index never used since the counter started - the drop candidates.
     'tr.unused td': {backgroundColor: 'rgba(255,167,38,0.12)'}
 }))
+
+/** label / value list of /admin/system (update, versions) */
+export const StyledSystemDl = styled('dl')({
+    display: 'grid',
+    gridTemplateColumns: 'max-content 1fr',
+    gap: '0.25rem 1rem',
+    margin: '0 0 1rem',
+    dt: {fontWeight: 600},
+    dd: {margin: 0}
+})

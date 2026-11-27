@@ -18,14 +18,56 @@ import {createSharedBrowser} from './sharedBrowser.mjs'
 
  Optional proxy (e.g. a residential connection instead of the datacenter IP of the server):
    env LUNUC_BROWSER_PROXY=http://host:port or socks5://host:port
+
+ Optional remote Chrome (e.g. on a Mac at home, reached via Tailscale) instead of a local one:
+   env LUNUC_BROWSER_REMOTE=http://100.67.68.34:9222 (or ws://.../devtools/browser/<id>)
+   Chrome there: --remote-debugging-port=9222 --user-data-dir=<own dir>
+ If it does not answer within REMOTE_CONNECT_TIMEOUT a local Chrome is started (fallback).
+ close() of a remote Chrome only closes the contexts of lunuc and disconnects - the Chrome keeps running.
+ launchStealthBrowser({local: true}) always starts a local Chrome (e.g. for pages of this server).
  */
 export const BROWSER_LOCALE = 'de-CH'
 export const BROWSER_LANGUAGES = ['de-CH', 'de', 'en']
 export const BROWSER_TIMEZONE = 'Europe/Zurich'
 export const BROWSER_PROXY = process.env.LUNUC_BROWSER_PROXY
+export const BROWSER_REMOTE = process.env.LUNUC_BROWSER_REMOTE
+const REMOTE_CONNECT_TIMEOUT = 4000
+
+const connectRemoteBrowser = (puppeteer) => {
+    const target = /^wss?:/.test(BROWSER_REMOTE) ? {browserWSEndpoint: BROWSER_REMOTE} : {browserURL: BROWSER_REMOTE}
+    return new Promise((resolve, reject) => {
+        let timedOut = false
+        const timer = setTimeout(() => {
+            timedOut = true
+            reject(new Error(`no answer within ${REMOTE_CONNECT_TIMEOUT}ms`))
+        }, REMOTE_CONNECT_TIMEOUT)
+        puppeteer.connect({defaultViewport: null, protocolTimeout: 30000, ...target}).then(browser => {
+            clearTimeout(timer)
+            if (timedOut) {
+                // too late, the local fallback is already starting
+                browser.disconnect().catch(() => {})
+                return
+            }
+            // never close the remote Chrome itself: only the contexts lunuc created, then disconnect
+            browser.close = async () => {
+                const defaultContext = browser.defaultBrowserContext()
+                await Promise.all(browser.browserContexts()
+                    .filter(context => context !== defaultContext)
+                    .map(context => context.close().catch(() => {})))
+                await browser.disconnect()
+            }
+            browser.isRemote = true
+            console.log(`connected to remote Chrome ${BROWSER_REMOTE}`)
+            resolve(browser)
+        }, e => {
+            clearTimeout(timer)
+            reject(e)
+        })
+    })
+}
 
 // own puppeteer-extra instance per launch, so changed plugin options apply after a browser reset
-export const launchStealthBrowser = (options = {}) => {
+export const launchStealthBrowser = async ({local = false, ...options} = {}) => {
     const puppeteer = addExtra(puppeteerCore)
     const stealth = StealthPlugin()
     stealth.enabledEvasions.delete('user-agent-override')
@@ -33,6 +75,14 @@ export const launchStealthBrowser = (options = {}) => {
     puppeteer.use(stealth)
     puppeteer.use(UserAgentOverride({locale: BROWSER_LANGUAGES.join(',')}))
     puppeteer.use(NavigatorLanguages({languages: BROWSER_LANGUAGES}))
+
+    if (BROWSER_REMOTE && !local) {
+        try {
+            return await connectRemoteBrowser(puppeteer)
+        } catch (e) {
+            console.log(`remote Chrome ${BROWSER_REMOTE} not reachable (${e.message}) - starting a local Chrome`)
+        }
+    }
 
     const args = [
         '--no-sandbox',
@@ -109,3 +159,9 @@ export const waitForChallenge = async (page, timeoutMs = 25000) => {
  The tools are admin only (browserControl: admin_options).
  */
 export const stealthBrowser = createSharedBrowser({idleCloseMs: 10 * 60 * 1000, launch: launchStealthBrowser})
+
+// always local (never LUNUC_BROWSER_REMOTE): for pages of this server (127.0.0.1), e.g. renderComponent
+export const localStealthBrowser = createSharedBrowser({
+    idleCloseMs: 5 * 60 * 1000,
+    launch: (options) => launchStealthBrowser({...options, local: true})
+})
