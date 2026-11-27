@@ -14,6 +14,17 @@
       "indexes": [
         {
           "fields": {
+            "createdBy": 1,
+            "event": 1
+          },
+          "options": {
+            "partialFilterExpression": {
+              "event": "proxy"
+            }
+          }
+        },
+        {
+          "fields": {
             "geodata": 1
           },
           "options": {
