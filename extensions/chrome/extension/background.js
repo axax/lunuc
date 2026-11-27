@@ -70,17 +70,21 @@ const SUBTITLE_EXT = /\.(vtt|webvtt|srt)(\?|#|$)/i
 // Teilstücke von Untertiteln aus HLS-Playlists (die werden über die Playlist geladen)
 const SUBTITLE_SEGMENT = /(seg|segment|chunk|frag|fragment|part)[-_]?\d+[^/]*\.(vtt|webvtt)(\?|#|$)|[-_]\d{3,}\.(vtt|webvtt)(\?|#|$)/i
 
-// Sprache aus dem Dateinamen bzw. Parameter: "film_en.srt", "subs.de-CH.vtt", "?lang=fr"
-function guessLang(url) {
-    try {
-        const u = new URL(url)
-        const param = u.searchParams.get('lang') || u.searchParams.get('language')
-        if (param) return param.toLowerCase().slice(0, 5)
-        const m = u.pathname.match(/[._-]([a-z]{2,3})(?:[-_][a-z]{2})?\.(?:vtt|webvtt|srt)$/i)
-        return m ? m[1].toLowerCase() : ''
-    } catch (e) {
-        return ''
+// Sprache aus Dateiname/Parameter: guessLang() kommt aus lang.js
+importScripts('lang.js')
+
+// Sprache einer Untertitel-Datei: URL, sonst Inhalt (Ergebnis pro URL zwischengespeichert)
+const subtitleLangCache = new Map()
+function subtitleLang(url) {
+    if (!subtitleLangCache.has(url)) {
+        // Inhalt immer prüfen: Vorschaubilder (Thumbnail-VTT) sind keine Untertitel
+        const fromUrl = guessLang(url)
+        subtitleLangCache.set(url, isNonSubtitleUrl(url) ? Promise.resolve('') :
+            fetch(url, {credentials: 'include'}).then(r => r.ok ? r.text() : '')
+                .then(text => isThumbnailVtt(text) ? '' : fromUrl || langFromText(text)).catch(() => fromUrl))
+        if (subtitleLangCache.size > 500) subtitleLangCache.delete(subtitleLangCache.keys().next().value)
     }
+    return subtitleLangCache.get(url)
 }
 
 // Schreibzugriffe nacheinander ausführen, sonst gehen bei vielen gleichzeitigen Requests Einträge verloren
@@ -123,8 +127,11 @@ chrome.webRequest.onHeadersReceived.addListener(details => {
 
     // Untertitel als eigene Datei
     if (SUBTITLE_EXT.test(url) || /text\/vtt|subrip|x-srt/.test(type)) {
+        // Sprache aus der URL, sonst aus dem Inhalt; Untertitel ohne erkennbare Sprache werden ignoriert
         if (!SUBTITLE_SEGMENT.test(url)) {
-            addMedia(details.tabId, {url, kind: 'subtitle', lang: guessLang(url), type, size, time: Date.now()})
+            subtitleLang(url).then(lang => {
+                if (lang) addMedia(details.tabId, {url, kind: 'subtitle', lang, type, size, time: Date.now()})
+            })
         }
         return
     }
@@ -236,12 +243,13 @@ function updateBadge(jobs) {
     chrome.action.setBadgeText({text: current.state === 'queued' ? '…' : pct + '%'})
 }
 
-async function startJob({url, kind, name, subtitles, streamSubtitles}) {
+async function startJob({url, kind, name, subtitles, streamSubtitles, quality}) {
     const job = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         url, kind, name: name || 'video',
         // separate Untertitel-Dateien [{url, lang}] und ob Untertitel aus dem Stream mitkommen
         subtitles: subtitles || [], streamSubtitles: streamSubtitles !== false,
+        quality: quality || 'original',
         state: 'queued', progress: 0, label: 'Wartet…', message: '', time: Date.now()
     }
     await mutateJobs(jobs => { jobs.push(job) })
@@ -346,23 +354,26 @@ function nativeRequest(message) {
     })
 }
 
+const QUALITY_LABEL = {'1080p': '1080p H.264', '720p': '720p H.264', '480p': '480p H.264', '1080p-hevc': '1080p H.265', '720p-hevc': '720p H.265'}
+
 async function ftpSettings() {
     return (await chrome.storage.local.get('ftp')).ftp || null
 }
 
-function convertNative(id, files, name, ftp) {
+function convertNative(id, files, name, ftp, quality) {
     return new Promise((resolve, reject) => {
         const port = chrome.runtime.connectNative(NATIVE_HOST)
         nativePorts.set(id, port)
         let finished = false
-        updateJob(id, {state: 'converting', progress: 0, label: 'Wandle um…'})
+        const convertLabel = quality && quality !== 'original' ? `Wandle um (${QUALITY_LABEL[quality] || quality})…` : 'Wandle um…'
+        updateJob(id, {state: 'converting', progress: 0, label: convertLabel})
         port.onMessage.addListener(msg => {
             if (msg.progress !== undefined) {
                 const uploading = msg.phase === 'upload'
                 updateJob(id, {
                     state: uploading ? 'uploading' : 'converting',
                     progress: msg.progress,
-                    label: uploading ? 'Lade hoch…' : 'Wandle um…'
+                    label: uploading ? 'Lade hoch…' : convertLabel
                 })
             } else if (msg.done) {
                 finished = true
@@ -379,7 +390,7 @@ function convertNative(id, files, name, ftp) {
             if (!finished) reject(new Error(chrome.runtime.lastError?.message || 'ffmpeg-Helfer beendet'))
         })
         port.postMessage({
-            cmd: 'convert', outputName: name + '.mp4', deleteInputs: true,
+            cmd: 'convert', outputName: name + '.mp4', deleteInputs: true, quality,
             inputs: files.filter(f => !f.subtitle).map(f => f.path),
             subtitles: files.filter(f => f.subtitle).map(f => ({path: f.path, lang: f.lang})),
             ftp: ftp && ftp.enabled ? ftp : null,
@@ -404,7 +415,7 @@ async function finishJob(id, files, name) {
     }
     try {
         const ftp = await ftpSettings()
-        const res = await convertNative(id, files, name, ftp)
+        const res = await convertNative(id, files, name, ftp, job.quality)
         // Teildateien hat der Helfer gelöscht → nur noch aus der Download-Liste entfernen
         for (const downloadId of (await getJob(id)).downloadIds || []) chrome.downloads.erase({id: downloadId}).catch(() => {})
         const file = res.output.split(/[\\/]/).pop()

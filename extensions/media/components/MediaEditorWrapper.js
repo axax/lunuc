@@ -1,6 +1,4 @@
 import React, {useState, useEffect, useMemo} from 'react'
-import Util from '../../../client/util/index.mjs'
-import DomUtil from '../../../client/util/dom.mjs'
 import {_t} from '../../../util/i18n.mjs'
 import {
     Button,
@@ -10,13 +8,13 @@ import {
     Box
 } from 'ui/admin'
 import Async from '../../../client/components/Async.js'
-import UploadUtil from "../../../client/util/upload";
 import {getMediaPlaybackSrc, isExternalMedia} from '../../../client/util/media'
 import {rememberMediaReplaceHint, showPendingMediaReplaceHint} from './mediaReplaceHint'
 
 const SimpleSwitch = (props) => <Async {...props} expose="SimpleSwitch" load={() =>import(/* webpackChunkName: "admin" */ '../../../gensrc/ui/admin')}/>
 const TypePicker = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/TypePicker')}/>
 const FileDrop = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "admin" */ '../../../client/components/FileDrop')}/>
+const CmsViewContainer = (props) => <Async {...props} load={() =>import(/* webpackChunkName: "admin" */ '../../cms/containers/CmsViewContainer')}/>
 
 export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
     const mediaSetting = meta.TypeContainer ? meta.TypeContainer.settings.Media : {}
@@ -31,7 +29,6 @@ export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
     const [overrideFile, setOverrideFile] = useState(
         false
     )
-    const mediaData = Util.getImageObject(dataToEdit)
 
     // placeholders like ${name} resolved, media server through the proxy (only evaluated when the source changes)
     const previewSrc = useMemo(
@@ -46,6 +43,26 @@ export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
         setPreviewError(false)
     }, [previewSrc])
 
+    // own image editor (CmsPage system/image_editor), opened as overlay
+    const [imageEditorOpen, setImageEditorOpen] = useState(false)
+    const [previewVersion, setPreviewVersion] = useState(0)
+    const imageEditorProps = useMemo(() => ({
+        mediaId: dataToEdit._id,
+        onClose: () => setImageEditorOpen(false),
+        onSave: (media, {asNew}) => {
+            if (asNew) {
+                // show the new media in the list
+                const container = meta.TypeContainer
+                if (container && container.getData) {
+                    container.getData(container.pageParams, false)
+                }
+            } else {
+                // the browser may still have the old file cached
+                setPreviewVersion(Date.now())
+            }
+        }
+    }), [dataToEdit._id])
+
     let editor
 
     if (dataToEdit.mimeType && dataToEdit.mimeType.indexOf('image') === 0) {
@@ -53,91 +70,11 @@ export const MediaEditorWrapper = ({children, dataToEdit, meta}) => {
         editor = <><img key="mediaImage"
                         id="mediaImage"
                         style={{border: 'solid 0.4rem black', maxWidth: '100%', maxHeight: '20rem'}}
-                        src={previewSrc}/><br />
-            <div id="image-editor" style={{position:'absolute',top:0, right:0, left:0, bottom:0,zIndex:10,display:'none'}}></div>
-            <Button color="primary" variant="contained" key="mediaImageEdit" onClick={() => {
-                DomUtil.createAndAddTag('style', 'head', {
-                    textContent: '.SfxModal-Wrapper{z-index:10000 !important}.SfxPopper-wrapper{z-index:10100 !important}',
-                    id:'FilerobotImageEditor'
-                })
-                DomUtil.addScript('https://scaleflex.cloudimg.io/v7/plugins/filerobot-image-editor/latest/filerobot-image-editor.min.js', {
-                    async: true,
-                    onload: (e) => {
-                        e.preventDefault()
-                        //after importing the plugin/library from CDN
-                        const container = document.getElementById("image-editor")
-                        container.style.display = 'block'
-
-                        const config = {
-                            source: mediaData.src,
-                            showBackButton:true,
-                            closeAfterSave:true,
-                            annotationsCommon:{
-                                zIndex:9999
-                            },
-                            onBeforeSave:(e)=>{
-                                return true
-                            },
-                            moreSaveOptions:[
-                                {
-                                    label: 'Current file',
-                                    onClick: (triggerSaveModal, triggerSave) =>
-                                        triggerSaveModal((imageInfo, designState) => {
-                                            console.log(imageInfo, designState)
-                                            UploadUtil.uploadData({
-                                                dataUrl:imageInfo.imageBase64,
-                                                uploadTo: '/graphql/upload',
-                                                data:{_id: dataToEdit._id, name: dataToEdit.name},
-                                                onLoad: (e) => {
-                                                    if(e.target.response) {
-                                                        const {status, message} = e.target.response
-                                                        if (status === 'success') {
-                                                            document.getElementById('mediaImage').src= imageInfo.imageBase64
-                                                        } else {
-                                                            _app_.dispatcher.addNotification(message)
-                                                        }
-                                                    }else{
-                                                    }
-                                                },
-                                                onError: (e) => {
-                                                    _app_.dispatcher.addNotification(e.message)
-                                                }
-                                            })
-                                        })
-                                },
-                                {
-                                    label: 'Save as new file (Export)',
-                                    onClick: (triggerSaveModal, triggerSave) =>
-                                        triggerSave((imageInfo, designState) => {
-                                            const tmpLink = document.createElement('a')
-                                            tmpLink.download = imageInfo.fullName
-                                            tmpLink.href = imageInfo.imageBase64
-                                            tmpLink.style = 'position: absolute; z-index: -111; visibility: none;'
-                                            document.body.appendChild(tmpLink)
-                                            tmpLink.click()
-                                            document.body.removeChild(tmpLink)
-                                        })
-                                },
-                            ],
-                            onSave: (imageInfo, designState) => {
-                                console.log('save',imageInfo, designState)
-                            },
-                            onClose: (closingReason) => {
-                                container.style.display = 'none'
-                                console.log('Closing reason', closingReason);
-                                ImageEditor.terminate();
-                            }
-                        }
-                        const ImageEditor = new FilerobotImageEditor(container, config)
-
-                        ImageEditor.render({
-                            // additional config provided while rendering
-                            observePluginContainerSize: true
-                        })
-                    }
-                })
-            }
-            }>{_t('Media.editImage')}</Button>
+                        src={previewVersion ? previewSrc + (previewSrc.indexOf('?') < 0 ? '?' : '&') + 'v=' + previewVersion : previewSrc}/><br />
+            <Button color="primary" variant="contained" key="mediaImageEdit" onClick={() => setImageEditorOpen(true)}>{_t('Media.editImage')}</Button>
+            {imageEditorOpen && <div style={{position: 'fixed', inset: 0, zIndex: 1400}}>
+                <CmsViewContainer slug="system/image_editor" dynamic={true} user={_app_.user} _props={imageEditorProps}/>
+            </div>}
             <p>{dataToEdit.imageScene || ''}</p>
             <p><small>Keywords: <strong>{dataToEdit.imageKeyword || ''}</strong></small></p></>
 

@@ -23,6 +23,7 @@ import {
     CAPABILITY_MEDIA_REFERENCES
 } from './constants/index.mjs'
 import GenericResolver from "../../api/resolver/generic/genericResolver.mjs";
+import {createMatchForCurrentUser} from '../../api/util/dbquery.mjs'
 import {findMediaUsages, ensureMediaReferences} from './resolver/mediaRefMap.mjs'
 import {ApiError} from '../../api/error.mjs'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -173,6 +174,15 @@ Hook.on('typeBeforeCreate', async ({db, type, data}) => {
     }
 })*/
 
+// same rule as GenericResolver.updateEntity: manage_other_users or the update match of the current user
+const mayUpdateMedia = async (db, context, id) => {
+    if (await Util.userHasCapability(db, context, CAPABILITY_MANAGE_OTHER_USERS)) {
+        return true
+    }
+    const match = await createMatchForCurrentUser({typeName: 'Media', db, context, operation: 'update'})
+    return !!match && !!(await db.collection('Media').findOne({...match, _id: new ObjectId(id)}, {projection: {_id: 1}}))
+}
+
 // Hook when db is ready
 Hook.on('FileUpload', async ({db, req, context, file, data, response}) => {
     let replaceMode = false, isPrivate = isMediaPrivate(data.private)
@@ -189,6 +199,9 @@ Hook.on('FileUpload', async ({db, req, context, file, data, response}) => {
         const medias = await GenericResolver.entities(db, req, 'Media', ['_id', 'private'], {limit:1, filter:`_id=${data._id}`})
         if(medias.results.length===0){
             throw new Error('Media not found')
+        }else if(!await mayUpdateMedia(db, context, data._id)){
+            // checked before the file is written: a failing updateMedia afterwards would leave the file replaced
+            throw new Error('No permission to replace this file')
         }else{
             replaceMode = true
             if (data.private === undefined) {

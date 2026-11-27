@@ -46,7 +46,7 @@ function collectFromFrame() {
     // <track> am Video-Element (Untertitel/Captions)
     const tracks = []
     document.querySelectorAll('video track[src]').forEach(t => {
-        if (/^(subtitles|captions|)$/.test(t.kind || '') && /^https?:/.test(t.src)) tracks.push({url: t.src, lang: clean(t.srclang).toLowerCase()})
+        if (/^(subtitles|captions|)$/.test(t.kind || '') && /^https?:/.test(t.src)) tracks.push({url: t.src, lang: clean(t.srclang).toLowerCase(), label: clean(t.label)})
     })
 
     const info = {urls, tracks, top: window === window.top, title: clean(document.title)}
@@ -64,8 +64,14 @@ function collectFromFrame() {
             for (const o of items) {
                 const types = [].concat(o['@type'] || [])
                 if (o.name && types.some(t => /Episode|VideoObject|Movie|Clip/.test(t))) {
-                    const series = o.partOfSeries && o.partOfSeries.name
+                    const series = (o.partOfSeries && o.partOfSeries.name) || (o.partOfTVSeries && o.partOfTVSeries.name)
+                    const season = o.partOfSeason && (o.partOfSeason.seasonNumber || o.partOfSeason.name)
                     info.ld = clean([series && series !== o.name ? series : '', o.name].filter(Boolean).join(' - '))
+                    info.ldEp = {
+                        series: clean(series), title: clean(o.name),
+                        season: parseInt(season, 10) || 0, episode: parseInt(o.episodeNumber, 10) || 0,
+                        year: types.some(t => /Movie/.test(t)) ? (String(o.datePublished || o.dateCreated || o.releasedEvent && o.releasedEvent.startDate || '').match(/\b(19|20)\d{2}\b/) || [''])[0] : ''
+                    }
                     break
                 }
             }
@@ -87,6 +93,8 @@ function collectFromFrame() {
 
     const meta = n => clean((document.querySelector(`meta[property="${n}"], meta[name="${n}"]`) || {}).content)
     info.og = meta('og:title')
+    info.ogType = meta('og:type')
+    info.ogEp = {series: meta('video:series'), season: meta('video:season'), episode: meta('video:episode')}
     info.site = meta('og:site_name')
     info.h1 = short((document.querySelector('h1') || {}).textContent)
     return info
@@ -104,24 +112,107 @@ function stripSiteName(title, site, host) {
     return title
 }
 
+// ---- Staffel/Folge erkennen ----
+// "S01E02", "S01-E02", "s1 e2", "1x02", "Staffel 1 Folge 2", "Season 1, Episode 2", "Saison 1 Épisode 2", "Folge 7", "Eps 4"
+const EP_WORD = '(?:folge|episode|episodio|ep|eps|teil|capitulo|aflevering|odcinek|bolum|avsnitt)'
+const SEASON_WORD = '(?:staffel|season|saison|stagione|temporada|seizoen|sezon|sesong)'
+const EP_PATTERNS = [
+    [new RegExp('(?:^|[^a-z0-9])s(\\d{1,2})[\\s._-]*e(\\d{1,3})(?![0-9])', 'i'), m => ({season: +m[1], episode: +m[2]})],
+    [new RegExp('(?:^|[^a-z0-9])(\\d{1,2})x(\\d{2,3})(?![0-9])', 'i'), m => ({season: +m[1], episode: +m[2]})],
+    [new RegExp(SEASON_WORD + '\\.?\\s*(\\d{1,2})[^0-9a-z]{0,6}(?:[a-z]+\\s+)?' + EP_WORD + '\\.?\\s*(\\d{1,3})(?![0-9])', 'i'), m => ({season: +m[1], episode: +m[2]})],
+    [new RegExp('(?:^|[^a-z0-9])' + EP_WORD + '\\.?\\s*(\\d{1,3})(?![0-9])', 'i'), m => ({season: 0, episode: +m[1]})],
+    [new RegExp('(?:^|[^a-z0-9])(\\d{1,3})\\.\\s*' + EP_WORD + '(?![a-z])', 'i'), m => ({season: 0, episode: +m[1]})], // "2. Folge"
+]
+
+function plain(s) {
+    return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+}
+
+// liefert {season, episode, index, length} (index/length beziehen sich auf den Originaltext)
+function parseEpisode(text) {
+    const t = plain(text)
+    for (const [re, fn] of EP_PATTERNS) {
+        const m = t.match(re)
+        if (m && +m[m.length - 1] > 0) {
+            const lead = m[0].search(/[a-z0-9]/i)
+            return {...fn(m), index: m.index + lead, length: m[0].length - lead}
+        }
+    }
+    return null
+}
+
+const pad = n => String(n).padStart(2, '0')
+const epCode = ep => (ep.season ? `S${pad(ep.season)}` : '') + `E${pad(ep.episode)}`
+
+// Name mit Staffel/Folge im einheitlichen Format: "Serie - S01E02 - Titel"
+function withEpisode(name, ep) {
+    if (!ep || !ep.episode) return name
+    const found = parseEpisode(name)
+    if (found) {
+        // vorhandene Angabe vereinheitlichen; fehlende Staffel aus anderen Quellen ergänzen
+        const merged = {season: found.season || (found.episode === ep.episode ? ep.season : 0), episode: found.episode}
+        const before = name.slice(0, found.index).replace(/[\s\-–—|:,]+$/, '')
+        const after = name.slice(found.index + found.length).replace(/^[\s\-–—|:,]+/, '')
+        return [before, epCode(merged), after].filter(Boolean).join(' - ')
+    }
+    const parts = name.split(/\s+-\s+/)
+    if (parts.length > 1) return [parts[0], epCode(ep), ...parts.slice(1)].join(' - ')
+    return `${name} - ${epCode(ep)}`
+}
+
+// typische Zusätze von Streaming-Seiten entfernen
+function stripNoise(title) {
+    return title
+        .replace(/^\s*(?:watch|jetzt ansehen|jetzt streamen|ansehen|regarder|guarda|ver)\s*[:\-–]?\s+/i, '')
+        .replace(/\s*[\-–|(]?\s*(?:ganze folge|full episode|in voller länge|online (?:anschauen|ansehen|schauen|sehen|streamen)|stream(?:en)? online|watch online|kostenlos|gratis|in hd|hd|4k|uhd)\s*\)?\s*$/i, '')
+        .trim()
+}
+
 // bester Name aus allen Frames: Media Session > schema.org > aktiver Listeneintrag > Tab-Titel
-function pickName(frames) {
+// danach Staffel/Folge (aus Name, schema.org, Meta-Tags, Seiten- und Medien-URLs) und bei Filmen das Jahr ergänzen
+function pickName(frames, media = []) {
     const top = frames.find(f => f.top) || frames[0] || {}
     let host = ''
     try { host = new URL(currentTab.url).hostname } catch (e) {}
-    const base = stripSiteName(currentTab.title || top.title || '', top.site, host)
+    const base = stripNoise(stripSiteName(currentTab.title || top.title || '', top.site, host))
     const contains = (a, b) => a.toLowerCase().includes(b.toLowerCase())
 
+    let name
     const session = frames.map(f => f.session).find(Boolean)
+    const ld = frames.map(f => f.ld).find(Boolean)
+    const active = frames.map(f => f.active).find(Boolean)
     if (session) {
         const prefix = [session.album, session.artist].find(p => p && !contains(session.title, p))
-        return prefix ? `${prefix} - ${session.title}` : session.title
+        name = prefix ? `${prefix} - ${session.title}` : session.title
+    } else if (ld) {
+        name = ld
+    } else if (active) {
+        name = base && !contains(base, active) ? `${base} - ${active}` : active
+    } else {
+        name = base || stripNoise(top.og || '') || top.h1 || 'video'
     }
-    const ld = frames.map(f => f.ld).find(Boolean)
-    if (ld) return ld
-    const active = frames.map(f => f.active).find(Boolean)
-    if (active) return base && !contains(base, active) ? `${base} - ${active}` : active
-    return base || top.og || top.h1 || 'video'
+
+    // Staffel/Folge: strukturierte Daten zuerst, dann Texte, dann URLs (Seite, Video, Untertitel)
+    const ldEp = frames.map(f => f.ldEp).find(e => e && e.episode)
+    const ogEp = frames.map(f => f.ogEp).find(e => e && +e.episode)
+    let ep = ldEp ? {season: ldEp.season, episode: ldEp.episode} : ogEp ? {season: +ogEp.season || 0, episode: +ogEp.episode} : null
+    const urlName = u => { try { return decodeURIComponent(new URL(u).pathname) } catch (e) { return u || '' } }
+    const sources = [name, base, top.og, top.h1, active, urlName(currentTab.url), ...media.map(m => urlName(m.url))]
+    for (const s of sources) {
+        const found = s && parseEpisode(s)
+        if (!found) continue
+        if (!ep) ep = found
+        else if (!ep.season && found.season && found.episode === ep.episode) ep.season = found.season
+        if (ep.season) break
+    }
+    // nur Folge ohne Staffel aus einer URL ist zu unsicher (z. B. "/ep/123")
+    if (ep && !ep.season && !ldEp && !ogEp && !sources.slice(0, 5).some(s => s && parseEpisode(s))) ep = null
+    name = withEpisode(name, ep)
+
+    // Film: Jahr anhängen ("Titel (2021)")
+    const year = frames.map(f => f.ldEp && f.ldEp.year).find(Boolean)
+    if (year && !ep && !/\b(19|20)\d{2}\b/.test(name)) name += ` (${year})`
+    return name
 }
 
 async function scanDom() {
@@ -160,25 +251,37 @@ function selectedSubtitles() {
     return Array.from(subtitleListEl.querySelectorAll('input:checked')).map(el => ({url: el.subtitle.url, lang: el.subtitle.lang}))
 }
 
+const qualityEl = document.getElementById('quality')
+chrome.storage.local.get('quality', ({quality}) => { if (quality) qualityEl.value = quality })
+qualityEl.onchange = () => chrome.storage.local.set({quality: qualityEl.value})
+
 chrome.storage.local.get('streamSubtitles', ({streamSubtitles}) => { streamSubtitlesEl.checked = streamSubtitles !== false })
 streamSubtitlesEl.onchange = () => chrome.storage.local.set({streamSubtitles: streamSubtitlesEl.checked})
 
 async function renderMedia() {
     let media = await chrome.runtime.sendMessage({command: 'getMedia', tabId: currentTab.id}) || []
     const frames = await scanDom()
-    // vom Benutzer geänderter Name bleibt beim erneuten Scannen erhalten
-    if (!nameInput.dataset.edited) nameInput.value = safeName(pickName(frames))
     frames.flatMap(f => f.urls).forEach(url => {
         if (!media.some(m => m.url === url)) {
             media.push({url, kind: /\.m3u8(\?|#|$)/i.test(url) ? 'hls' : /\.mpd(\?|#|$)/i.test(url) ? 'dash' : 'file', size: 0})
         }
     })
 
-    frames.flatMap(f => f.tracks || []).forEach(t => {
-        if (!media.some(m => m.url === t.url)) media.push({url: t.url, kind: 'subtitle', lang: t.lang})
-    })
+    // <track>-Untertitel: Sprache aus Attributen/URL, sonst aus dem Inhalt
+    for (const t of frames.flatMap(f => f.tracks || [])) {
+        if (media.some(m => m.url === t.url)) continue
+        if (isNonSubtitleUrl(t.url)) continue
+        let lang = guessLang(t.lang, t.label, t.url), text = ''
+        try { text = await (await fetch(t.url, {credentials: 'include'})).text() } catch (e) {}
+        if (isThumbnailVtt(text)) continue
+        if (!lang) lang = langFromText(text)
+        if (lang) media.push({url: t.url, kind: 'subtitle', lang})
+    }
+    // vom Benutzer geänderter Name bleibt beim erneuten Scannen erhalten
+    if (!nameInput.dataset.edited) nameInput.value = safeName(pickName(frames, media))
+
     // Untertitel-Dateien separat anzeigen (werden beim Download mitgenommen)
-    renderSubtitles(media.filter(m => m.kind === 'subtitle'))
+    renderSubtitles(media.filter(m => m.kind === 'subtitle' && m.lang))
     media = media.filter(m => m.kind !== 'subtitle')
 
     listEl.innerHTML = ''
@@ -206,7 +309,7 @@ async function renderMedia() {
             btn.textContent = 'Gestartet'
             await chrome.runtime.sendMessage({
                 command: 'startDownload', url: m.url, kind: m.kind, name: safeName(nameInput.value),
-                subtitles: selectedSubtitles(), streamSubtitles: streamSubtitlesEl.checked
+                subtitles: selectedSubtitles(), streamSubtitles: streamSubtitlesEl.checked, quality: qualityEl.value
             })
         }
         li.appendChild(btn)

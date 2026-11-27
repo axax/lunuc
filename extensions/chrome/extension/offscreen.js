@@ -166,10 +166,20 @@ async function saveSubtitles(ctx, sources) {
     for (const src of sources) {
         try {
             const {format, text} = await loadSubtitle(ctx, src)
-            const lang = (src.lang || 'und').replace(/[^a-z0-9-]/gi, '')
+            if (isThumbnailVtt(text)) {
+                console.info('Vorschaubilder statt Untertitel ignoriert', src.url)
+                continue
+            }
+            // Sprache aus Playlist/Dateiname, sonst aus dem Text; ohne erkennbare Sprache wird der Untertitel ignoriert
+            const detected = src.lang || langFromText(text)
+            if (!detected) {
+                console.info('Untertitel ohne erkennbare Sprache ignoriert', src.url)
+                continue
+            }
+            const lang = detected.replace(/[^a-z0-9-]/gi, '')
             used[lang] = (used[lang] || 0) + 1
             const filename = `${ctx.name}.${lang}${used[lang] > 1 ? '.' + used[lang] : ''}.${format}`
-            files.push({...await saveParts(ctx, [text], filename, 'text/' + format), subtitle: true, lang: src.lang || ''})
+            files.push({...await saveParts(ctx, [text], filename, 'text/' + format), subtitle: true, lang: detected})
         } catch (e) {
             if (signal().aborted) throw e
             console.warn('Untertitel übersprungen', src.url, e.message)
@@ -256,7 +266,7 @@ async function resolvePlaylists(url) {
     // Untertitel-Spuren (alle Sprachen der zur Variante gehörenden Gruppe)
     const subtitles = media
         .filter(a => a.TYPE === 'SUBTITLES' && a.URI && (!best.subtitleGroup || a['GROUP-ID'] === best.subtitleGroup))
-        .map(a => ({kind: 'hls', url: new URL(a.URI, url).href, lang: (a.LANGUAGE || '').toLowerCase()}))
+        .map(a => ({kind: 'hls', url: new URL(a.URI, url).href, lang: guessLang(a.LANGUAGE, a.NAME, a.URI)}))
 
     return {
         video: {url: best.url, text: await fetchText(best.url)},
@@ -434,7 +444,7 @@ function dashSubtitles(sets, period, base, periodDuration) {
         try {
             const {init, urls} = representationSegments(rep, set, period, base, periodDuration)
             if (init || !urls.length) continue
-            subs.push({kind: urls.length > 1 ? 'segments' : 'file', url: urls[0], urls, lang: (set.getAttribute('lang') || '').toLowerCase()})
+            subs.push({kind: urls.length > 1 ? 'segments' : 'file', url: urls[0], urls, lang: guessLang(set.getAttribute('lang'), rep.getAttribute('lang'), set.getAttribute('label'), urls[0])})
         } catch (e) {
             console.warn('Untertitel', e)
         }

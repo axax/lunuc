@@ -3,7 +3,7 @@
   "name": "Lunuc Extension",
   "description": "Lunuc chrome extension (YouTube mp3, Medien-Downloader)",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5Uu0Y0T9bUK1xfoWAbQOgp5StdYr1nCptOTSkpx0tSDJlyzyEf5V+CZh4Ng+dZUX8EaXoxgwiARHK60Efq4raYAOmU0+7NmB5ZLGOZcIhK45gExzYT+sWlP1Ghv529FG6QWBDczpeT6bK/cEUtfr7aCT2Rh1d46/1THlaDZWhtt5QDB3YsA53HWuqG6dV91u0kovz5rzRhEiMD8Cxk5Rhg9PmlPD8bGEj9+K4tqhaf4NpW6FFxjSWZf7yBoY5IVLEF0+CId7yTyQ/GxtBXQ4mF2HmZgIBl43xlKjT77oT3pJdlV1MO++HgbvUCqGLihFE9xMOitIk80qOTgHS73C1wIDAQAB",
-  "version": "0.3",
+  "version": "0.8",
   "background": {
     "service_worker": "background.js"
   },

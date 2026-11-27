@@ -10,6 +10,16 @@
 <h3>Medien auf dieser Seite</h3>
 <p class="hint">Video einmal abspielen, damit Streams erkannt werden.</p>
 <label class="field">Dateiname <input type="text" id="fileName" spellcheck="false"></label>
+<label class="field">Qualität
+    <select id="quality">
+        <option value="original">Original (schnell, keine Neukodierung)</option>
+        <option value="1080p">1080p H.264 – gute Qualität</option>
+        <option value="720p">720p H.264 – kleiner, läuft überall</option>
+        <option value="480p">480p H.264 – sehr klein</option>
+        <option value="1080p-hevc">1080p H.265 – ca. 40 % kleiner, langsamer</option>
+        <option value="720p-hevc">720p H.265 – sehr klein, langsamer</option>
+    </select>
+</label>
 <ul id="mediaList"></ul>
 <div id="subtitleBox">
     <h4>Untertitel</h4>
@@ -27,6 +37,7 @@
 <div class="row">
     <button id="clearJobs" class="btn small">Erledigte entfernen</button>
 </div>
+<script src="lang.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>

@@ -110,13 +110,35 @@ process.stdin.on('end', () => {
     process.exit(0)
 })
 
-// ISO 639-1 → 639-2 (MP4 erwartet dreistellige Sprachcodes)
-const LANG3 = {de: 'deu', en: 'eng', fr: 'fra', it: 'ita', es: 'spa', pt: 'por', nl: 'nld', rm: 'roh', gsw: 'gsw',
-    pl: 'pol', ru: 'rus', tr: 'tur', ja: 'jpn', zh: 'zho', ko: 'kor', ar: 'ara', sv: 'swe', da: 'dan', no: 'nor', fi: 'fin', cs: 'ces', hu: 'hun'}
+// ISO 639-1 → 639-2/T (MP4 erwartet dreistellige Sprachcodes) – vollständige Liste
+const LANG3 = Object.fromEntries(('aa:aar ab:abk af:afr ak:aka am:amh an:arg ar:ara as:asm av:ava ay:aym az:aze ba:bak be:bel bg:bul ' +
+    'bh:bih bi:bis bm:bam bn:ben bo:bod br:bre bs:bos ca:cat ce:che ch:cha co:cos cr:cre cs:ces cu:chu cv:chv cy:cym da:dan ' +
+    'de:deu dv:div dz:dzo ee:ewe el:ell en:eng eo:epo es:spa et:est eu:eus fa:fas ff:ful fi:fin fj:fij fo:fao fr:fra fy:fry ' +
+    'ga:gle gd:gla gl:glg gn:grn gu:guj gv:glv ha:hau he:heb hi:hin ho:hmo hr:hrv ht:hat hu:hun hy:hye hz:her ia:ina id:ind ' +
+    'ie:ile ig:ibo ii:iii ik:ipk io:ido is:isl it:ita iu:iku ja:jpn jv:jav ka:kat kg:kon ki:kik kj:kua kk:kaz kl:kal km:khm ' +
+    'kn:kan ko:kor kr:kau ks:kas ku:kur kv:kom kw:cor ky:kir la:lat lb:ltz lg:lug li:lim ln:lin lo:lao lt:lit lu:lub lv:lav ' +
+    'mg:mlg mh:mah mi:mri mk:mkd ml:mal mn:mon mr:mar ms:msa mt:mlt my:mya na:nau nb:nob nd:nde ne:nep ng:ndo nl:nld nn:nno ' +
+    'no:nor nr:nbl nv:nav ny:nya oc:oci oj:oji om:orm or:ori os:oss pa:pan pi:pli pl:pol ps:pus pt:por qu:que rm:roh rn:run ' +
+    'ro:ron ru:rus rw:kin sa:san sc:srd sd:snd se:sme sg:sag si:sin sk:slk sl:slv sm:smo sn:sna so:som sq:sqi sr:srp ss:ssw ' +
+    'st:sot su:sun sv:swe sw:swa ta:tam te:tel tg:tgk th:tha ti:tir tk:tuk tl:tgl tn:tsn to:ton tr:tur ts:tso tt:tat tw:twi ' +
+    'ty:tah ug:uig uk:ukr ur:urd uz:uzb ve:ven vi:vie vo:vol wa:wln wo:wol xh:xho yi:yid yo:yor za:zha zh:zho zu:zul')
+    .split(' ').map(p => p.split(':')))
+// 639-2/B-Varianten und verbreitete Abweichungen → 639-2/T
+const LANG3_ALIAS = {ger: 'deu', fre: 'fra', dut: 'nld', cze: 'ces', chi: 'zho', gre: 'ell', rum: 'ron', slo: 'slk',
+    per: 'fas', arm: 'hye', baq: 'eus', geo: 'kat', ice: 'isl', mac: 'mkd', mao: 'mri', may: 'msa', bur: 'mya', tib: 'bod',
+    wel: 'cym', alb: 'sqi', iw: 'heb', in: 'ind', ji: 'yid', fil: 'fil', yue: 'yue', cmn: 'zho', gsw: 'gsw'}
+const LANG3_VALUES = new Set(Object.values(LANG3))
 
 function lang3(lang) {
     const l = String(lang || '').toLowerCase().split(/[-_]/)[0]
-    return LANG3[l] || (/^[a-z]{3}$/.test(l) ? l : 'und')
+    if (LANG3[l]) return LANG3[l]
+    if (LANG3_ALIAS[l]) return LANG3_ALIAS[l]
+    return LANG3_VALUES.has(l) ? l : 'und'
+}
+
+// Sprachname für die Spur-Beschriftung ("Griechisch", "Portugiesisch (Brasilien)")
+function langTitle(lang) {
+    try { return new Intl.DisplayNames(['de'], {type: 'language'}).of(String(lang).replace('_', '-')) || '' } catch (e) { return '' }
 }
 
 function existingFiles(list) {
@@ -126,17 +148,52 @@ function existingFiles(list) {
     return list
 }
 
-function ffmpegArgs(inputs, subtitles, output) {
+// Qualitätsstufen für die Neukodierung (ohne Angabe: Original, nur umverpacken)
+// CRF: kleiner = besser/grösser. H.265 braucht bei gleicher Qualität etwa 40 % weniger Platz.
+const QUALITY = {
+    '1080p': {height: 1080, crf: 22, codec: 'h264'},
+    '720p': {height: 720, crf: 23, codec: 'h264'},
+    '480p': {height: 480, crf: 24, codec: 'h264'},
+    '1080p-hevc': {height: 1080, crf: 25, codec: 'hevc'},
+    '720p-hevc': {height: 720, crf: 26, codec: 'hevc'}
+}
+
+let encoderList = null
+function hasEncoder(ffmpeg, name) {
+    if (encoderList === null) {
+        try { encoderList = execFileSync(ffmpeg, ['-hide_banner', '-encoders'], {stdio: ['ignore', 'pipe', 'ignore']}).toString() } catch (e) { encoderList = '' }
+    }
+    return new RegExp('\\s' + name + '\\s').test(encoderList)
+}
+
+// Video-/Audio-Parameter je nach Qualität
+function codecArgs(ffmpeg, quality) {
+    const q = QUALITY[quality]
+    if (!q) return ['-c:v', 'copy', '-c:a', 'copy']
+    // -2: Breite bleibt gerade (sonst bricht libx264 bei ungeraden Breiten ab); min(): nie hochskalieren
+    const vf = `scale=-2:'min(${q.height},ih)':flags=lanczos,format=yuv420p`
+    const video = q.codec === 'hevc' && hasEncoder(ffmpeg, 'libx265')
+        // hvc1-Tag, damit QuickTime/iOS/Apple TV das Video abspielen
+        ? ['-c:v', 'libx265', '-preset', 'medium', '-crf', String(q.crf), '-tag:v', 'hvc1', '-x265-params', 'log-level=error']
+        : ['-c:v', 'libx264', '-preset', 'slow', '-crf', String(q.crf + (q.codec === 'hevc' ? -3 : 0)), '-profile:v', 'high']
+    return [...video, '-vf', vf, '-c:a', 'aac', '-b:a', '128k', '-ac', '2']
+}
+
+function ffmpegArgs(inputs, subtitles, output, ffmpeg, quality) {
     const args = ['-hide_banner', '-nostdin', '-y']
     inputs.forEach(i => args.push('-i', i))
     subtitles.forEach(s => args.push('-i', s.path))
     if (inputs.length === 2) args.push('-map', '0:v:0', '-map', '1:a:0')
     else if (subtitles.length) args.push('-map', '0:v?', '-map', '0:a?') // mit -map werden sonst nur die Untertitel übernommen
     subtitles.forEach((s, i) => args.push('-map', `${inputs.length + i}:0`))
-    args.push('-c', 'copy')
+    args.push(...codecArgs(ffmpeg, quality))
     if (subtitles.length) {
         args.push('-c:s', 'mov_text')
-        subtitles.forEach((s, i) => args.push(`-metadata:s:s:${i}`, `language=${lang3(s.lang)}`))
+        subtitles.forEach((s, i) => {
+            args.push(`-metadata:s:s:${i}`, `language=${lang3(s.lang)}`)
+            const title = langTitle(s.lang)
+            if (title) args.push(`-metadata:s:s:${i}`, `title=${title}`, `-metadata:s:s:${i}`, `handler_name=${title}`)
+        })
     }
     args.push('-movflags', '+faststart', output)
     return args
@@ -216,23 +273,26 @@ async function convert(msg) {
 
     // fehlerhafte Untertitel vorab aussortieren – nur die funktionierenden werden eingebettet,
     // die anderen bleiben als Datei neben der MP4 liegen
-    let embedded = subtitles.length ? await validSubtitles(ffmpeg, subtitles) : []
+    // Untertitel ohne erkennbare Sprache gar nicht erst einbetten
+    const known = subtitles.filter(s => lang3(s.lang) !== 'und')
+    let embedded = known.length ? await validSubtitles(ffmpeg, known) : []
     try {
-        await runFfmpeg(ffmpeg, ffmpegArgs(inputs, embedded, output), output)
+        await runFfmpeg(ffmpeg, ffmpegArgs(inputs, embedded, output, ffmpeg, msg.quality), output)
     } catch (e) {
         if (!embedded.length) return send({error: e.message})
         // scheitert es trotzdem an den Untertiteln: Video ohne Untertitel
         try {
-            await runFfmpeg(ffmpeg, ffmpegArgs(inputs, [], output), output)
+            await runFfmpeg(ffmpeg, ffmpegArgs(inputs, [], output, ffmpeg, msg.quality), output)
             embedded = []
         } catch (e2) {
             return send({error: e2.message})
         }
     }
-    const skipped = subtitles.filter(s => !embedded.includes(s))
+    const skipped = known.filter(s => !embedded.includes(s))
+    const unknown = subtitles.filter(s => !known.includes(s))
 
     if (msg.deleteInputs) {
-        inputs.concat(embedded.map(s => s.path)).forEach(p => { try { fs.unlinkSync(p) } catch (e) {} })
+        inputs.concat(embedded.map(s => s.path), unknown.map(s => s.path)).forEach(p => { try { fs.unlinkSync(p) } catch (e) {} })
     }
 
     const done = {done: true, output, subtitles: embedded.length, subtitlesSkipped: skipped.length,
