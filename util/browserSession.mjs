@@ -391,7 +391,6 @@ export const showPointer = async (page, box, {label} = {}) => {
  */
 function collectSnapshot(max) {
     const REF = 'data-lunuc-ref'
-    document.querySelectorAll('[' + REF + ']').forEach(el => el.removeAttribute(REF))
     const INTERACTIVE = 'a[href],button,input:not([type=hidden]),select,textarea,summary,[role=button],[role=link],' +
         '[role=checkbox],[role=radio],[role=tab],[role=menuitem],[role=option],[role=switch],[role=combobox],[role=textbox],' +
         '[contenteditable=""],[contenteditable=true],[onclick]'
@@ -410,13 +409,15 @@ function collectSnapshot(max) {
     const nameOf = (el) => {
         const aria = el.getAttribute('aria-label')
         if (aria) return aria
+        // ids are looked up in the own tree (document or shadow root)
+        const root = el.getRootNode && el.getRootNode().querySelector ? el.getRootNode() : document
         const by = el.getAttribute('aria-labelledby')
         if (by) {
-            const t = by.split(/\s+/).map(id => document.getElementById(id)).filter(Boolean).map(e => e.innerText).join(' ')
+            const t = by.split(/\s+/).map(id => root.querySelector('#' + CSS.escape(id))).filter(Boolean).map(e => e.innerText).join(' ')
             if (t.trim()) return t
         }
         if (el.id) {
-            const label = document.querySelector('label[for="' + CSS.escape(el.id) + '"]')
+            const label = root.querySelector('label[for="' + CSS.escape(el.id) + '"]')
             if (label && label.innerText.trim()) return label.innerText
         }
         const wrap = el.closest('label')
@@ -441,16 +442,45 @@ function collectSnapshot(max) {
         return tag === 'button' || tag === 'summary' ? 'button' : 'clickable(' + tag + ')'
     }
 
-    const lines = []
-    let n = 0, total = 0
-    const walker = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_ELEMENT)
-    for (let el = walker.currentNode; el; el = walker.nextNode()) {
+    // all elements in document order, also inside open shadow roots
+    // (cookie banners like Usercentrics live there - a TreeWalker does not enter them)
+    const all = []
+    const walk = (node) => {
+        for (const el of node.children) {
+            all.push(el)
+            if (el.shadowRoot) walk(el.shadowRoot)
+            walk(el)
+        }
+    }
+    walk(document.body || document.documentElement)
+
+    // the element that gets the click at x/y (through shadow roots)
+    const topAt = (x, y) => {
+        let hit = document.elementFromPoint(x, y)
+        while (hit && hit.shadowRoot) {
+            const inner = hit.shadowRoot.elementFromPoint(x, y)
+            if (!inner || inner === hit) break
+            hit = inner
+        }
+        return hit
+    }
+    const isInside = (node, el) => {
+        for (let n = node; n; n = n.parentNode || n.host) {
+            if (n === el) return true
+        }
+        return false
+    }
+
+    // pass 1: headings and interactive elements in document order
+    const entries = []
+    for (const el of all) {
+        el.removeAttribute(REF)
         const tag = el.tagName
         if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'TEMPLATE' || el.id === '__lunuc_llm_cursor') continue
         if (/^H[1-3]$/.test(tag)) {
             const r = visible(el)
             const text = r && clean(el.innerText, 100)
-            if (text && lines.length < max * 1.3) lines.push('#'.repeat(+tag[1]) + ' ' + text)
+            if (text) entries.push({heading: '#'.repeat(+tag[1]) + ' ' + text})
             continue
         }
         if (!el.matches(INTERACTIVE)) continue
@@ -458,8 +488,36 @@ function collectSnapshot(max) {
         if (el.hasAttribute('onclick') && el.querySelector(INTERACTIVE)) continue
         const r = visible(el)
         if (!r) continue
-        total++
-        if (n >= max) continue
+        const offscreen = r.bottom < 0 || r.top > vh || r.right < 0 || r.left > vw
+        let covered = false
+        if (!offscreen) {
+            // something else (dialog, cookie banner, overlay) gets the click on the center
+            const x = Math.min(vw - 1, Math.max(0, (r.left + r.right) / 2))
+            const y = Math.min(vh - 1, Math.max(0, (r.top + r.bottom) / 2))
+            const hit = topAt(x, y)
+            covered = !!hit && !isInside(hit, el) && !isInside(el, hit)
+        }
+        entries.push({el, r, offscreen, covered})
+    }
+
+    // pass 2: the numbers go first to what can be clicked now (visible, not covered), then offscreen, then covered
+    const interactive = entries.filter(e => e.el)
+    const total = interactive.length
+    const prio = (e) => e.covered ? 2 : (e.offscreen ? 1 : 0)
+    const chosen = new Set(interactive.map((e, i) => [e, i]).sort((a, b) => prio(a[0]) - prio(b[0]) || a[1] - b[1])
+        .slice(0, max).map(([e]) => e))
+    const covered = interactive.filter(e => e.covered).length
+
+    const lines = []
+    let n = 0
+    for (const e of entries) {
+        if (e.heading) {
+            if (lines.length < max * 1.3) lines.push(e.heading)
+            continue
+        }
+        if (!chosen.has(e)) continue
+        const {el, r} = e
+        const tag = el.tagName
         n++
         el.setAttribute(REF, String(n))
         const parts = ['[' + n + ']', roleOf(el)]
@@ -485,7 +543,8 @@ function collectSnapshot(max) {
         }
         if (el.disabled || el.getAttribute('aria-disabled') === 'true') parts.push('disabled')
         if (el.getAttribute('aria-expanded')) parts.push('expanded=' + el.getAttribute('aria-expanded'))
-        if (r.bottom < 0 || r.top > vh || r.right < 0 || r.left > vw) parts.push('(offscreen)')
+        if (e.offscreen) parts.push('(offscreen)')
+        if (e.covered) parts.push('(covered)')
         lines.push(parts.join(' '))
     }
     return {
@@ -497,6 +556,7 @@ function collectSnapshot(max) {
         iframes: document.querySelectorAll('iframe').length,
         refs: n,
         total,
+        covered,
         lines
     }
 }
@@ -508,6 +568,10 @@ export const takeSnapshot = async (page, {max = 200} = {}) => {
         `URL: ${s.url}`,
         `Scroll: ${s.scrollY} of ${Math.max(0, s.scrollHeight - s.viewportHeight)}px` + (s.iframes ? ` · ${s.iframes} iframe(s), their content is not listed` : '')
     ]
+    if (s.covered) {
+        head.push(`${s.covered} element(s) are covered by something on top (dialog, cookie banner, overlay) - marked (covered). ` +
+            'Clicks there hit the element on top: handle the dialog first (its buttons are listed without (covered)).')
+    }
     const tail = s.total > s.refs ? [`… ${s.total - s.refs} more interactive elements not numbered (limit ${max}) - scroll or use getText.`] : []
     return {
         text: [...head, '', ...(s.lines.length ? s.lines : ['(no interactive elements found)']), ...tail].join('\n'),
@@ -519,5 +583,7 @@ export const takeSnapshot = async (page, {max = 200} = {}) => {
 export const resolveRef = async (page, ref) => {
     const n = parseInt(ref, 10)
     if (!(n > 0)) return null
-    return page.$(`[data-lunuc-ref="${n}"]`)
+    const selector = `[data-lunuc-ref="${n}"]`
+    // pierce/: also inside shadow roots (the snapshot numbers elements there too)
+    return (await page.$(selector)) || page.$('pierce/' + selector)
 }
