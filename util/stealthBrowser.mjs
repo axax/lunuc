@@ -24,6 +24,7 @@ import {createSharedBrowser} from './sharedBrowser.mjs'
    Chrome there: --remote-debugging-port=9222 --user-data-dir=<own dir>
  If it does not answer within REMOTE_CONNECT_TIMEOUT a local Chrome is started (fallback).
  close() of a remote Chrome only closes the contexts of lunuc and disconnects - the Chrome keeps running.
+ The remote Chrome is used without the stealth plugin (it is a real browser, the evasions would contradict it).
  launchStealthBrowser({local: true}) always starts a local Chrome (e.g. for pages of this server).
  */
 export const BROWSER_LOCALE = 'de-CH'
@@ -68,6 +69,16 @@ const connectRemoteBrowser = (puppeteer) => {
 
 // own puppeteer-extra instance per launch, so changed plugin options apply after a browser reset
 export const launchStealthBrowser = async ({local = false, ...options} = {}) => {
+    if (BROWSER_REMOTE && !local) {
+        try {
+            // plain puppeteer, no stealth plugin: the remote one is a real Chrome (real GPU, user agent,
+            // languages) - the evasions would only add inconsistencies that bot checks detect
+            return await connectRemoteBrowser(puppeteerCore)
+        } catch (e) {
+            console.log(`remote Chrome ${BROWSER_REMOTE} not reachable (${e.message}) - starting a local Chrome`)
+        }
+    }
+
     const puppeteer = addExtra(puppeteerCore)
     const stealth = StealthPlugin()
     stealth.enabledEvasions.delete('user-agent-override')
@@ -75,14 +86,6 @@ export const launchStealthBrowser = async ({local = false, ...options} = {}) => 
     puppeteer.use(stealth)
     puppeteer.use(UserAgentOverride({locale: BROWSER_LANGUAGES.join(',')}))
     puppeteer.use(NavigatorLanguages({languages: BROWSER_LANGUAGES}))
-
-    if (BROWSER_REMOTE && !local) {
-        try {
-            return await connectRemoteBrowser(puppeteer)
-        } catch (e) {
-            console.log(`remote Chrome ${BROWSER_REMOTE} not reachable (${e.message}) - starting a local Chrome`)
-        }
-    }
 
     const args = [
         '--no-sandbox',

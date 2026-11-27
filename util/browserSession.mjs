@@ -51,6 +51,9 @@ export const isLlmSessionId = (id) => typeof id === 'string' && /^llm-[A-Za-z0-9
 /* ---------- Chrome ---------- */
 export const getBrowser = async () => {
     const a = app()
+    // idle pages of browser-view are closed by the timer too, not only on the next openUrl
+    // (with a remote Chrome with windows, see LUNUC_BROWSER_REMOTE, they stay open on its screen otherwise)
+    startPruneTimer()
     const current = a._proxyBrowser
     if (isConnected(current)) {
         return current
@@ -176,7 +179,7 @@ export const isPageBusy = (ctx) => !!(ctx.playmode || ctx.pending > 0 || ctx.llm
 export const isPageIdle = (ctx, now = Date.now()) =>
     !isPageBusy(ctx) && now - (ctx.time || 0) > (ctx.idleMs || DEFAULT_IDLE_MS)
 
-// closes idle pages (all kinds; browser-view calls it on openUrl, the LLM sessions on a timer)
+// closes idle pages (all kinds; called on openUrl of browser-view and by a timer every PRUNE_INTERVAL_MS)
 export const pruneIdlePages = async () => {
     const registry = getRegistry()
     for (const [id, ctx] of Object.entries(registry)) {

@@ -20,6 +20,7 @@ import Cache from '../util/cache.mjs'
 import {gunzipJsonBody} from './util/unzip.mjs'
 import {appendServerTiming, timingEntry, eventLoopEntry, SERVER_TIMING_ENABLED} from '../util/serverTiming.mjs'
 import {startEventLoopWatchdog, trackRequestForWatchdog} from '../util/eventLoopWatchdog.mjs'
+import {startBrowserHost} from '../util/browserHost.mjs'
 import {executeGraphqlRequest} from './util/graphqlExecute.mjs'
 import {graphqlResponseJson} from './util/graphqlResponse.mjs'
 
@@ -113,6 +114,9 @@ const TWO_HOURS_AND_FIVE_MINS = (2 * 60 + 5) * 60 * 1000; // 7.500.000 ms
 export let server
 
 export const start = (done) => {
+
+    // optional: keeps a Chrome with remote debugging running for other lunuc servers (env LUNUC_BROWSER_HOST)
+    startBrowserHost()
 
 
     dbConnection(MONGO_URL, (err, db, client) => dbPreparation(db, () => {
