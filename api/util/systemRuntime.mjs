@@ -23,7 +23,9 @@ const REMOTE_CACHE_MS = 60 * 60 * 1000
 const REMOTE_TIMEOUT_MS = 15000
 const SYSTEMD_DIR = '/etc/systemd/system'
 // PATH entry of an nvm node in the service files: <nvm dir>/versions/node/v26.13.0/bin
-const NVM_PATH_RE = /([^\s:"]+)\/versions\/node\/(v\d+\.\d+\.\d+)\/bin/
+// (the dir has to start with "/", otherwise "PATH=" of Environment="PATH=..." would be part of it)
+const NVM_PATH_RE = /(\/[^\s:"=]*)\/versions\/node\/(v\d+\.\d+\.\d+)\/bin/
+const NODE_RELEASE_RE = /^v\d+\.\d+\.\d+$/
 const NVM_EXEC_RE = /^(.*)\/versions\/node\/(v\d+\.\d+\.\d+)\/bin\/node$/
 const MAX_NODE_RELEASES = 6
 // lowest node major that is offered
@@ -54,6 +56,8 @@ const fetchCached = (url, transform, force) => {
 const fetchNodeReleases = force => fetchCached(NODE_INDEX_URL, list => {
     const byMajor = new Map()
     for (const entry of list) {
+        // only final releases (index.json may also list pre-releases like v27.0.0-alpha...)
+        if (!NODE_RELEASE_RE.test(entry.version)) continue
         const major = majorOf(entry.version)
         const latest = byMajor.get(major)
         if (major >= MIN_NODE_MAJOR && (!latest || compareVersions(entry.version, latest.version) > 0)) {
@@ -115,7 +119,7 @@ const getNodeInfo = async (force, launcher) => {
     if (result.nvmDir) {
         try {
             result.installed = fs.readdirSync(path.join(result.nvmDir, 'versions', 'node'))
-                .filter(v => /^v\d+\.\d+\.\d+$/.test(v)).sort(compareVersions).reverse()
+                .filter(v => NODE_RELEASE_RE.test(v)).sort(compareVersions).reverse()
         } catch (e) {
         }
     }
