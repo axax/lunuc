@@ -13,7 +13,14 @@ export default () => {
     Hook.on('TypeCreateEdit', ({type, props}) => {
         if (type === 'Api') {
             props.actions.unshift({key: 'openApi', label: 'Open API URL'})
-            props.actions.push({key: 'showAccessLog', label: _t('Api.showAccessLog')})
+            // place before "Cancel" so it groups with the extra actions (better on mobile)
+            const cancelIdx = props.actions.findIndex(a => a.key === 'cancel')
+            const accessLogAction = {key: 'showAccessLog', label: _t('Api.showAccessLog')}
+            if (cancelIdx >= 0) {
+                props.actions.splice(cancelIdx, 0, accessLogAction)
+            } else {
+                props.actions.push(accessLogAction)
+            }
         }
     })
 

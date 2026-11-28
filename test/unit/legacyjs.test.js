@@ -33,6 +33,14 @@ describe('legacyjs', () => {
         return out
     }
 
+    it('removes numeric separators without buble (iOS 12 bug on system/llm)', () => {
+        // no ?. in the code: separators alone must trigger the conversion
+        const out = oc.toLegacyJs('var __r = (scope.w * scope.h) / 1_000_000; var s = "1_0"')
+        assert.ok(!/\d_\d/.test(out.replace('"1_0"', '')))
+        assert.strictEqual(evaluate(out, {w: 2000, h: 1000}), 2)
+        same('var __r = scope?.n / 1_000', {n: 5000})
+    })
+
     it('leaves code alone which needs no conversion', () => {
         assert.strictEqual(oc.toLegacyJs('var a = 1'), 'var a = 1')
         assert.strictEqual(oc.toLegacyJs(''), '')

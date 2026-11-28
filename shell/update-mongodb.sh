@@ -89,6 +89,7 @@ if [ -n "$BACKUP_DIR" ]; then
         echo "no connection url for the backup"
         exit 1
     fi
+    BACKUP_DIR=${BACKUP_DIR%/}
     mkdir -p "$BACKUP_DIR"
     BACKUP_FILE="$BACKUP_DIR/backup.db.$(date +%s)000.gz"
     echo "=== mongodump -> $BACKUP_FILE"
@@ -106,10 +107,36 @@ if [ "$SERIES" != "$CURRENT_SERIES" ]; then
         exit 1
     fi
     NEW_LIST="/etc/apt/sources.list.d/mongodb-org-$SERIES.list"
-    KEYRING="/usr/share/keyrings/mongodb-server-$SERIES.gpg"
+
+    # the repository has to exist for this distribution (e.g. 9.0 is only built for debian trixie)
+    REPO_URL=$(grep -o 'https://repo.mongodb.org/apt/[a-z]*' "$OLD_LIST" | head -n1)
+    SUITE=$(grep -o "[a-z]*/mongodb-org/$CURRENT_SERIES" "$OLD_LIST" | head -n1 | cut -d/ -f1)
+    if [ -n "$REPO_URL" ] && [ -n "$SUITE" ]; then
+        if ! curl -fsSI "$REPO_URL/dists/$SUITE/mongodb-org/$SERIES/Release" >/dev/null; then
+            echo "MongoDB $SERIES is not available for '$SUITE' ($REPO_URL/dists/$SUITE/mongodb-org/$SERIES)."
+            echo "An upgrade of the distribution is needed first - see https://www.mongodb.com/docs/manual/administration/install-community-linux/"
+            exit 1
+        fi
+    fi
 
     echo "=== apt source mongodb-org/$CURRENT_SERIES -> mongodb-org/$SERIES"
-    curl -fsSL "https://pgp.mongodb.com/server-$SERIES.asc" | $SUDO gpg --dearmor --yes -o "$KEYRING"
+    # signing key: per series up to 8.x (server-8.0.asc), per major version since 9 (server-9.asc)
+    KEY_FILE=$(mktemp)
+    KEYRING=""
+    for name in "$SERIES" "${SERIES%%.*}"; do
+        if curl -fsSL "https://pgp.mongodb.com/server-$name.asc" -o "$KEY_FILE"; then
+            KEYRING="/usr/share/keyrings/mongodb-server-$name.gpg"
+            echo "key: https://pgp.mongodb.com/server-$name.asc"
+            break
+        fi
+    done
+    if [ -z "$KEYRING" ]; then
+        rm -f "$KEY_FILE"
+        echo "no signing key found for MongoDB $SERIES on pgp.mongodb.com"
+        exit 1
+    fi
+    $SUDO gpg --dearmor --yes -o "$KEYRING" "$KEY_FILE"
+    rm -f "$KEY_FILE"
     sed -e "s#mongodb-org/$CURRENT_SERIES#mongodb-org/$SERIES#g" -e "s#signed-by=[^] ]*#signed-by=$KEYRING#" "$OLD_LIST" \
         | $SUDO tee "$NEW_LIST.tmp" >/dev/null
     SOURCES_CHANGED=true

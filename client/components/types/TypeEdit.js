@@ -213,8 +213,8 @@ class TypeEdit extends React.Component {
                 props.actions[0] = Object.assign({}, props.actions[0], {divider: true})
             }
             props.actions.unshift(
-                {key: 'navigate_prev', label: '‹ ' + _t('TypeEdit.prev'), disabled: !navigation.hasPrev},
-                {key: 'navigate_next', label: _t('TypeEdit.next') + ' ›', disabled: !navigation.hasNext})
+                {key: 'navigate_prev', label: '‹ ' + _t('TypeEdit.prev'), disabled: !navigation.hasPrev, hideOnMobile: true},
+                {key: 'navigate_next', label: _t('TypeEdit.next') + ' ›', disabled: !navigation.hasNext, hideOnMobile: true})
             // another entry: new form (the GenericForm only takes its values on mount)
             props.children = <React.Fragment key={'entry-' + dataToEdit._id}>{props.children}</React.Fragment>
         }

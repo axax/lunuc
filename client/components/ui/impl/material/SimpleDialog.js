@@ -124,13 +124,25 @@ export const SimpleDialog = ({
                 : children}
         </DialogContent>
         {actions ?
-            <DialogActions>
+            <DialogActions sx={isMobile ? {
+                // mobile: wrap the buttons into rows instead of squeezing the labels
+                flexWrap: 'wrap',
+                justifyContent: 'flex-end',
+                rowGap: 0.5,
+                px: 1.5,
+                py: 1,
+                // iPhone home indicator
+                pb: 'calc(8px + env(safe-area-inset-bottom))',
+                '& > :not(style) ~ :not(style)': {ml: 0},
+                '& .MuiButton-root': {whiteSpace: 'nowrap', minWidth: 0, px: 1.25}
+            } : undefined}>
                 {actions.map((action, i) => {
-                    if (!action) {
+                    // hideOnMobile: optional actions (e.g. previous / next) that only take space on small screens
+                    if (!action || (isMobile && action.hideOnMobile)) {
                         return null
                     }
                     return <React.Fragment key={i}>
-                        {action.divider && <div style={{flex: '1 0 0'}}/>}
+                        {action.divider && !isMobile && <div style={{flex: '1 0 0'}}/>}
                         <Button autoFocus={action.autoFocus} disabled={!!action.disabled} onClick={() => {
                             onClose(action)
                         }} color={action.type} variant={action.variant} size={action.size}>
